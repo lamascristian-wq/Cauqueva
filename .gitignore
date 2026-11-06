@@ -1,0 +1,23 @@
+# Variables de entorno (Contraseñas y configuraciones sensibles)
+.env
+.env.*
+
+# Base de datos local de Django
+db.sqlite3
+
+# Archivos en caché y compilados de Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Entornos virtuales (por si los utilizas localmente fuera de Docker)
+venv/
+env/
+.venv/
+
+# Archivos de configuración local de Visual Studio Code
+.vscode/
+
+# Directorios de archivos estáticos y subidas de usuarios en Django
+media/
+staticfiles/

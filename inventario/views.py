@@ -1,26 +1,50 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from .models import MateriaPrima
-from .forms import MateriaPrimaForm # 1. Importamos el formulario que acabamos de crear
+from .forms import MateriaPrimaForm
 
-# Tu vista anterior (no la cambiamos)
 def panel_principal(request):
     lista_productos = MateriaPrima.objects.all()
     contexto = {'productos': lista_productos}
     return render(request, 'inventario/dashboard.html', contexto)
 
-# 2. NUEVA VISTA: Para registrar productos
 def registrar_producto(request):
-    # Si el usuario presionó el botón de guardar (envió datos)
     if request.method == 'POST':
         formulario = MateriaPrimaForm(request.POST)
-        if formulario.is_valid(): # Si no puso letras donde van números, etc.
-            formulario.save()     # Guarda en la base de datos
-            return redirect('dashboard') # Lo devuelve a la pantalla principal
-    
-    # Si el usuario recién entra a la pantalla (solo quiere ver el formulario vacío)
+        if formulario.is_valid():
+            formulario.save()
+            return redirect('dashboard')
     else:
         formulario = MateriaPrimaForm()
+    return render(request, 'inventario/formulario.html', {'formulario': formulario})
 
-    # Enviamos el formulario al diseño HTML
+# NUEVA VISTA: Para editar un producto existente
+def editar_producto(request, id):
+    # 1. Buscamos el producto exacto usando su número de identificación (ID)
+    producto = get_object_or_404(MateriaPrima, id=id)
+    
+    if request.method == 'POST':
+        # 2. Le pasamos los datos nuevos, pero le decimos que sobreescriba el producto existente (instance=producto)
+        formulario = MateriaPrimaForm(request.POST, instance=producto)
+        if formulario.is_valid():
+            formulario.save()
+            return redirect('dashboard')
+    else:
+        # 3. Si recién entra, cargamos el formulario lleno con los datos actuales del producto
+        formulario = MateriaPrimaForm(instance=producto)
+
+    # Reutilizamos el mismo diseño HTML
     contexto = {'formulario': formulario}
     return render(request, 'inventario/formulario.html', contexto)
+# NUEVA VISTA: Para eliminar un producto
+def eliminar_producto(request, id):
+    # 1. Buscamos el producto que se quiere borrar
+    producto = get_object_or_404(MateriaPrima, id=id)
+    
+    # 2. Si el usuario presiona el botón rojo de confirmación (POST)
+    if request.method == 'POST':
+        producto.delete()            # Lo borramos definitivamente de la base de datos
+        return redirect('dashboard') # Lo devolvemos al inicio
+    
+    # 3. Si solo hizo clic en "Eliminar" desde la tabla, le mostramos la pantalla de confirmación
+    contexto = {'producto': producto}
+    return render(request, 'inventario/eliminar.html', contexto)

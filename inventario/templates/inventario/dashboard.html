@@ -32,6 +32,7 @@
                             <th>Variedad</th>
                             <th>Stock Actual</th>
                             <th>Unidad</th>
+                            <th>Acciones</th> <!-- NUEVA COLUMNA -->
                         </tr>
                     </thead>
                     <tbody>
@@ -44,6 +45,16 @@
                             
                             <!-- Nota: get_unidad_medida_display hace que diga "Kilogramos" en lugar de solo "KG" -->
                             <td>{{ producto.get_unidad_medida_display }}</td>
+                            <td>{{ producto.get_unidad_medida_display }}</td>
+                                                        
+                            <!-- BOTONES DE ACCIÓN -->
+                            <td>
+                                <a href="{% url 'editar_producto' producto.id %}" class="btn btn-sm btn-outline-primary">Actualizar</a>
+                                
+                                <!-- NUEVO BOTÓN PARA ELIMINAR -->
+                                <a href="{% url 'eliminar_producto' producto.id %}" class="btn btn-sm btn-outline-danger">Eliminar</a>
+                            </td>
+                        </tr>
                         </tr>
                         {% empty %}
                         <tr>

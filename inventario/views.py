@@ -4,6 +4,7 @@ from .models import MateriaPrima, Movimiento
 from .forms import MovimientoForm
 import csv 
 from django.http import HttpResponse
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 # Función auxiliar para comprobar si el usuario es "Gerente" (Staff)
 def es_gerente(user):
@@ -38,6 +39,7 @@ def registrar_producto(request):
         formulario = MovimientoForm(request.POST)
         if formulario.is_valid():
             formulario.save()
+            messages.success(request, '¡Movimiento registrado correctamente!')
             return redirect('dashboard')
     else:
         formulario = MovimientoForm()

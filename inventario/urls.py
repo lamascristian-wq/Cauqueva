@@ -7,4 +7,5 @@ urlpatterns = [
     
     # NUEVA RUTA para el historial
     path('historial/<int:id>/', views.historial_producto, name='historial_producto'),
+    path('informes/', views.generar_informe, name='informes'),
 ]

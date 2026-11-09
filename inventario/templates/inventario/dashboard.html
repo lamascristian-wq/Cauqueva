@@ -26,7 +26,7 @@
                             <th>Variedad</th>
                             <th>Stock Calculado</th>
                             <th>Unidad</th>
-                            <th>Acciones</th> <!-- NUEVA COLUMNA -->
+                            <th>Acciones</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -49,7 +49,12 @@
                     </tbody>
                 </table>
                 
-                <a href="{% url 'nuevo_producto' %}" class="btn btn-success mt-3">Registrar Movimiento</a>
+                <!-- BOTONES INFERIORES -->
+                <div class="mt-4">
+                    <a href="{% url 'nuevo_producto' %}" class="btn btn-success me-2">Registrar Movimiento</a>
+                    <a href="{% url 'informes' %}" class="btn btn-secondary">Generar Informes</a>
+                </div>
+                
             </div>
         </div>
     </div>

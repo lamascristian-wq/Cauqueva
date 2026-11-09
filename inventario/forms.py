@@ -1,17 +1,15 @@
 from django import forms
-from .models import MateriaPrima
+from .models import Movimiento
 
-class MateriaPrimaForm(forms.ModelForm):
+class MovimientoForm(forms.ModelForm):
     class Meta:
-        model = MateriaPrima
-        # Indicamos qué campos queremos que llene el trabajador
-        fields = ['nombre', 'variedad', 'unidad_medida', 'stock_actual', 'stock_minimo']
-        
-        # Le agregamos las clases 'form-control' de Bootstrap para que se vean bonitos
+        model = Movimiento
+        fields = ['materia_prima', 'variedad', 'unidad', 'tipo', 'cantidad', 'observacion']
         widgets = {
-            'nombre': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ej: Papa Oca'}),
-            'variedad': forms.TextInput(attrs={'class': 'form-control'}),
-            'unidad_medida': forms.Select(attrs={'class': 'form-select'}),
-            'stock_actual': forms.NumberInput(attrs={'class': 'form-control'}),
-            'stock_minimo': forms.NumberInput(attrs={'class': 'form-control'}),
+            'materia_prima': forms.Select(attrs={'class': 'form-select'}),
+            'variedad': forms.Select(attrs={'class': 'form-select'}),
+            'unidad': forms.Select(attrs={'class': 'form-select'}),
+            'tipo': forms.Select(attrs={'class': 'form-select'}),
+            'cantidad': forms.NumberInput(attrs={'class': 'form-control'}),
+            'observacion': forms.TextInput(attrs={'class': 'form-control'}),
         }

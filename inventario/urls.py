@@ -5,7 +5,6 @@ urlpatterns = [
     path('', views.panel_principal, name='dashboard'),
     path('nuevo/', views.registrar_producto, name='nuevo_producto'),
     
-    # NUEVA RUTA: Recibe un número entero (<int:id>) para saber qué producto editar
-    path('editar/<int:id>/', views.editar_producto, name='editar_producto'),
-    path('eliminar/<int:id>/', views.eliminar_producto, name='eliminar_producto'),
+    # NUEVA RUTA para el historial
+    path('historial/<int:id>/', views.historial_producto, name='historial_producto'),
 ]

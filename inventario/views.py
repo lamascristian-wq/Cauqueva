@@ -1,50 +1,48 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from .models import MateriaPrima
-from .forms import MateriaPrimaForm
+from .models import MateriaPrima, Movimiento
+from .forms import MovimientoForm
 
 def panel_principal(request):
-    lista_productos = MateriaPrima.objects.all()
-    contexto = {'productos': lista_productos}
-    return render(request, 'inventario/dashboard.html', contexto)
+    materias_primas = MateriaPrima.objects.filter(activo=True)
+    resumen = []
+    for mp in materias_primas:
+        variedades = mp.variedad_set.filter(activo=True)
+        if variedades.exists():
+            for var in variedades:
+                movimientos = Movimiento.objects.filter(materia_prima=mp, variedad=var)
+                stock = sum(m.cantidad_kg * m.efecto_stock for m in movimientos)
+                resumen.append({
+                    'id_materia': mp.id, # NUEVO: Enviamos el ID para el botón
+                    'nombre': mp.nombre,
+                    'variedad': var.nombre,
+                    'stock': stock,
+                    'unidad': 'kg'
+                })
+        else:
+            movimientos = Movimiento.objects.filter(materia_prima=mp, variedad__isnull=True)
+            stock = sum(m.cantidad_kg * m.efecto_stock for m in movimientos)
+            resumen.append({
+                'id_materia': mp.id, # NUEVO: Enviamos el ID para el botón
+                'nombre': mp.nombre,
+                'variedad': 'Sin variedad',
+                'stock': stock,
+                'unidad': 'kg'
+            })
+    return render(request, 'inventario/dashboard.html', {'productos': resumen})
 
 def registrar_producto(request):
     if request.method == 'POST':
-        formulario = MateriaPrimaForm(request.POST)
+        formulario = MovimientoForm(request.POST)
         if formulario.is_valid():
             formulario.save()
             return redirect('dashboard')
     else:
-        formulario = MateriaPrimaForm()
+        formulario = MovimientoForm()
     return render(request, 'inventario/formulario.html', {'formulario': formulario})
 
-# NUEVA VISTA: Para editar un producto existente
-def editar_producto(request, id):
-    # 1. Buscamos el producto exacto usando su número de identificación (ID)
-    producto = get_object_or_404(MateriaPrima, id=id)
-    
-    if request.method == 'POST':
-        # 2. Le pasamos los datos nuevos, pero le decimos que sobreescriba el producto existente (instance=producto)
-        formulario = MateriaPrimaForm(request.POST, instance=producto)
-        if formulario.is_valid():
-            formulario.save()
-            return redirect('dashboard')
-    else:
-        # 3. Si recién entra, cargamos el formulario lleno con los datos actuales del producto
-        formulario = MateriaPrimaForm(instance=producto)
-
-    # Reutilizamos el mismo diseño HTML
-    contexto = {'formulario': formulario}
-    return render(request, 'inventario/formulario.html', contexto)
-# NUEVA VISTA: Para eliminar un producto
-def eliminar_producto(request, id):
-    # 1. Buscamos el producto que se quiere borrar
-    producto = get_object_or_404(MateriaPrima, id=id)
-    
-    # 2. Si el usuario presiona el botón rojo de confirmación (POST)
-    if request.method == 'POST':
-        producto.delete()            # Lo borramos definitivamente de la base de datos
-        return redirect('dashboard') # Lo devolvemos al inicio
-    
-    # 3. Si solo hizo clic en "Eliminar" desde la tabla, le mostramos la pantalla de confirmación
-    contexto = {'producto': producto}
-    return render(request, 'inventario/eliminar.html', contexto)
+# NUEVA VISTA: Mostrará la lista de movimientos de un producto específico
+def historial_producto(request, id):
+    materia = get_object_or_404(MateriaPrima, id=id)
+    # Buscamos todos los movimientos de esta materia prima (Django los ordenará por fecha automáticamente gracias al modelo)
+    movimientos = Movimiento.objects.filter(materia_prima=materia)
+    return render(request, 'inventario/historial.html', {'materia': materia, 'movimientos': movimientos})

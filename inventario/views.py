@@ -13,11 +13,15 @@ def panel_principal(request):
             for var in variedades:
                 movimientos = Movimiento.objects.filter(materia_prima=mp, variedad=var)
                 stock = sum(m.cantidad_kg * m.efecto_stock for m in movimientos)
-                resumen.append({'id_materia': mp.id, 'nombre': mp.nombre, 'variedad': var.nombre, 'stock': stock, 'unidad': 'kg'})
+                # NUEVO: Comparamos si el stock está por debajo o igual al mínimo
+                alerta = stock <= mp.stock_minimo
+                resumen.append({'id_materia': mp.id, 'nombre': mp.nombre, 'variedad': var.nombre, 'stock': stock, 'unidad': 'kg', 'stock_minimo': mp.stock_minimo, 'alerta': alerta})
         else:
             movimientos = Movimiento.objects.filter(materia_prima=mp, variedad__isnull=True)
             stock = sum(m.cantidad_kg * m.efecto_stock for m in movimientos)
-            resumen.append({'id_materia': mp.id, 'nombre': mp.nombre, 'variedad': 'Sin variedad', 'stock': stock, 'unidad': 'kg'})
+            # NUEVO: Comparamos si el stock está por debajo o igual al mínimo
+            alerta = stock <= mp.stock_minimo
+            resumen.append({'id_materia': mp.id, 'nombre': mp.nombre, 'variedad': 'Sin variedad', 'stock': stock, 'unidad': 'kg', 'stock_minimo': mp.stock_minimo, 'alerta': alerta})
     return render(request, 'inventario/dashboard.html', {'productos': resumen})
 
 # 2. Vista para Registrar un Movimiento

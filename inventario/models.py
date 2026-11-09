@@ -6,7 +6,7 @@ class MateriaPrima(models.Model):
     nombre = models.CharField(max_length=100, help_text="Ej: Papa, Maíz, Apio")
     descripcion = models.CharField(max_length=255, blank=True, null=True)
     activo = models.BooleanField(default=True)
-
+    stock_minimo = models.DecimalField(max_digits=10, decimal_places=2, default=50.00, verbose_name="Stock Mínimo (kg)")
     class Meta:
         verbose_name = "Materia Prima"
         verbose_name_plural = "Materias Primas"

@@ -3,24 +3,57 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CAUQUEVA - Inicio</title>
+    <title>CAUQUEVA - Panel Ejecutivo</title>
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Chart.js para los gráficos ejecutivos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-light">
 
-    <nav class="navbar navbar-dark bg-success mb-4">
+    <nav class="navbar navbar-dark bg-success mb-4 shadow-sm">
         <div class="container">
-            <span class="navbar-brand mb-0 h1">🌱 Cooperativa CAUQUEVA</span>
+            <span class="navbar-brand mb-0 h1 fw-bold">🌱 Cooperativa CAUQUEVA - Gestión de Inventario</span>
         </div>
     </nav>
 
     <div class="container">
-        <div class="card shadow-sm">
+        
+        <!-- SECCIÓN DE GRÁFICOS EJECUTIVOS PARA ALTOS MANDOS -->
+        <div class="row mb-4">
+            <div class="col-md-6 mb-3">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <h5 class="card-title text-success fw-bold mb-3">📊 Stock Actual por Producto (kg)</h5>
+                        <div style="position: relative; height: 250px;">
+                            <canvas id="stockChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <h5 class="card-title text-success fw-bold mb-3">📈 Resumen Operativo General</h5>
+                        <p class="text-muted small">Indicador visual del volumen total de existencias bajo control de la cooperativa en la planta.</p>
+                        <div class="d-flex justify-content-center align-items-center" style="height: 200px;">
+                            <div class="text-center">
+                                <h1 class="display-4 text-success fw-bold" id="totalStockValue">--</h1>
+                                <p class="text-secondary fw-semibold">Kilogramos Totales en Stock</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN DE LA TABLA TRADICIONAL CON ALERTAS -->
+        <div class="card shadow-sm mb-5">
             <div class="card-body">
-                <h3 class="card-title text-success mb-4">Resumen de Existencias</h3>
+                <h3 class="card-title text-success mb-4">Detalle de Existencias</h3>
                 
                 <table class="table table-striped table-hover align-middle">
-                    <thead>
+                    <thead class="table-success">
                         <tr>
                             <th>Producto</th>
                             <th>Variedad</th>
@@ -31,13 +64,21 @@
                     </thead>
                     <tbody>
                         {% for producto in productos %}
-                        <tr>
-                            <td><strong>{{ producto.nombre }}</strong></td>
+                        <!-- Si hay alerta, pintamos la fila de rojo suave -->
+                        <tr class="{% if producto.alerta %}table-danger{% endif %}">
+                            <td>
+                                <strong>{{ producto.nombre }}</strong>
+                                {% if producto.alerta %}
+                                    <span class="badge bg-danger ms-2">¡Stock Crítico!</span>
+                                {% endif %}
+                            </td>
                             <td>{{ producto.variedad }}</td>
-                            <td>{{ producto.stock|floatformat:2 }}</td>
+                            <td class="stock-valor fw-bold {% if producto.alerta %}text-danger{% endif %}" data-valor="{{ producto.stock }}">
+                                {{ producto.stock|floatformat:2 }} 
+                                <small class="text-muted d-block fw-normal">(Mínimo: {{ producto.stock_minimo|floatformat:2 }})</small>
+                            </td>
                             <td>{{ producto.unidad }}</td>
                             <td>
-                                <!-- BOTÓN DE HISTORIAL -->
                                 <a href="{% url 'historial_producto' producto.id_materia %}" class="btn btn-sm btn-outline-info">Ver Historial</a>
                             </td>
                         </tr>
@@ -49,7 +90,7 @@
                     </tbody>
                 </table>
                 
-                <!-- BOTONES INFERIORES -->
+                <!-- BOTONES DE ACCIÓN RÁPIDA -->
                 <div class="mt-4">
                     <a href="{% url 'nuevo_producto' %}" class="btn btn-success me-2">Registrar Movimiento</a>
                     <a href="{% url 'informes' %}" class="btn btn-secondary">Generar Informes</a>
@@ -58,6 +99,66 @@
             </div>
         </div>
     </div>
+
+    <!-- SCRIPT PARA CONSTRUIR EL GRÁFICO DINÁMICAMENTE -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const filas = document.querySelectorAll("tbody tr");
+            let nombres = [];
+            let stocks = [];
+            let sumaTotal = 0;
+
+            filas.forEach(fila => {
+                const celdaNombre = fila.querySelector("strong");
+                const celdaStock = fila.querySelector(".stock-valor");
+                
+                if (celdaNombre && celdaStock) {
+                    // Tomamos la variedad ignorando el badge de alerta si existe
+                    const variedad = fila.children[1].textContent.trim();
+                    const nombreProd = celdaNombre.textContent.trim() + " (" + variedad + ")";
+                    const valorStock = parseFloat(celdaStock.getAttribute("data-valor")) || 0;
+                    
+                    nombres.push(nombreProd);
+                    stocks.push(valorStock);
+                    sumaTotal += valorStock;
+                }
+            });
+
+            // Mostramos el total en la tarjeta KPI
+            document.getElementById("totalStockValue").textContent = sumaTotal.toFixed(2) + " kg";
+
+            // Renderizamos el gráfico de barras con Chart.js
+            const ctx = document.getElementById('stockChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: nombres.length > 0 ? nombres : ['Sin datos'],
+                    datasets: [{
+                        label: 'Stock en Kilogramos',
+                        data: stocks.length > 0 ? stocks : [0],
+                        backgroundColor: 'rgba(40, 167, 69, 0.7)',
+                        borderColor: 'rgba(40, 167, 69, 1)',
+                        borderWidth: 1,
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        });
+    </script>
 
 </body>
 </html>

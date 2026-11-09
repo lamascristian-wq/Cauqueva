@@ -4,9 +4,13 @@ from .models import MateriaPrima, Movimiento
 from .forms import MovimientoForm
 import csv 
 from django.http import HttpResponse
-
+from django.contrib.auth.decorators import login_required, user_passes_test
+# Función auxiliar para comprobar si el usuario es "Gerente" (Staff)
+def es_gerente(user):
+    return user.is_staff
 
 # 1. Vista del Panel Principal
+@login_required(login_url='login')
 def panel_principal(request):
     materias_primas = MateriaPrima.objects.filter(activo=True)
     resumen = []
@@ -28,6 +32,7 @@ def panel_principal(request):
     return render(request, 'inventario/dashboard.html', {'productos': resumen})
 
 # 2. Vista para Registrar un Movimiento
+@login_required(login_url='login')
 def registrar_producto(request):
     if request.method == 'POST':
         formulario = MovimientoForm(request.POST)
@@ -39,12 +44,14 @@ def registrar_producto(request):
     return render(request, 'inventario/formulario.html', {'formulario': formulario})
 
 # 3. Vista del Historial (CU-08)
+@login_required(login_url='login')
 def historial_producto(request, id):
     materia = get_object_or_404(MateriaPrima, id=id)
     movimientos = Movimiento.objects.filter(materia_prima=materia)
     return render(request, 'inventario/historial.html', {'materia': materia, 'movimientos': movimientos})
 
 # 4. Vista de Informes Mensuales (CU-07)
+@login_required(login_url='login')
 def generar_informe(request):
     hoy = timezone.now()
     mes_seleccionado = int(request.GET.get('mes', hoy.month))
@@ -73,6 +80,7 @@ def generar_informe(request):
     contexto = {'reporte': reporte, 'mes_seleccionado': mes_seleccionado, 'anio_seleccionado': anio_seleccionado, 'anios': [hoy.year - 1, hoy.year, hoy.year + 1]}
     return render(request, 'inventario/informe.html', contexto)
 # NUEVA VISTA: Exportar Informe a Excel/CSV
+@login_required(login_url='login')
 def exportar_informe_csv(request):
     hoy = timezone.now()
     mes_seleccionado = int(request.GET.get('mes', hoy.month))

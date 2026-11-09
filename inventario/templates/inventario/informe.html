@@ -55,6 +55,12 @@
                     <div class="col-auto">
                         <button type="submit" class="btn btn-primary">Generar Informe</button>
                     </div>
+                    <!-- NUEVO BOTÓN DE DESCARGA -->
+                    <div class="col-auto">
+                        <a href="{% url 'exportar_informe' %}?mes={{ mes_seleccionado }}&anio={{ anio_seleccionado }}" class="btn btn-success">
+                            Descargar Excel (CSV)
+                        </a>
+                    </div>
                 </form>
 
                 <!-- Tabla de resultados -->

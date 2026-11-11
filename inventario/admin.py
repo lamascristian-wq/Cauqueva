@@ -1,9 +1,9 @@
 from django.contrib import admin
-from .models import MateriaPrima
+from .models import MateriaPrima, Variedad, UnidadMedida, TipoMovimiento, Movimiento
 
-@admin.register(MateriaPrima)
-class MateriaPrimaAdmin(admin.ModelAdmin):
-    list_display = ('nombre', 'variedad', 'unidad_medida', 'stock_actual', 'stock_minimo')
-    search_fields = ('nombre', 'variedad')
-    list_filter = ('unidad_medida',) 
-# Register your models here.
+# Registramos todas las tablas para poder gestionarlas desde el panel azul
+admin.site.register(MateriaPrima)
+admin.site.register(Variedad)
+admin.site.register(UnidadMedida)
+admin.site.register(TipoMovimiento)
+admin.site.register(Movimiento)

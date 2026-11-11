@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAUQUEVA - Panel Ejecutivo</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Chart.js para los gráficos ejecutivos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-light">
+    <!-- CONTENEDOR DE NOTIFICACIONES (TOASTS) -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1055;">
+        {% if messages %}
+            {% for message in messages %}
+                <div class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body fw-bold">
+                            ✅ {{ message }}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+    <nav class="navbar navbar-dark bg-success mb-4 shadow-sm">
+        <div class="container">
+            <span class="navbar-brand mb-0 h1 fw-bold">🌱 Cooperativa CAUQUEVA - Gestión de Inventario</span>
+            <div class="d-flex text-white align-items-center">
+                <small class="me-3">Usuario: <strong>{{ request.user.username }}</strong></small>
+                <a href="{% url 'logout' %}" class="btn btn-sm btn-outline-light">Cerrar Sesión</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        
+        <!-- SECCIÓN DE GRÁFICOS EJECUTIVOS PARA ALTOS MANDOS -->
+        <div class="row mb-4">
+            <div class="col-md-6 mb-3">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <h5 class="card-title text-success fw-bold mb-3">📊 Stock Actual por Producto (kg)</h5>
+                        <div style="position: relative; height: 250px;">
+                            <canvas id="stockChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body">
+                        <h5 class="card-title text-success fw-bold mb-3">📈 Resumen Operativo General</h5>
+                        <p class="text-muted small">Indicador visual del volumen total de existencias bajo control de la cooperativa en la planta.</p>
+                        <div class="d-flex justify-content-center align-items-center" style="height: 200px;">
+                            <div class="text-center">
+                                <h1 class="display-4 text-success fw-bold" id="totalStockValue">--</h1>
+                                <p class="text-secondary fw-semibold">Kilogramos Totales en Stock</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECCIÓN DE LA TABLA TRADICIONAL CON ALERTAS -->
+        <div class="card shadow-sm mb-5">
+            <div class="card-body">
+                <h3 class="card-title text-success mb-4">Detalle de Existencias</h3>
+                <div class="row mb-3">
+                    <div class="col-md-6 col-12">
+                        <div class="input-group shadow-sm">
+                            <span class="input-group-text bg-success text-white border-success">🔍</span>
+                            <input type="text" id="buscadorTabla" class="form-control form-control-lg border-success" placeholder="Buscar por producto o variedad...">
+                        </div>
+                    </div>
+                </div>
+                <table class="table table-striped table-hover align-middle">
+                    <thead class="table-success">
+                        <tr>
+                            <th>Producto</th>
+                            <th>Variedad</th>
+                            <th>Stock Calculado</th>
+                            <th>Unidad</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for producto in productos %}
+                        <!-- Si hay alerta, pintamos la fila de rojo suave -->
+                        <tr class="{% if producto.alerta %}table-danger{% endif %}">
+                            <td>
+                                <strong>{{ producto.nombre }}</strong>
+                                {% if producto.alerta %}
+                                    <span class="badge bg-danger ms-2">¡Stock Crítico!</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ producto.variedad }}</td>
+                            <td class="stock-valor fw-bold {% if producto.alerta %}text-danger{% endif %}" data-valor="{{ producto.stock }}">
+                                {{ producto.stock|floatformat:2 }} 
+                                <small class="text-muted d-block fw-normal">(Mínimo: {{ producto.stock_minimo|floatformat:2 }})</small>
+                            </td>
+                            <td>{{ producto.unidad }}</td>
+                            <td>
+                                <a href="{% url 'historial_producto' producto.id_materia %}" class="btn btn-sm btn-outline-info">Ver Historial</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center text-muted">No hay materias primas registradas.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                
+                <!-- BOTONES DE ACCIÓN RÁPIDA -->
+                <div class="mt-4">
+                    <a href="{% url 'nuevo_producto' %}" class="btn btn-success me-2">Registrar Movimiento</a>
+                    {% if request.user.is_staff %}
+                        <a href="{% url 'informes' %}" class="btn btn-secondary">Generar Informes</a>
+                    {% endif %}
+                </div>
+                
+            </div>
+        </div>
+    </div>
+
+    <!-- SCRIPT PARA CONSTRUIR EL GRÁFICO DINÁMICAMENTE -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const filas = document.querySelectorAll("tbody tr");
+            let nombres = [];
+            let stocks = [];
+            let sumaTotal = 0;
+
+            filas.forEach(fila => {
+                const celdaNombre = fila.querySelector("strong");
+                const celdaStock = fila.querySelector(".stock-valor");
+                
+                if (celdaNombre && celdaStock) {
+                    // Tomamos la variedad ignorando el badge de alerta si existe
+                    const variedad = fila.children[1].textContent.trim();
+                    const nombreProd = celdaNombre.textContent.trim() + " (" + variedad + ")";
+                    const valorStock = parseFloat(celdaStock.getAttribute("data-valor")) || 0;
+                    
+                    nombres.push(nombreProd);
+                    stocks.push(valorStock);
+                    sumaTotal += valorStock;
+                }
+            });
+
+            // Mostramos el total en la tarjeta KPI
+            document.getElementById("totalStockValue").textContent = sumaTotal.toFixed(2) + " kg";
+
+            // Renderizamos el gráfico de barras con Chart.js
+            const ctx = document.getElementById('stockChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: nombres.length > 0 ? nombres : ['Sin datos'],
+                    datasets: [{
+                        label: 'Stock en Kilogramos',
+                        data: stocks.length > 0 ? stocks : [0],
+                        backgroundColor: 'rgba(40, 167, 69, 0.7)',
+                        borderColor: 'rgba(40, 167, 69, 1)',
+                        borderWidth: 1,
+                        borderRadius: 5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        // --- LÓGICA DEL BUSCADOR EN TIEMPO REAL ---
+            const inputBuscador = document.getElementById("buscadorTabla");
+            
+            if (inputBuscador) {
+                inputBuscador.addEventListener("keyup", function() {
+                    const textoFiltro = this.value.toLowerCase();
+                    
+                    filas.forEach(fila => {
+                        // Ignorar la fila vacía si no hay productos
+                        if (fila.cells.length < 5) return; 
+                        
+                        const celdaNombre = fila.querySelector("strong");
+                        const nombreProducto = celdaNombre ? celdaNombre.textContent.toLowerCase() : "";
+                        const variedadProducto = fila.children[1].textContent.toLowerCase();
+                        
+                        // Si el texto escrito coincide con el nombre o la variedad, mostramos la fila
+                        if (nombreProducto.includes(textoFiltro) || variedadProducto.includes(textoFiltro)) {
+                            fila.style.display = "";
+                        } else {
+                            // Si no, la ocultamos
+                            fila.style.display = "none";
+                        }
+                    });
+                });
+            }
+        });
+    </script>
+<!-- SCRIPT DE BOOTSTRAP (Necesario para los Toasts) -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- SCRIPT PARA INICIALIZAR LOS TOASTS -->
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // Inicializar y mostrar los Toasts automáticamente
+            var toastElList = [].slice.call(document.querySelectorAll('.toast'))
+            var toastList = toastElList.map(function (toastEl) {
+                // El toast desaparecerá solo después de 3.5 segundos (3500ms)
+                return new bootstrap.Toast(toastEl, { delay: 3500 }) 
+            })
+            toastList.forEach(toast => toast.show());
+        });
+    </script>
+</body>
+</html>

@@ -3,168 +3,364 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CAUQUEVA - Panel Ejecutivo</title>
-    <!-- Bootstrap CSS -->
+    <title>CAUQUEVA - Panel principal</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Chart.js para los gráficos ejecutivos -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --cauqueva-green: #236b45;
+            --cauqueva-green-dark: #184d32;
+            --cauqueva-green-light: #eaf3ed;
+            --page-background: #f5f7f5;
+            --text-primary: #24332a;
+            --text-secondary: #647168;
+            --border-color: #e2e9e3;
+        }
+
+        body {
+            background: var(--page-background);
+            color: var(--text-primary);
+            font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        }
+
+        .site-header {
+            background: var(--cauqueva-green);
+            border-bottom: 4px solid #d5e6d9;
+        }
+
+        .brand-name {
+            letter-spacing: 0.04em;
+        }
+
+        .page-content {
+            max-width: 1240px;
+        }
+
+        .page-intro {
+            padding: 2rem 0 1.5rem;
+        }
+
+        .eyebrow {
+            color: var(--cauqueva-green);
+            font-size: 0.78rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+
+        .card {
+            border: 1px solid var(--border-color);
+            border-radius: 0.85rem;
+        }
+
+        .card-title {
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-weight: 700;
+        }
+
+        .metric-card {
+            min-height: 132px;
+        }
+
+        .metric-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .metric-value {
+            color: var(--cauqueva-green-dark);
+            font-size: clamp(1.65rem, 3vw, 2.2rem);
+            font-weight: 750;
+            line-height: 1.2;
+        }
+
+        .metric-unit {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .metric-alert .metric-value {
+            color: #9a5b12;
+        }
+
+        .btn-success {
+            --bs-btn-bg: var(--cauqueva-green);
+            --bs-btn-border-color: var(--cauqueva-green);
+            --bs-btn-hover-bg: var(--cauqueva-green-dark);
+            --bs-btn-hover-border-color: var(--cauqueva-green-dark);
+            --bs-btn-active-bg: var(--cauqueva-green-dark);
+            --bs-btn-active-border-color: var(--cauqueva-green-dark);
+        }
+
+        .btn-outline-success {
+            --bs-btn-color: var(--cauqueva-green);
+            --bs-btn-border-color: #9cbba6;
+            --bs-btn-hover-bg: var(--cauqueva-green);
+            --bs-btn-hover-border-color: var(--cauqueva-green);
+        }
+
+        .btn:focus-visible,
+        .form-control:focus-visible {
+            outline: 3px solid #a9d2b5;
+            outline-offset: 2px;
+            box-shadow: none;
+        }
+
+        .search-control {
+            min-height: 46px;
+        }
+
+        .table thead th {
+            background: var(--cauqueva-green-light);
+            color: var(--cauqueva-green-dark);
+            font-size: 0.84rem;
+            white-space: nowrap;
+        }
+
+        .table > :not(caption) > * > * {
+            padding: 0.9rem 0.85rem;
+        }
+
+        .stock-warning {
+            background: #fff8eb;
+        }
+
+        .stock-warning td:first-child {
+            box-shadow: inset 4px 0 #d99532;
+        }
+
+        .badge-critical {
+            background: #fff0d6;
+            color: #80500f;
+            font-weight: 650;
+        }
+
+        .text-secondary,
+        .text-muted {
+            color: var(--text-secondary) !important;
+        }
+
+        .toast-container {
+            z-index: 1055;
+        }
+
+        @media (max-width: 575.98px) {
+            .page-intro {
+                padding-top: 1.5rem;
+            }
+
+            .header-user {
+                align-items: flex-start !important;
+            }
+
+            .header-user small {
+                max-width: 130px;
+                overflow-wrap: anywhere;
+            }
+        }
+    </style>
 </head>
-<body class="bg-light">
-    <!-- CONTENEDOR DE NOTIFICACIONES (TOASTS) -->
-    <div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1055;">
+<body>
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
         {% if messages %}
             {% for message in messages %}
                 <div class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
                     <div class="d-flex">
-                        <div class="toast-body fw-bold">
-                            ✅ {{ message }}
-                        </div>
-                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                        <div class="toast-body fw-semibold">{{ message }}</div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Cerrar aviso"></button>
                     </div>
                 </div>
             {% endfor %}
         {% endif %}
     </div>
-    <nav class="navbar navbar-dark bg-success mb-4 shadow-sm">
-        <div class="container">
-            <span class="navbar-brand mb-0 h1 fw-bold">🌱 Cooperativa CAUQUEVA - Gestión de Inventario</span>
-            <div class="d-flex text-white align-items-center">
-                <small class="me-3">Usuario: <strong>{{ request.user.username }}</strong></small>
-                <a href="{% url 'logout' %}" class="btn btn-sm btn-outline-light">Cerrar Sesión</a>
-            </div>
-        </div>
-    </nav>
 
-    <div class="container">
-        
-        <!-- SECCIÓN DE GRÁFICOS EJECUTIVOS PARA ALTOS MANDOS -->
-        <div class="row mb-4">
-            <div class="col-md-6 mb-3">
-                <div class="card shadow-sm h-100">
-                    <div class="card-body">
-                        <h5 class="card-title text-success fw-bold mb-3">📊 Stock Actual por Producto (kg)</h5>
-                        <div style="position: relative; height: 250px;">
-                            <canvas id="stockChart"></canvas>
+    <header class="site-header">
+        <nav class="navbar navbar-dark">
+            <div class="container page-content">
+                <a class="navbar-brand mb-0" href="{% url 'dashboard' %}" aria-label="CAUQUEVA, panel principal">
+                    <span class="brand-name fw-bold">CAUQUEVA</span>
+                    <span class="d-block small text-white-50">Gestión de inventario</span>
+                </a>
+                <div class="header-user d-flex align-items-center gap-3 text-white">
+                    <small>Usuario: <strong>{{ request.user.username }}</strong></small>
+                    <a href="{% url 'logout' %}" class="btn btn-sm btn-outline-light">Cerrar sesión</a>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container page-content pb-5">
+        <section class="page-intro d-flex flex-column flex-md-row justify-content-between align-items-md-end gap-3">
+            <div>
+                <p class="eyebrow mb-2">Inventario de la cooperativa</p>
+                <h1 class="h2 fw-bold mb-2">Panel principal</h1>
+                <p class="text-secondary mb-0">Consultá las existencias y registrá los movimientos de forma sencilla.</p>
+            </div>
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{% url 'nuevo_producto' %}" class="btn btn-success px-3 py-2">Registrar movimiento</a>
+                {% if request.user.is_staff %}
+                    <a href="{% url 'informes' %}" class="btn btn-outline-success px-3 py-2">Generar informes</a>
+                {% endif %}
+            </div>
+        </section>
+
+        <section class="row g-3 mb-4" aria-label="Resumen del inventario">
+            <div class="col-12 col-md-4">
+                <article class="card metric-card h-100 shadow-sm">
+                    <div class="card-body d-flex flex-column justify-content-between">
+                        <span class="metric-label">Stock total</span>
+                        <div>
+                            <span class="metric-value" id="totalStockValue" aria-live="polite">--</span>
+                            <span class="metric-unit">kg</span>
                         </div>
                     </div>
-                </div>
+                </article>
             </div>
-            <div class="col-md-6 mb-3">
-                <div class="card shadow-sm h-100">
-                    <div class="card-body">
-                        <h5 class="card-title text-success fw-bold mb-3">📈 Resumen Operativo General</h5>
-                        <p class="text-muted small">Indicador visual del volumen total de existencias bajo control de la cooperativa en la planta.</p>
-                        <div class="d-flex justify-content-center align-items-center" style="height: 200px;">
-                            <div class="text-center">
-                                <h1 class="display-4 text-success fw-bold" id="totalStockValue">--</h1>
-                                <p class="text-secondary fw-semibold">Kilogramos Totales en Stock</p>
-                            </div>
+            <div class="col-12 col-md-4">
+                <article class="card metric-card h-100 shadow-sm">
+                    <div class="card-body d-flex flex-column justify-content-between">
+                        <span class="metric-label">Productos y variedades</span>
+                        <div class="metric-value" id="totalProductCount" aria-live="polite">--</div>
+                    </div>
+                </article>
+            </div>
+            <div class="col-12 col-md-4">
+                <article class="card metric-card metric-alert h-100 shadow-sm">
+                    <div class="card-body d-flex flex-column justify-content-between">
+                        <span class="metric-label">Existencias en nivel crítico</span>
+                        <div class="metric-value" id="criticalProductCount" aria-live="polite">--</div>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <section class="row g-3 mb-4" aria-label="Gráfico y resumen de existencias">
+            <div class="col-12 col-lg-8">
+                <article class="card h-100 shadow-sm">
+                    <div class="card-body p-3 p-md-4">
+                        <h2 class="card-title mb-1">Stock por producto</h2>
+                        <p class="text-secondary small mb-3">Comparación de las existencias actuales, en kilogramos.</p>
+                        <div style="position: relative; height: 280px;">
+                            <canvas id="stockChart" role="img" aria-label="Gráfico de barras con el stock actual de cada producto, en kilogramos"></canvas>
                         </div>
                     </div>
-                </div>
+                </article>
             </div>
-        </div>
-
-        <!-- SECCIÓN DE LA TABLA TRADICIONAL CON ALERTAS -->
-        <div class="card shadow-sm mb-5">
-            <div class="card-body">
-                <h3 class="card-title text-success mb-4">Detalle de Existencias</h3>
-                <div class="row mb-3">
-                    <div class="col-md-6 col-12">
-                        <div class="input-group shadow-sm">
-                            <span class="input-group-text bg-success text-white border-success">🔍</span>
-                            <input type="text" id="buscadorTabla" class="form-control form-control-lg border-success" placeholder="Buscar por producto o variedad...">
+            <div class="col-12 col-lg-4">
+                <article class="card h-100 shadow-sm">
+                    <div class="card-body p-3 p-md-4">
+                        <h2 class="card-title mb-2">¿Qué muestra este panel?</h2>
+                        <p class="text-secondary mb-3">El stock se calcula con los movimientos registrados para cada producto y variedad.</p>
+                        <div class="rounded-3 p-3" style="background: var(--cauqueva-green-light);">
+                            <p class="fw-semibold mb-1">Atención a las alertas</p>
+                            <p class="small text-secondary mb-0">Los productos marcados como “Stock crítico” están en su mínimo o por debajo de él.</p>
                         </div>
                     </div>
-                </div>
-                <table class="table table-striped table-hover align-middle">
-                    <thead class="table-success">
-                        <tr>
-                            <th>Producto</th>
-                            <th>Variedad</th>
-                            <th>Stock Calculado</th>
-                            <th>Unidad</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for producto in productos %}
-                        <!-- Si hay alerta, pintamos la fila de rojo suave -->
-                        <tr class="{% if producto.alerta %}table-danger{% endif %}">
-                            <td>
-                                <strong>{{ producto.nombre }}</strong>
-                                {% if producto.alerta %}
-                                    <span class="badge bg-danger ms-2">¡Stock Crítico!</span>
-                                {% endif %}
-                            </td>
-                            <td>{{ producto.variedad }}</td>
-                            <td class="stock-valor fw-bold {% if producto.alerta %}text-danger{% endif %}" data-valor="{{ producto.stock }}">
-                                {{ producto.stock|floatformat:2 }} 
-                                <small class="text-muted d-block fw-normal">(Mínimo: {{ producto.stock_minimo|floatformat:2 }})</small>
-                            </td>
-                            <td>{{ producto.unidad }}</td>
-                            <td>
-                                <a href="{% url 'historial_producto' producto.id_materia %}" class="btn btn-sm btn-outline-info">Ver Historial</a>
-                            </td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="5" class="text-center text-muted">No hay materias primas registradas.</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                
-                <!-- BOTONES DE ACCIÓN RÁPIDA -->
-                <div class="mt-4">
-                    <a href="{% url 'nuevo_producto' %}" class="btn btn-success me-2">Registrar Movimiento</a>
-                    {% if request.user.is_staff %}
-                        <a href="{% url 'informes' %}" class="btn btn-secondary">Generar Informes</a>
-                    {% endif %}
-                </div>
-                
+                </article>
             </div>
-        </div>
-    </div>
+        </section>
 
-    <!-- SCRIPT PARA CONSTRUIR EL GRÁFICO DINÁMICAMENTE -->
+        <section class="card shadow-sm" aria-labelledby="inventory-title">
+            <div class="card-body p-3 p-md-4">
+                <div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-end gap-3 mb-3">
+                    <div>
+                        <h2 class="h4 fw-bold mb-1" id="inventory-title">Existencias</h2>
+                        <p class="text-secondary mb-0" id="tableDescription" aria-live="polite">Listado de productos y variedades registrados.</p>
+                    </div>
+                    <div class="w-100" style="max-width: 390px;">
+                        <label for="buscadorTabla" class="form-label fw-semibold mb-1">Buscar producto o variedad</label>
+                        <input type="search" id="buscadorTabla" class="form-control search-control" placeholder="Escribí un nombre para buscar" autocomplete="off">
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead>
+                            <tr>
+                                <th scope="col">Producto</th>
+                                <th scope="col">Variedad</th>
+                                <th scope="col">Stock actual</th>
+                                <th scope="col">Unidad</th>
+                                <th scope="col">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventoryRows">
+                            {% for producto in productos %}
+                            <tr data-product-row data-alert="{% if producto.alerta %}true{% else %}false{% endif %}" class="{% if producto.alerta %}stock-warning{% endif %}">
+                                <td>
+                                    <strong>{{ producto.nombre }}</strong>
+                                    {% if producto.alerta %}
+                                        <span class="badge badge-critical ms-1">Stock crítico</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ producto.variedad }}</td>
+                                <td class="stock-valor fw-bold {% if producto.alerta %}text-warning-emphasis{% endif %}" data-valor="{{ producto.stock }}">
+                                    {{ producto.stock|floatformat:2 }}
+                                    <small class="text-muted d-block fw-normal">Mínimo: {{ producto.stock_minimo|floatformat:2 }}</small>
+                                </td>
+                                <td>{{ producto.unidad }}</td>
+                                <td>
+                                    <a href="{% url 'historial_producto' producto.id_materia %}" class="btn btn-sm btn-outline-success">Ver historial</a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr id="emptyInventoryRow">
+                                <td colspan="5" class="text-center text-secondary py-4">Todavía no hay materias primas registradas.</td>
+                            </tr>
+                            {% endfor %}
+                            <tr id="noSearchResults" hidden>
+                                <td colspan="5" class="text-center text-secondary py-4">No encontramos productos con ese nombre. Revisá la búsqueda e intentá de nuevo.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+    </main>
+
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            const filas = document.querySelectorAll("tbody tr");
-            let nombres = [];
-            let stocks = [];
-            let sumaTotal = 0;
+            const productRows = Array.from(document.querySelectorAll("[data-product-row]"));
+            const productNames = [];
+            const stocks = [];
+            let totalStock = 0;
+            let criticalProducts = 0;
 
-            filas.forEach(fila => {
-                const celdaNombre = fila.querySelector("strong");
-                const celdaStock = fila.querySelector(".stock-valor");
-                
-                if (celdaNombre && celdaStock) {
-                    // Tomamos la variedad ignorando el badge de alerta si existe
-                    const variedad = fila.children[1].textContent.trim();
-                    const nombreProd = celdaNombre.textContent.trim() + " (" + variedad + ")";
-                    const valorStock = parseFloat(celdaStock.getAttribute("data-valor")) || 0;
-                    
-                    nombres.push(nombreProd);
-                    stocks.push(valorStock);
-                    sumaTotal += valorStock;
+            productRows.forEach(function(row) {
+                const productName = row.querySelector("td strong").textContent.trim();
+                const variety = row.children[1].textContent.trim();
+                const stockCell = row.querySelector(".stock-valor");
+                const stockValue = Number.parseFloat(stockCell.dataset.valor);
+                const safeStock = Number.isFinite(stockValue) ? stockValue : 0;
+
+                productNames.push(productName + " (" + variety + ")");
+                stocks.push(safeStock);
+                totalStock += safeStock;
+                if (row.dataset.alert === "true") {
+                    criticalProducts += 1;
                 }
             });
 
-            // Mostramos el total en la tarjeta KPI
-            document.getElementById("totalStockValue").textContent = sumaTotal.toFixed(2) + " kg";
+            document.getElementById("totalStockValue").textContent = totalStock.toLocaleString("es-AR", {
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2
+            });
+            document.getElementById("totalProductCount").textContent = productRows.length;
+            document.getElementById("criticalProductCount").textContent = criticalProducts;
 
-            // Renderizamos el gráfico de barras con Chart.js
-            const ctx = document.getElementById('stockChart').getContext('2d');
-            new Chart(ctx, {
-                type: 'bar',
+            const chartContext = document.getElementById("stockChart").getContext("2d");
+            new Chart(chartContext, {
+                type: "bar",
                 data: {
-                    labels: nombres.length > 0 ? nombres : ['Sin datos'],
+                    labels: productNames.length > 0 ? productNames : ["Sin datos"],
                     datasets: [{
-                        label: 'Stock en Kilogramos',
+                        label: "Stock (kg)",
                         data: stocks.length > 0 ? stocks : [0],
-                        backgroundColor: 'rgba(40, 167, 69, 0.7)',
-                        borderColor: 'rgba(40, 167, 69, 1)',
+                        backgroundColor: "rgba(35, 107, 69, 0.72)",
+                        borderColor: "rgba(35, 107, 69, 1)",
                         borderWidth: 1,
                         borderRadius: 5
                     }]
@@ -174,7 +370,11 @@
                     maintainAspectRatio: false,
                     scales: {
                         y: {
-                            beginAtZero: true
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: "Kilogramos"
+                            }
                         }
                     },
                     plugins: {
@@ -184,46 +384,44 @@
                     }
                 }
             });
-        // --- LÓGICA DEL BUSCADOR EN TIEMPO REAL ---
-            const inputBuscador = document.getElementById("buscadorTabla");
-            
-            if (inputBuscador) {
-                inputBuscador.addEventListener("keyup", function() {
-                    const textoFiltro = this.value.toLowerCase();
-                    
-                    filas.forEach(fila => {
-                        // Ignorar la fila vacía si no hay productos
-                        if (fila.cells.length < 5) return; 
-                        
-                        const celdaNombre = fila.querySelector("strong");
-                        const nombreProducto = celdaNombre ? celdaNombre.textContent.toLowerCase() : "";
-                        const variedadProducto = fila.children[1].textContent.toLowerCase();
-                        
-                        // Si el texto escrito coincide con el nombre o la variedad, mostramos la fila
-                        if (nombreProducto.includes(textoFiltro) || variedadProducto.includes(textoFiltro)) {
-                            fila.style.display = "";
-                        } else {
-                            // Si no, la ocultamos
-                            fila.style.display = "none";
-                        }
-                    });
+
+            const searchInput = document.getElementById("buscadorTabla");
+            const noResultsRow = document.getElementById("noSearchResults");
+            const tableDescription = document.getElementById("tableDescription");
+
+            searchInput.addEventListener("input", function() {
+                const searchTerm = this.value.trim().toLocaleLowerCase("es");
+                let visibleRows = 0;
+
+                productRows.forEach(function(row) {
+                    const productName = row.children[0].textContent.toLocaleLowerCase("es");
+                    const variety = row.children[1].textContent.toLocaleLowerCase("es");
+                    const matches = productName.includes(searchTerm) || variety.includes(searchTerm);
+
+                    row.hidden = !matches;
+                    if (matches) {
+                        visibleRows += 1;
+                    }
                 });
-            }
+
+                noResultsRow.hidden = searchTerm.length === 0 || productRows.length === 0 || visibleRows > 0;
+                if (searchTerm.length > 0 && productRows.length > 0) {
+                    tableDescription.textContent = visibleRows === 1
+                        ? "Se encontró 1 producto."
+                        : "Se encontraron " + visibleRows + " productos.";
+                } else {
+                    tableDescription.textContent = "Listado de productos y variedades registrados.";
+                }
+            });
         });
     </script>
-<!-- SCRIPT DE BOOTSTRAP (Necesario para los Toasts) -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-
-    <!-- SCRIPT PARA INICIALIZAR LOS TOASTS -->
     <script>
         document.addEventListener("DOMContentLoaded", function() {
-            // Inicializar y mostrar los Toasts automáticamente
-            var toastElList = [].slice.call(document.querySelectorAll('.toast'))
-            var toastList = toastElList.map(function (toastEl) {
-                // El toast desaparecerá solo después de 3.5 segundos (3500ms)
-                return new bootstrap.Toast(toastEl, { delay: 3500 }) 
-            })
-            toastList.forEach(toast => toast.show());
+            const toastElements = Array.from(document.querySelectorAll(".toast"));
+            toastElements.forEach(function(toastElement) {
+                new bootstrap.Toast(toastElement, { delay: 3500 }).show();
+            });
         });
     </script>
 </body>

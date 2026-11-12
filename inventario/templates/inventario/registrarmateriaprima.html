@@ -1,0 +1,109 @@
+{% extends 'inventario/base.html' %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+
+    <!-- Encabezado -->
+    <div class="mb-6 flex items-center justify-between">
+        <div>
+            <h2 class="text-2xl font-bold text-gray-800">Nueva materia prima</h2>
+            <p class="text-sm text-gray-500 mt-1">Registrá una materia prima nueva para poder cargarle ingresos y consumos.</p>
+        </div>
+        <a href="{% url 'inventariostock' %}"
+           class="text-sm font-medium text-green-700 hover:text-green-900 bg-green-50 hover:bg-green-100 px-3 py-2 rounded-lg transition-colors flex items-center">
+            <span class="material-icons text-sm mr-1">arrow_back</span> Volver al listado
+        </a>
+    </div>
+
+    <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+
+        {% if formulario.non_field_errors %}
+        <div class="mb-6 p-4 rounded-lg text-sm bg-red-50 text-red-700 border border-red-200 flex items-start">
+            <span class="material-icons text-base mr-2">error</span>
+            <div>{% for e in formulario.non_field_errors %}<p>{{ e }}</p>{% endfor %}</div>
+        </div>
+        {% endif %}
+
+        <form method="POST" class="space-y-6">
+            {% csrf_token %}
+
+            <!-- Datos generales -->
+            <div>
+                <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">Datos generales</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                    <div>
+                        <label for="{{ formulario.nombre.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ formulario.nombre.label }} <span class="text-red-500">*</span>
+                        </label>
+                        {{ formulario.nombre }}
+                        {% for e in formulario.nombre.errors %}<p class="text-xs text-red-600 mt-1">{{ e }}</p>{% endfor %}
+                    </div>
+
+                    <div>
+                        <label for="{{ formulario.variedad.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ formulario.variedad.label }}
+                        </label>
+                        {{ formulario.variedad }}
+                        {% for e in formulario.variedad.errors %}<p class="text-xs text-red-600 mt-1">{{ e }}</p>{% endfor %}
+                    </div>
+
+                    <div class="sm:col-span-2">
+                        <label for="{{ formulario.descripcion.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ formulario.descripcion.label }}
+                        </label>
+                        {{ formulario.descripcion }}
+                        {% for e in formulario.descripcion.errors %}<p class="text-xs text-red-600 mt-1">{{ e }}</p>{% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Stock -->
+            <div class="pt-6 border-t border-gray-100">
+                <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">Stock</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+
+                    <div>
+                        <label for="{{ formulario.unidad_medida.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ formulario.unidad_medida.label }} <span class="text-red-500">*</span>
+                        </label>
+                        {{ formulario.unidad_medida }}
+                        {% for e in formulario.unidad_medida.errors %}<p class="text-xs text-red-600 mt-1">{{ e }}</p>{% endfor %}
+                    </div>
+
+                    <div>
+                        <label for="{{ formulario.stock_minimo.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ formulario.stock_minimo.label }} <span class="text-red-500">*</span>
+                        </label>
+                        {{ formulario.stock_minimo }}
+                        {% for e in formulario.stock_minimo.errors %}<p class="text-xs text-red-600 mt-1">{{ e }}</p>{% endfor %}
+                    </div>
+
+                    <div>
+                        <label for="{{ formulario.stock_inicial.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                            {{ formulario.stock_inicial.label }}
+                        </label>
+                        {{ formulario.stock_inicial }}
+                        {% for e in formulario.stock_inicial.errors %}<p class="text-xs text-red-600 mt-1">{{ e }}</p>{% endfor %}
+                    </div>
+                </div>
+                <p class="text-xs text-gray-500 mt-3">
+                    {{ formulario.stock_minimo.help_text }} {{ formulario.stock_inicial.help_text }}
+                </p>
+            </div>
+
+            <!-- Acciones -->
+            <div class="pt-6 border-t border-gray-100 flex items-center justify-end space-x-3">
+                <a href="{% url 'inventariostock' %}"
+                   class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium py-2 px-4 rounded-lg transition-colors text-sm">
+                    Cancelar
+                </a>
+                <button type="submit"
+                        class="bg-green-700 hover:bg-green-800 text-white font-medium py-2 px-6 rounded-lg transition-colors shadow-sm text-sm flex items-center">
+                    <span class="material-icons text-sm mr-1.5">save</span> Guardar materia prima
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

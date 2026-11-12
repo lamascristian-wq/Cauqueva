@@ -1,98 +1,92 @@
-from django.db import models
+from django.db import models,transaction
 from django.utils import timezone
+from django.core.validators import MinValueValidator
+from django.core.exceptions import ValidationError
+from django.db.models import F
 
-# 1. Tabla de Materias Primas
+class Proveedor(models.Model):
+    nombre = models.CharField(max_length=150, unique=True) 
+    telefono = models.CharField(max_length=50, blank=True, null=True) # Datos extra opcionales
+
+    def __str__(self):
+        return self.nombre
+
+#Tabla de Materias Primas
 class MateriaPrima(models.Model):
-    nombre = models.CharField(max_length=100, help_text="Ej: Papa, Maíz, Apio")
+    UNIDADES = [
+        ('KG', 'Kilogramos'),
+        ('TN', 'Toneladas'),
+        ('UN', 'Unidades'),
+    ]
+    nombre = models.CharField(max_length=100)
+    unidad_medida = models.CharField(max_length=2, choices=UNIDADES, default='KG')
     descripcion = models.CharField(max_length=255, blank=True, null=True)
-    activo = models.BooleanField(default=True)
+    stock_actual = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2, 
+        default=0.00,
+        validators=[MinValueValidator(0.00)])
     stock_minimo = models.DecimalField(max_digits=10, decimal_places=2, default=50.00, verbose_name="Stock Mínimo (kg)")
+    variedad = models.CharField(max_length=100, blank=True, null=True)
+    
     class Meta:
         verbose_name = "Materia Prima"
         verbose_name_plural = "Materias Primas"
 
     def __str__(self):
-        return self.nombre
+        variedad_str = f" - {self.variedad}" if self.variedad else ""
+        return f"{self.nombre}{variedad_str}"
 
-# 2. Tabla de Variedades
-class Variedad(models.Model):
-    materia_prima = models.ForeignKey(MateriaPrima, on_delete=models.CASCADE)
-    nombre = models.CharField(max_length=100, help_text="Ej: Morada, Blanca, Capia")
-    activo = models.BooleanField(default=True)
 
-    class Meta:
-        verbose_name = "Variedad"
-        verbose_name_plural = "Variedades"
-        # Regla de integridad: No pueden existir dos variedades con el mismo nombre para la misma papa
-        unique_together = ('materia_prima', 'nombre') 
-
-    def __str__(self):
-        return f"{self.materia_prima.nombre} - {self.nombre}"
-
-# 3. Tabla de Unidades de Medida
-class UnidadMedida(models.Model):
-    nombre = models.CharField(max_length=50, help_text="Ej: Kilogramo, Gramo")
-    simbolo = models.CharField(max_length=10, unique=True, help_text="Ej: kg, g")
-    factor_kg = models.DecimalField(max_digits=12, decimal_places=6, help_text="Equivalencia en kg (Ej: 1 para kg, 0.001 para g)")
-
-    class Meta:
-        verbose_name = "Unidad de Medida"
-        verbose_name_plural = "Unidades de Medida"
-
-    def __str__(self):
-        return f"{self.nombre} ({self.simbolo})"
-
-# 4. Tabla de Tipos de Movimiento
-class TipoMovimiento(models.Model):
-    # Efectos posibles: 1 (Suma) o -1 (Resta)
-    EFECTOS = [
-        (1, 'Suma (+1)'),
-        (-1, 'Resta (-1)'),
+class MovimientoStock(models.Model):
+    TIPO_CHOICES = [
+        ('INGRESO', 'Ingreso de Materia Prima'),
+        ('CONSUMO', 'Consumo en Producción'),
     ]
-    
-    nombre = models.CharField(max_length=50, unique=True, help_text="Ej: Ingreso, Consumo, Merma")
-    efecto_predeterminado = models.SmallIntegerField(choices=EFECTOS)
+    materia_prima = models.ForeignKey(MateriaPrima, on_delete=models.CASCADE)
+    proveedor = models.ForeignKey(Proveedor, on_delete=models.SET_NULL, null=True, blank=True)
+    # RESTRICCIONES
+    tipo = models.CharField(max_length=10, choices=TIPO_CHOICES)
+    cantidad = models.DecimalField(
+        max_digits=10, 
+        decimal_places=2,
+        validators=[MinValueValidator(0.01)] 
+    )
+    fecha = models.DateTimeField(default=timezone.now)
+    observaciones = models.TextField(blank=True, null=True)
 
     class Meta:
-        verbose_name = "Tipo de Movimiento"
-        verbose_name_plural = "Tipos de Movimiento"
+        verbose_name = "Movimiento de Stock"
+        verbose_name_plural = "Historial de Movimientos"
+        ordering = ['-fecha'] # Ordena automáticamente del más nuevo al más viejo
 
     def __str__(self):
-        return f"{self.nombre} ({self.get_efecto_predeterminado_display()})"
+        return f"{self.get_tipo_display()} - {self.materia_prima} ({self.cantidad} {self.materia_prima.unidad_medida})"
+    
+    def clean(self):
+        # No permitir consumir más de lo que hay en stock
+        if self.tipo == 'CONSUMO' and self.materia_prima_id and self.pk is None:
+            if self.cantidad is not None and self.cantidad > self.materia_prima.stock_actual:
+                raise ValidationError(
+                    f"Stock insuficiente: hay {self.materia_prima.stock_actual} "
+                    f"{self.materia_prima.unidad_medida} disponibles."
+                )
 
-# 5. Tabla Central de Movimientos
-class Movimiento(models.Model):
-    # Relaciones (Foreign Keys)
-    materia_prima = models.ForeignKey(MateriaPrima, on_delete=models.PROTECT)
-    variedad = models.ForeignKey(Variedad, on_delete=models.PROTECT, blank=True, null=True)
-    unidad = models.ForeignKey(UnidadMedida, on_delete=models.PROTECT)
-    tipo = models.ForeignKey(TipoMovimiento, on_delete=models.PROTECT)
-    
-    # Por ahora usaremos un campo de texto para el usuario hasta conectar el sistema de login
-    usuario_registro = models.CharField(max_length=100, default="Admin") 
-    
-    # Datos de cantidad
-    cantidad = models.DecimalField(max_digits=12, decimal_places=3)
-    cantidad_kg = models.DecimalField(max_digits=12, decimal_places=3, editable=False) # Se calculará solo
-    efecto_stock = models.SmallIntegerField(editable=False) # Se tomará del tipo de movimiento
-    
-    # Datos de registro
-    fecha = models.DateTimeField(default=timezone.now)
-    observacion = models.TextField(blank=True, null=True)
-
-    class Meta:
-        verbose_name = "Movimiento"
-        verbose_name_plural = "Movimientos"
-        ordering = ['-fecha'] # Ordenar del más reciente al más antiguo
+    def _delta(self):
+        return self.cantidad if self.tipo == 'INGRESO' else -self.cantidad
 
     def save(self, *args, **kwargs):
-        # ANTES de guardar en la base de datos, calculamos la cantidad en KG y el efecto automáticamente
-        if self.unidad:
-            self.cantidad_kg = self.cantidad * self.unidad.factor_kg
-        if self.tipo:
-            self.efecto_stock = self.tipo.efecto_predeterminado
-            
-        super().save(*args, **kwargs)
+        es_nuevo = self.pk is None
+        with transaction.atomic():
+            super().save(*args, **kwargs)
+            if es_nuevo:
+                MateriaPrima.objects.filter(pk=self.materia_prima_id).update(
+                    stock_actual=F('stock_actual') + self._delta()
+                )
 
-    def __str__(self):
-        return f"{self.tipo.nombre} de {self.cantidad} {self.unidad.simbolo} de {self.materia_prima.nombre}"
+    def delete(self, *args, **kwargs):
+        with transaction.atomic():
+            MateriaPrima.objects.filter(pk=self.materia_prima_id).update(
+                stock_actual=F('stock_actual') - self._delta()
+            )
+            super().delete(*args, **kwargs)

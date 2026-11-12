@@ -1,0 +1,185 @@
+{% extends "inventario/base.html" %}
+
+{% block content %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    corePlugins: { preflight: false },  // evita que Tailwind pise los estilos de tu base.html
+    theme: {
+      extend: {
+        colors: {
+          verde: { DEFAULT: "#2f6b4f", claro: "#dcebe2" },
+          rojo: { DEFAULT: "#d64545", claro: "#fbe3e3" },
+        },
+      },
+    },
+  };
+</script>
+<style>#panel, #panel *, #panel *::before, #panel *::after { box-sizing: border-box; }</style>
+
+<div id="panel" class="text-[#1f2d27]">
+
+  <!-- Encabezado -->
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="m-0 text-3xl font-semibold">Dashboard</h1>
+    <form method="get">
+      <select name="materia" onchange="this.form.submit()"
+              class="max-w-[260px] cursor-pointer rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm">
+        <option value="">Todas las materias primas</option>
+        {% for m in materias %}
+          <option value="{{ m.id }}" {% if materia_id == m.id|stringformat:"s" %}selected{% endif %}>{{ m }}</option>
+        {% endfor %}
+      </select>
+    </form>
+  </div>
+
+  <!-- Tarjetas con datos reales -->
+  <section class="grid grid-cols-1 gap-6 mb-6 md:grid-cols-3">
+
+    <div class="flex items-center justify-between rounded-2xl bg-white px-6 py-5 shadow-sm">
+      <div>
+        <div class="mb-3 text-[15px] text-gray-600">Stock Actual de Materia Prima</div>
+        <div class="text-4xl font-semibold leading-none text-verde">
+          {{ stock_total|floatformat:"-2g" }} <span class="text-2xl">Kg</span>
+        </div>
+      </div>
+      <div class="grid h-14 w-14 place-items-center rounded-xl bg-verde-claro text-2xl text-verde">
+        <i class="bi bi-graph-up-arrow"></i>
+      </div>
+    </div>
+
+    <div class="flex items-center justify-between rounded-2xl bg-white px-6 py-5 shadow-sm">
+      <div>
+        <div class="mb-3 text-[15px] text-gray-600">Producción en Proceso</div>
+        <div class="text-4xl font-semibold leading-none text-verde">
+          {{ en_proceso|floatformat:"-2g" }} <span class="text-2xl">Kg</span>
+        </div>
+      </div>
+      <div class="grid h-14 w-14 place-items-center rounded-xl bg-verde-claro text-2xl text-verde">
+        <i class="bi bi-box-seam"></i>
+      </div>
+    </div>
+
+    <div class="flex items-center justify-between rounded-2xl bg-white px-6 py-5 shadow-sm">
+      <div>
+        <div class="mb-3 text-[15px] text-gray-600">Alertas de Stock</div>
+        <div class="text-4xl font-semibold leading-none {% if cant_alertas %}text-[#1f2d27]{% else %}text-verde{% endif %}">
+          {{ cant_alertas }} <span class="text-2xl">Crítica{{ cant_alertas|pluralize:"s" }}</span>
+        </div>
+      </div>
+      <div class="grid h-14 w-14 place-items-center rounded-xl text-2xl
+                  {% if cant_alertas %}bg-rojo-claro text-rojo{% else %}bg-verde-claro text-verde{% endif %}">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+      </div>
+    </div>
+  </section>
+
+  <!-- Gráfico -->
+  <section class="mb-6 rounded-2xl bg-white px-6 pt-5 pb-4 shadow-sm">
+    <h2 class="m-0 mb-4 text-lg font-semibold">Evolución de movimientos</h2>
+
+    <div class="mb-3 flex flex-wrap items-center gap-6 text-sm text-gray-500">
+      <span class="font-semibold text-[#1f2d27]">Mes <i class="bi bi-arrow-down-up"></i></span>
+      <button type="button" data-serie="0" class="chip inline-flex items-center gap-2 border-0 bg-transparent p-0 text-sm text-gray-500 cursor-pointer">
+        <span class="h-2.5 w-2.5 rounded-full bg-verde"></span> Ingresos
+      </button>
+      <button type="button" data-serie="1" class="chip inline-flex items-center gap-2 border-0 bg-transparent p-0 text-sm text-gray-500 cursor-pointer">
+        <span class="h-2.5 w-2.5 rounded-full bg-[#8fc4a8]"></span> Consumos
+      </button>
+    </div>
+
+    <div class="relative h-[330px]">
+      <canvas id="graficoMovimientos"></canvas>
+      <div id="sinDatos" class="pointer-events-none absolute inset-0 hidden place-items-center text-center text-gray-500">
+        <div>
+          <i class="bi bi-bar-chart text-3xl"></i><br>
+          Todavía no hay movimientos registrados.<br>
+          Cargá ingresos o consumos para ver la evolución.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Listado de alertas -->
+  <section class="rounded-2xl bg-white px-6 py-5 shadow-sm">
+    <h2 class="m-0 mb-3 text-lg font-semibold">Listado de alertas</h2>
+    {% if alertas %}
+    <table class="w-full border-collapse text-sm">
+      <thead>
+        <tr class="text-left text-gray-500">
+          <th class="border-b border-gray-100 p-2.5 font-medium">Materia prima</th>
+          <th class="border-b border-gray-100 p-2.5 font-medium">Stock actual</th>
+          <th class="border-b border-gray-100 p-2.5 font-medium">Stock mínimo</th>
+          <th class="border-b border-gray-100 p-2.5 font-medium">Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in alertas %}
+        <tr>
+          <td class="border-b border-gray-100 p-2.5">{{ a }}</td>
+          <td class="border-b border-gray-100 p-2.5">{{ a.stock_actual|floatformat:"-2g" }} {{ a.unidad_medida }}</td>
+          <td class="border-b border-gray-100 p-2.5">{{ a.stock_minimo|floatformat:"-2g" }} {{ a.unidad_medida }}</td>
+          <td class="border-b border-gray-100 p-2.5">
+            <span class="rounded-full bg-rojo-claro px-3 py-0.5 text-xs text-rojo">Crítica</span>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <p class="m-0 text-gray-500">No hay alertas de stock por el momento.</p>
+    {% endif %}
+  </section>
+</div>
+
+{{ grafico|json_script:"datos-grafico" }}
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+  const datos = JSON.parse(document.getElementById("datos-grafico").textContent);
+
+  if (!datos.labels.length) {
+    const aviso = document.getElementById("sinDatos");
+    aviso.classList.remove("hidden");
+    aviso.classList.add("grid");
+  }
+
+  const grafico = new Chart(document.getElementById("graficoMovimientos"), {
+    data: {
+      labels: datos.labels,
+      datasets: [
+        {
+          type: "bar", label: "Ingresos", data: datos.ingresos,
+          backgroundColor: "#2f6b4f", borderRadius: 4, barThickness: 14, order: 2,
+        },
+        {
+          type: "line", label: "Consumos", data: datos.consumos,
+          borderColor: "#8fc4a8", backgroundColor: "rgba(143, 196, 168, .2)",
+          fill: true, tension: 0.3, pointRadius: 4, pointBackgroundColor: "#8fc4a8", order: 1,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: "bottom" } },
+      scales: {
+        y: { beginAtZero: true, title: { display: true, text: datos.unidad } },
+        x: { grid: { display: false } },
+      },
+    },
+  });
+
+  // Los botones de arriba muestran u ocultan cada serie
+  document.querySelectorAll(".chip").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      const i = Number(chip.dataset.serie);
+      const visible = grafico.isDatasetVisible(i);
+      grafico.setDatasetVisibility(i, !visible);
+      chip.style.opacity = visible ? 0.4 : 1;
+      grafico.update();
+    });
+  });
+</script>
+{% endblock %}

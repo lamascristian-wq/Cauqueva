@@ -6,6 +6,17 @@
     <title>Nuevo Producto - CAUQUEVA</title>
     <!-- Conectamos Bootstrap para que se vea igual de profesional que el panel -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+    .campo-con-error .form-control,
+    .campo-con-error .form-select {
+        border-color: #dc3545;
+    }
+
+    .campo-con-error .form-control:focus,
+    .campo-con-error .form-select:focus {
+        box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
+    }
+</style>
 </head>
 <body class="bg-light">
 
@@ -26,8 +37,32 @@
                     <!-- SEGURIDAD: Esto es obligatorio en Django para evitar ataques de hackers (falsificación de peticiones) -->
                     {% csrf_token %}
                     
-                    <!-- Aquí Django "dibuja" automáticamente las cajas de texto que configuramos en forms.py -->
-                    {{ formulario.as_p }}
+                    {% for field in formulario %}
+                        <div class="mb-3 {% if field.errors %}campo-con-error{% endif %}">
+
+                            {{ field.label_tag }}
+
+                            {% if field.name == 'variedad' %}
+                                <select
+                                    name="{{ field.html_name }}"
+                                    id="id_variedad"
+                                    class="form-select"
+                                    disabled
+                                >
+                                    <option value="">Primero seleccioná una materia prima</option>
+                                </select>
+                            {% else %}
+                                {{ field }}
+                            {% endif %}
+
+                            {% for error in field.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ error }}
+                                </div>
+                            {% endfor %}
+
+                        </div>
+                    {% endfor %}
                     
                     <!-- Botones de acción -->
                     <div class="d-grid gap-2 mt-4">
@@ -40,6 +75,57 @@
             </div>
         </div>
     </div>
+
+    <script>
+        const materiaPrima = document.getElementById('id_materia_prima');
+        const variedad = document.getElementById('id_variedad');
+
+        const urlVariedades = "{% url 'obtener_variedades' %}";
+        const variedadSeleccionada = "{{ formulario.variedad.value|default:'' }}";
+
+        function cargarVariedades(materiaId, variedadId = '') {
+            variedad.innerHTML = '<option value="">Cargando variedades...</option>';
+            variedad.disabled = true;
+
+            if (!materiaId) {
+                variedad.innerHTML = '<option value="">Primero seleccioná una materia prima</option>';
+                return;
+            }
+
+            fetch(`${urlVariedades}?materia_id=${materiaId}`)
+                .then(response => response.json())
+                .then(data => {
+                    variedad.innerHTML = '<option value="">Seleccioná una variedad</option>';
+
+                    data.forEach(item => {
+                        const opcion = document.createElement('option');
+                        opcion.value = item.id;
+                        opcion.textContent = item.nombre;
+
+                        if (String(item.id) === String(variedadId)) {
+                            opcion.selected = true;
+                        }
+
+                        variedad.appendChild(opcion);
+                    });
+
+                    variedad.disabled = false;
+                })
+                .catch(error => {
+                    console.error('Error al cargar variedades:', error);
+                    variedad.innerHTML = '<option value="">Error al cargar variedades</option>';
+                });
+        }
+
+        materiaPrima.addEventListener('change', function () {
+            cargarVariedades(this.value);
+        });
+
+        // Recuperar la selección cuando el formulario vuelve con errores.
+        if (materiaPrima.value) {
+            cargarVariedades(materiaPrima.value, variedadSeleccionada);
+        }
+    </script>
 
 </body>
 </html>

@@ -1,9 +1,9 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
-from .models import MateriaPrima, Movimiento
+from .models import MateriaPrima, Variedad, Movimiento
 from .forms import MovimientoForm
 import csv 
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 # Función auxiliar para comprobar si el usuario es "Gerente" (Staff)
@@ -31,6 +31,17 @@ def panel_principal(request):
             alerta = stock <= mp.stock_minimo
             resumen.append({'id_materia': mp.id, 'nombre': mp.nombre, 'variedad': 'Sin variedad', 'stock': stock, 'unidad': 'kg', 'stock_minimo': mp.stock_minimo, 'alerta': alerta})
     return render(request, 'inventario/dashboard.html', {'productos': resumen})
+
+@login_required(login_url='login')
+def obtener_variedades(request):
+    materia_id = request.GET.get('materia_id')
+
+    variedades = Variedad.objects.filter(
+        materia_prima_id=materia_id,
+        activo=True
+    ).values('id', 'nombre')
+
+    return JsonResponse(list(variedades), safe=False)
 
 # 2. Vista para Registrar un Movimiento
 @login_required(login_url='login')

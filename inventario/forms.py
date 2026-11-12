@@ -6,13 +6,44 @@ class MovimientoForm(forms.ModelForm):
         model = Movimiento
         fields = ['materia_prima', 'variedad', 'unidad', 'tipo', 'cantidad', 'observacion']
         widgets = {
-            'materia_prima': forms.Select(attrs={'class': 'form-select'}),
-            'variedad': forms.Select(attrs={'class': 'form-select'}),
+            'materia_prima': forms.Select(attrs={
+            'class': 'form-select',
+            'id': 'id_materia_prima',
+            }),
+            'variedad': forms.Select(attrs={
+            'class': 'form-select',
+            'id': 'id_variedad',
+            }),
             'unidad': forms.Select(attrs={'class': 'form-select'}),
             'tipo': forms.Select(attrs={'class': 'form-select'}),
-            'cantidad': forms.NumberInput(attrs={'class': 'form-control'}),
+            'cantidad': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': 'any',}),
             'observacion': forms.TextInput(attrs={'class': 'form-control'}),
         }
+
+
+    def clean_cantidad(self):
+        cantidad = self.cleaned_data.get('cantidad')
+        unidad = self.cleaned_data.get('unidad')
+
+        if cantidad is not None and unidad is not None:
+            cantidad_en_kg = cantidad * unidad.factor_kg
+
+            if cantidad_en_kg < 1:
+                raise forms.ValidationError(
+                    "La cantidad mínima por movimiento es 1 kg. "
+                    "Revisá la cantidad y la unidad seleccionada."
+                )
+
+        return cantidad
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields['cantidad'].error_messages['max_decimal_places'] = (
+            "La cantidad admite como máximo 3 decimales."
+        )
 
     # Esta función intercepta los datos antes de guardarlos en la base de datos
     def clean(self):
@@ -24,8 +55,16 @@ class MovimientoForm(forms.ModelForm):
         tipo = cleaned_data.get('tipo')
         cantidad = cleaned_data.get('cantidad')
 
+        # Comprobar que la variedad pertenezca a la materia prima
+        if materia and variedad:
+            if variedad.materia_prima_id != materia.id:
+                self.add_error(
+                    'variedad',
+                    'La variedad seleccionada no pertenece a la materia prima elegida.'
+                )
+
         # 2. Si todos los datos requeridos están presentes, verificamos el stock
-        if materia and unidad and tipo and cantidad:
+        if materia and unidad and tipo and cantidad and not self.has_error('variedad'):
             
             # Solo validamos si es un movimiento de salida (efecto -1)
             if tipo.efecto_predeterminado == -1:

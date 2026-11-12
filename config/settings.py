@@ -47,8 +47,10 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    "inventario.middleware.LoginRequeridoMiddleware",
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -64,6 +66,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'inventario.context_processors.notificaciones_stock',
             ],
         },
     },
@@ -124,4 +127,6 @@ STATIC_URL = 'static/'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # Redirección automática al panel después de iniciar sesión
-LOGIN_REDIRECT_URL = 'dashboard'
+LOGIN_URL = "login"
+LOGIN_REDIRECT_URL = "panelprincipal"   # el nombre de tu URL del dashboard
+LOGOUT_REDIRECT_URL = "login"

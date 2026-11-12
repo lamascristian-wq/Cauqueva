@@ -1,5 +1,5 @@
 from django import forms
-from .models import Movimiento
+from .models import Movimiento, MateriaPrima, Variedad
 
 class MovimientoForm(forms.ModelForm):
     class Meta:
@@ -40,6 +40,17 @@ class MovimientoForm(forms.ModelForm):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        # Mostrar solamente materias primas activas
+        self.fields['materia_prima'].queryset = MateriaPrima.objects.filter(
+            activo=True
+        ).order_by('nombre')
+
+        # Mostrar solamente variedades activas de materias primas activas
+        self.fields['variedad'].queryset = Variedad.objects.filter(
+            activo=True,
+            materia_prima__activo=True
+        ).order_by('nombre')
 
         self.fields['cantidad'].error_messages['max_decimal_places'] = (
             "La cantidad admite como máximo 3 decimales."
@@ -87,3 +98,28 @@ class MovimientoForm(forms.ModelForm):
                     )
         
         return cleaned_data
+class MateriaPrimaForm(forms.ModelForm):
+
+    class Meta:
+        model = MateriaPrima
+        fields = ['nombre', 'descripcion', 'stock_minimo']
+
+    def clean_nombre(self):
+        nombre = self.cleaned_data.get('nombre')
+
+        if MateriaPrima.objects.filter(nombre__iexact=nombre).exists():
+            raise forms.ValidationError(
+                "Ya existe una materia prima con ese nombre."
+            )
+
+        return nombre
+
+    def clean_stock_minimo(self):
+        stock_minimo = self.cleaned_data.get('stock_minimo')
+
+        if stock_minimo is not None and stock_minimo < 0:
+            raise forms.ValidationError(
+                "El stock mínimo no puede ser negativo."
+            )
+
+        return stock_minimo

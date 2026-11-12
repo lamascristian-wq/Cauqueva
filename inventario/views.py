@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from .models import MateriaPrima, Variedad, Movimiento
-from .forms import MovimientoForm
+from .forms import MovimientoForm, MateriaPrimaForm
 import csv 
 from django.http import HttpResponse, JsonResponse
 from django.contrib import messages
@@ -38,10 +38,33 @@ def obtener_variedades(request):
 
     variedades = Variedad.objects.filter(
         materia_prima_id=materia_id,
-        activo=True
+        activo=True,
+        materia_prima__activo=True
     ).values('id', 'nombre')
 
     return JsonResponse(list(variedades), safe=False)
+
+
+@login_required(login_url='login')
+def registrar_materia_prima(request):
+    if request.method == 'POST':
+        formulario = MateriaPrimaForm(request.POST)
+
+        if formulario.is_valid():
+            formulario.save()
+            messages.success(
+                request,
+                '¡Materia prima registrada correctamente!'
+            )
+            return redirect('dashboard')
+    else:
+        formulario = MateriaPrimaForm()
+
+    return render(
+        request,
+        'inventario/formulario_materia_prima.html',
+        {'formulario': formulario}
+    )
 
 # 2. Vista para Registrar un Movimiento
 @login_required(login_url='login')

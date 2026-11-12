@@ -200,9 +200,18 @@
                 <p class="text-secondary mb-0">Consultá las existencias y registrá los movimientos de forma sencilla.</p>
             </div>
             <div class="d-flex flex-wrap gap-2">
-                <a href="{% url 'nuevo_producto' %}" class="btn btn-success px-3 py-2">Registrar movimiento</a>
+                <a href="{% url 'nuevo_producto' %}" class="btn btn-success px-3 py-2">
+                    Registrar movimiento
+                </a>
+
+                <a href="{% url 'nueva_materia_prima' %}" class="btn btn-outline-success px-3 py-2">
+                    Nueva materia prima
+                </a>
+
                 {% if request.user.is_staff %}
-                    <a href="{% url 'informes' %}" class="btn btn-outline-success px-3 py-2">Generar informes</a>
+                    <a href="{% url 'informes' %}" class="btn btn-outline-success px-3 py-2">
+                        Generar informes
+                    </a>
                 {% endif %}
             </div>
         </section>

@@ -17,6 +17,7 @@ from .models import (
     UnidadMedida,
     Variedad,
 )
+from .forms import MateriaPrimaForm, MovimientoForm
 
 
 class CargarDatosDemoTests(TestCase):
@@ -202,3 +203,86 @@ class CargarDatosDemoTests(TestCase):
         self.assertEqual(csv_response.status_code, 200)
         self.assertEqual(csv_response["Content-Type"], "text/csv")
         self.assertIn(b"DEMO - Papa andina", csv_response.content)
+
+class MateriaPrimaFormTests(TestCase):
+
+    def test_rechaza_nombres_duplicados_sin_distinguir_mayusculas(self):
+        MateriaPrima.objects.create(
+            nombre="Quinoa",
+            stock_minimo=Decimal("10")
+        )
+
+        formulario = MateriaPrimaForm(data={
+            "nombre": "QUINOA",
+            "descripcion": "",
+            "stock_minimo": "10",
+        })
+
+        self.assertFalse(formulario.is_valid())
+        self.assertIn(
+            "Ya existe una materia prima con ese nombre.",
+            formulario.errors["nombre"]
+        )
+
+    def test_rechaza_stock_minimo_negativo(self):
+        formulario = MateriaPrimaForm(data={
+            "nombre": "Producto de prueba",
+            "descripcion": "",
+            "stock_minimo": "-5",
+        })
+
+        self.assertFalse(formulario.is_valid())
+        self.assertIn(
+            "El stock mínimo no puede ser negativo.",
+            formulario.errors["stock_minimo"]
+        )
+class MovimientoFormTests(TestCase):
+
+    def setUp(self):
+        self.materia_activa = MateriaPrima.objects.create(
+            nombre="Materia activa",
+            activo=True
+        )
+
+        self.materia_inactiva = MateriaPrima.objects.create(
+            nombre="Materia inactiva",
+            activo=False
+        )
+
+        self.variedad_activa = Variedad.objects.create(
+            materia_prima=self.materia_activa,
+            nombre="Variedad activa",
+            activo=True
+        )
+
+        self.variedad_inactiva = Variedad.objects.create(
+            materia_prima=self.materia_activa,
+            nombre="Variedad inactiva",
+            activo=False
+        )
+
+        self.variedad_materia_inactiva = Variedad.objects.create(
+            materia_prima=self.materia_inactiva,
+            nombre="Variedad de materia inactiva",
+            activo=True
+        )
+
+    def test_solo_muestra_materias_primas_activas(self):
+        formulario = MovimientoForm()
+
+        materias = set(
+            formulario.fields["materia_prima"].queryset.values_list(
+                "id", flat=True
+            )
+        )
+        self.assertEqual(materias, {self.materia_activa.id})
+
+    def test_solo_muestra_variedades_activas_de_materias_activas(self):
+        formulario = MovimientoForm()
+
+        variedades = set(
+            formulario.fields["variedad"].queryset.values_list(
+                "id", flat=True
+            )
+        )
+        self.assertEqual(variedades, {self.variedad_activa.id})

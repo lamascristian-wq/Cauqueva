@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 from django.core.management import call_command, CommandError
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
+from datetime import timedelta
 
 from .management.commands.cargar_datos_demo import (
     DEMO_OBSERVATION_PREFIX,
@@ -169,6 +170,29 @@ class CargarDatosDemoTests(TestCase):
             "mes": sample_movement.fecha.month,
             "anio": sample_movement.fecha.year,
         }
+        # Una variedad inactiva debe seguir apareciendo en el informe.
+        demo_variety.activo = False
+        demo_variety.save(update_fields=["activo"])
+        # Este movimiento ocurre después del mes seleccionado.
+        # No debe modificar el stock al cierre de ese mes.
+        Movimiento.objects.create(
+            materia_prima=demo_potato,
+            variedad=demo_variety,
+            unidad=sample_movement.unidad,
+            tipo=sample_movement.tipo,
+            cantidad=Decimal("1000"),
+            fecha=sample_movement.fecha + timedelta(days=40),
+            observacion="Prueba de movimiento posterior al período",
+        )
+        # También debe aparecer el stock de movimientos sin variedad.
+        Movimiento.objects.create(
+            materia_prima=demo_potato,
+            unidad=sample_movement.unidad,
+            tipo=TipoMovimiento.objects.get(nombre="ingreso"),
+            cantidad=Decimal("7"),
+            fecha=sample_movement.fecha,
+            observacion="Prueba de movimiento sin variedad",
+        )
         report = client.get(reverse("informes"), report_params)
         self.assertEqual(report.status_code, 200)
         report_row = next(
@@ -176,6 +200,21 @@ class CargarDatosDemoTests(TestCase):
             for row in report.context["reporte"]
             if row["nombre"] == "DEMO - Papa andina"
             and row["variedad"] == "Morada"
+        )
+        unassigned_row = next(
+            row
+            for row in report.context["reporte"]
+            if row["nombre"] == "DEMO - Papa andina"
+            and row["variedad"] == "Sin variedad"
+        )
+
+        self.assertEqual(
+            unassigned_row["stock_total"],
+            Decimal("7.000"),
+        )
+        self.assertEqual(
+            unassigned_row["ingresos"],
+            Decimal("7.000"),
         )
         month_movements = Movimiento.objects.filter(
             variedad=demo_variety,
@@ -203,6 +242,10 @@ class CargarDatosDemoTests(TestCase):
         self.assertEqual(csv_response.status_code, 200)
         self.assertEqual(csv_response["Content-Type"], "text/csv")
         self.assertIn(b"DEMO - Papa andina", csv_response.content)
+        self.assertIn(b"Sin variedad", csv_response.content)
+        self.assertIn(b"155.00", csv_response.content)
+        self.assertIn(b"7.00", csv_response.content)
+        self.assertIn(b"Morada", csv_response.content)
 
 class MateriaPrimaFormTests(TestCase):
 

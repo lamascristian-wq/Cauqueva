@@ -6,6 +6,9 @@ import csv
 from django.http import HttpResponse, JsonResponse
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
+from datetime import datetime
+from decimal import Decimal
+from django.db.models import Q
 # Función auxiliar para comprobar si el usuario es "Gerente" (Staff)
 def es_gerente(user):
     return user.is_staff
@@ -86,71 +89,168 @@ def historial_producto(request, id):
     movimientos = Movimiento.objects.filter(materia_prima=materia)
     return render(request, 'inventario/historial.html', {'materia': materia, 'movimientos': movimientos})
 
+def _resumen_movimientos_informe(movimientos, fecha_inicio, fecha_fin):
+    """
+    Calcula los ingresos, consumos y stock al cierre del mes
+    para un conjunto de movimientos.
+    """
+    movimientos_historicos = list(
+        movimientos.filter(fecha__lt=fecha_fin)
+    )
+
+    movimientos_mes = [
+        movimiento
+        for movimiento in movimientos_historicos
+        if movimiento.fecha >= fecha_inicio
+    ]
+
+    ingresos_mes = sum(
+        movimiento.cantidad_kg
+        for movimiento in movimientos_mes
+        if movimiento.efecto_stock == 1
+    )
+
+    consumos_mes = sum(
+        movimiento.cantidad_kg
+        for movimiento in movimientos_mes
+        if movimiento.efecto_stock == -1
+    )
+
+    stock_total = sum(
+        movimiento.cantidad_kg * movimiento.efecto_stock
+        for movimiento in movimientos_historicos
+    )
+
+    return {
+        "ingresos": ingresos_mes,
+        "consumos": consumos_mes,
+        "stock_total": stock_total,
+    }
+
+
+def _generar_reporte_mensual(mes, anio):
+    # Inicio del mes seleccionado.
+    fecha_inicio = timezone.make_aware(datetime(anio, mes, 1))
+
+    # Inicio del mes siguiente: funciona también para diciembre.
+    if mes == 12:
+        fecha_fin = timezone.make_aware(datetime(anio + 1, 1, 1))
+    else:
+        fecha_fin = timezone.make_aware(datetime(anio, mes + 1, 1))
+
+    reporte = []
+    materias_primas = MateriaPrima.objects.filter(activo=True)
+
+    for mp in materias_primas:
+        # Incluimos todas las variedades, incluso las inactivas.
+        variedades = list(mp.variedad_set.all().order_by("nombre"))
+
+        for var in variedades:
+            movimientos = Movimiento.objects.filter(
+                materia_prima=mp,
+                variedad=var,
+            )
+
+            resumen = _resumen_movimientos_informe(
+                movimientos,
+                fecha_inicio,
+                fecha_fin,
+            )
+
+            reporte.append({
+                "nombre": mp.nombre,
+                "variedad": var.nombre,
+                **resumen,
+                "unidad": "kg",
+            })
+
+        # También contemplamos movimientos sin variedad asignada.
+        movimientos_sin_variedad = Movimiento.objects.filter(
+            materia_prima=mp,
+            variedad__isnull=True,
+        )
+
+        tiene_movimientos_sin_variedad = movimientos_sin_variedad.filter(
+            fecha__lt=fecha_fin
+        ).exists()
+
+        if not variedades or tiene_movimientos_sin_variedad:
+            resumen = _resumen_movimientos_informe(
+                movimientos_sin_variedad,
+                fecha_inicio,
+                fecha_fin,
+            )
+
+            reporte.append({
+                "nombre": mp.nombre,
+                "variedad": "Sin variedad",
+                **resumen,
+                "unidad": "kg",
+            })
+
+    return reporte
+
+
 # 4. Vista de Informes Mensuales (CU-07)
 @login_required(login_url='login')
 def generar_informe(request):
     hoy = timezone.now()
     mes_seleccionado = int(request.GET.get('mes', hoy.month))
     anio_seleccionado = int(request.GET.get('anio', hoy.year))
-    materias_primas = MateriaPrima.objects.filter(activo=True)
-    reporte = []
-    
-    for mp in materias_primas:
-        variedades = mp.variedad_set.filter(activo=True)
-        if variedades.exists():
-            for var in variedades:
-                movs_historicos = Movimiento.objects.filter(materia_prima=mp, variedad=var)
-                stock_total = sum(m.cantidad_kg * m.efecto_stock for m in movs_historicos)
-                movs_mes = movs_historicos.filter(fecha__year=anio_seleccionado, fecha__month=mes_seleccionado)
-                ingresos_mes = sum(m.cantidad_kg for m in movs_mes if m.efecto_stock == 1)
-                consumos_mes = sum(m.cantidad_kg for m in movs_mes if m.efecto_stock == -1)
-                reporte.append({'nombre': mp.nombre, 'variedad': var.nombre, 'ingresos': ingresos_mes, 'consumos': consumos_mes, 'stock_total': stock_total, 'unidad': 'kg'})
-        else:
-            movs_historicos = Movimiento.objects.filter(materia_prima=mp, variedad__isnull=True)
-            stock_total = sum(m.cantidad_kg * m.efecto_stock for m in movs_historicos)
-            movs_mes = movs_historicos.filter(fecha__year=anio_seleccionado, fecha__month=mes_seleccionado)
-            ingresos_mes = sum(m.cantidad_kg for m in movs_mes if m.efecto_stock == 1)
-            consumos_mes = sum(m.cantidad_kg for m in movs_mes if m.efecto_stock == -1)
-            reporte.append({'nombre': mp.nombre, 'variedad': 'Sin variedad', 'ingresos': ingresos_mes, 'consumos': consumos_mes, 'stock_total': stock_total, 'unidad': 'kg'})
-            
-    contexto = {'reporte': reporte, 'mes_seleccionado': mes_seleccionado, 'anio_seleccionado': anio_seleccionado, 'anios': [hoy.year - 1, hoy.year, hoy.year + 1]}
+
+    reporte = _generar_reporte_mensual(
+        mes_seleccionado,
+        anio_seleccionado,
+    )
+
+    contexto = {
+        'reporte': reporte,
+        'mes_seleccionado': mes_seleccionado,
+        'anio_seleccionado': anio_seleccionado,
+        'anios': [hoy.year - 1, hoy.year, hoy.year + 1],
+    }
+
     return render(request, 'inventario/informe.html', contexto)
-# NUEVA VISTA: Exportar Informe a Excel/CSV
+
+
+# Exportar informe a CSV
 @login_required(login_url='login')
 def exportar_informe_csv(request):
     hoy = timezone.now()
     mes_seleccionado = int(request.GET.get('mes', hoy.month))
     anio_seleccionado = int(request.GET.get('anio', hoy.year))
 
-    # Preparamos el archivo de respuesta
-    response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = f'attachment; filename="Reporte_CAUQUEVA_{mes_seleccionado}_{anio_seleccionado}.csv"'
-    # Añadimos codificación UTF-8 con BOM para que Excel lea bien los acentos
-    response.write(u'\ufeff'.encode('utf8')) 
-    
-    writer = csv.writer(response, delimiter=';') # Usamos punto y coma para el Excel en español
-    writer.writerow(['Producto', 'Variedad', 'Ingresos del Mes (kg)', 'Consumos del Mes (kg)', 'Stock Final (kg)'])
+    reporte = _generar_reporte_mensual(
+        mes_seleccionado,
+        anio_seleccionado,
+    )
 
-    materias_primas = MateriaPrima.objects.filter(activo=True)
-    
-    for mp in materias_primas:
-        variedades = mp.variedad_set.filter(activo=True)
-        if variedades.exists():
-            for var in variedades:
-                movs_historicos = Movimiento.objects.filter(materia_prima=mp, variedad=var)
-                stock_total = sum(m.cantidad_kg * m.efecto_stock for m in movs_historicos)
-                movs_mes = movs_historicos.filter(fecha__year=anio_seleccionado, fecha__month=mes_seleccionado)
-                ingresos_mes = sum(m.cantidad_kg for m in movs_mes if m.efecto_stock == 1)
-                consumos_mes = sum(m.cantidad_kg for m in movs_mes if m.efecto_stock == -1)
-                
-                writer.writerow([mp.nombre, var.nombre, f"{ingresos_mes:.2f}", f"{consumos_mes:.2f}", f"{stock_total:.2f}"])
-        else:
-            movs_historicos = Movimiento.objects.filter(materia_prima=mp, variedad__isnull=True)
-            stock_total = sum(m.cantidad_kg * m.efecto_stock for m in movs_historicos)
-            movs_mes = movs_historicos.filter(fecha__year=anio_seleccionado, fecha__month=mes_seleccionado)
-            ingresos_mes = sum(m.cantidad_kg for m in movs_mes if m.efecto_stock == 1)
-            consumos_mes = sum(m.cantidad_kg for m in movs_mes if m.efecto_stock == -1)
-            
-            writer.writerow([mp.nombre, 'Sin variedad', f"{ingresos_mes:.2f}", f"{consumos_mes:.2f}", f"{stock_total:.2f}"])
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = (
+        f'attachment; filename="Reporte_CAUQUEVA_'
+        f'{mes_seleccionado}_{anio_seleccionado}.csv"'
+    )
+
+    # BOM para que Excel interprete correctamente los acentos.
+    response.write('\ufeff'.encode('utf-8'))
+
+    writer = csv.writer(response, delimiter=';')
+
+    writer.writerow([
+        'Producto',
+        'Variedad',
+        'Ingresos del Mes (kg)',
+        'Consumos del Mes (kg)',
+        'Stock al Cierre del Mes (kg)',
+    ])
+
+    for item in reporte:
+        writer.writerow([
+            item['nombre'],
+            item['variedad'],
+            f"{item['ingresos']:.2f}",
+            f"{item['consumos']:.2f}",
+            f"{item['stock_total']:.2f}",
+        ])
 
     return response

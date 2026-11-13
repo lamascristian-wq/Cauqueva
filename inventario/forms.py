@@ -2,6 +2,7 @@ from django import forms
 from django.utils import timezone
 from django.contrib.auth.forms import AuthenticationForm
 from .models import MateriaPrima, MovimientoStock, Proveedor
+from django.db.models import Q
 
 ESTILO = (
     "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm "
@@ -108,33 +109,19 @@ class ConsumoForm(forms.ModelForm):
 class ProveedorForm(forms.ModelForm):
     class Meta:
         model = Proveedor
-        fields = ["nombre", "telefono", "materias_primas"]
-        labels = {
-            "nombre": "Nombre o razón social",
-            "telefono": "Teléfono",
-            "materias_primas": "Materias primas que provee",
-        }
-        help_texts = {
-            "materias_primas": "Marcá todas las que suele entregar. Podés cambiarlo más adelante.",
-        }
+        fields = ["nombre", "telefono"]
+        labels = {"nombre": "Nombre o razón social", "telefono": "Teléfono"}
         widgets = {
             "nombre": forms.TextInput(attrs={"class": ESTILO, "placeholder": "Ej: Finca Los Álamos"}),
             "telefono": forms.TextInput(attrs={"class": ESTILO, "placeholder": "Ej: 388 4123456 (opcional)"}),
-            "materias_primas": forms.CheckboxSelectMultiple(
-                attrs={"class": "h-4 w-4 rounded border-gray-300 text-green-700 focus:ring-green-600"}
-            ),
         }
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields["materias_primas"].queryset = MateriaPrima.objects.order_by("nombre")
 
     def clean_nombre(self):
         nombre = self.cleaned_data["nombre"].strip()
         repetido = Proveedor.objects.filter(nombre__iexact=nombre).exclude(pk=self.instance.pk)
         if repetido.exists():
             raise forms.ValidationError("Ya existe un proveedor con ese nombre.")
-        return nombre       
+        return nombre        
         
 class LoginForm(AuthenticationForm):
     def __init__(self, *args, **kwargs):

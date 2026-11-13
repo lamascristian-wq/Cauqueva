@@ -1,0 +1,79 @@
+{% extends 'inventario/base.html' %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+
+    <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div>
+            <h2 class="text-2xl font-bold text-gray-800">Proveedores</h2>
+            <p class="text-sm text-gray-500 mt-1">Quiénes abastecen a la cooperativa y qué entregaron.</p>
+        </div>
+        <a href="{% url 'crear_proveedor' %}"
+           class="inline-flex items-center bg-green-700 hover:bg-green-800 text-white text-sm font-medium py-2 px-4 rounded-lg shadow-sm transition-colors">
+            <span class="material-icons text-base mr-1.5">add</span> Nuevo proveedor
+        </a>
+    </div>
+
+    <form method="get" class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 mb-4 flex flex-wrap items-center gap-3">
+        <div class="relative flex-1 min-w-[220px]">
+            <span class="material-icons absolute left-3 top-2 text-gray-400 text-xl">search</span>
+            <input type="text" name="q" value="{{ q }}" placeholder="Buscar por nombre o teléfono..."
+                   class="w-full pl-10 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600">
+        </div>
+        <button type="submit" class="bg-green-700 hover:bg-green-800 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors">Buscar</button>
+        {% if q %}<a href="{% url 'proveedores' %}" class="text-sm text-gray-500 hover:text-gray-700 underline">Limpiar</a>{% endif %}
+    </form>
+
+    <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+                <thead class="bg-gray-50 text-xs uppercase text-gray-500">
+                    <tr>
+                        <th class="px-5 py-3 font-semibold">Proveedor</th>
+                        <th class="px-5 py-3 font-semibold">Teléfono</th>
+                        <th class="px-5 py-3 font-semibold">Materias primas que provee</th>
+                        <th class="px-5 py-3 font-semibold text-right">Ingresos</th>
+                        <th class="px-5 py-3 font-semibold">Último ingreso</th>
+                        <th class="px-5 py-3 font-semibold text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% for p in proveedores %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-5 py-3 font-medium text-gray-800">{{ p.nombre }}</td>
+                        <td class="px-5 py-3 text-gray-600">
+                            {% if p.telefono %}<a href="tel:{{ p.telefono }}" class="hover:text-green-700">{{ p.telefono }}</a>{% else %}—{% endif %}
+                        </td>
+                        <td class="px-5 py-3">
+                            {% for nombre in p.materias %}
+                                <span class="inline-block rounded-full bg-green-100 px-2.5 py-0.5 text-xs text-green-800 mr-1 mb-1">{{ nombre }}</span>
+                            {% empty %}
+                                <span class="text-gray-400">—</span>
+                            {% endfor %}
+                        </td>
+                        <td class="px-5 py-3 text-right font-semibold text-gray-800">{{ p.num_ingresos }}</td>
+                        <td class="px-5 py-3 text-gray-600 whitespace-nowrap">
+                            {% if p.ultimo_ingreso %}{{ p.ultimo_ingreso|date:"d/m/Y" }}{% else %}Sin ingresos{% endif %}
+                        </td>
+                        <td class="px-5 py-3 text-right">
+                            <a href="{% url 'editar_proveedor' p.pk %}" class="inline-flex items-center text-green-700 hover:text-green-900 text-sm font-medium">
+                                <span class="material-icons text-base mr-1">edit</span> Editar
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="px-5 py-12 text-center text-gray-500">
+                            <span class="material-icons text-4xl text-gray-300">local_shipping</span>
+                            <p class="mt-2">{% if q %}No hay proveedores que coincidan con la búsqueda.{% else %}Todavía no hay proveedores registrados.{% endif %}</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <p class="text-xs text-gray-400 mt-3">Mostrando {{ proveedores|length }} de {{ total }} proveedores.</p>
+</div>
+{% endblock %}

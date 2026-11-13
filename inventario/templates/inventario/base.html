@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAUQUEVA - Sistema de Gestión</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+</head>
+<body class="bg-gray-50 flex h-screen overflow-hidden font-sans text-gray-800">
+
+    <!-- BARRA LATERAL (Sidebar) -->
+    <aside class="w-64 bg-white border-r border-gray-200 flex flex-col z-20">
+        <!-- Logo -->
+        <div class="h-16 flex items-center px-6 border-b border-gray-200">
+            <span class="material-icons text-green-700 text-3xl mr-2">eco</span>
+            <div class="leading-tight">
+                <h1 class="text-lg font-bold text-gray-800">CAUQUEVA</h1>
+                <span class="text-xs text-gray-500">Sistema de Gestión</span>
+            </div>
+        </div>
+
+        <!-- Menú de Navegación -->
+        <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+
+            <a href="{% url 'panelprincipal' %}"
+               class="flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors
+                      {% if request.resolver_match.url_name == 'panelprincipal' %}text-green-800 bg-green-100{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-700{% endif %}">
+                <span class="material-icons mr-3 {% if request.resolver_match.url_name == 'panelprincipal' %}text-green-700{% else %}text-gray-400{% endif %}">dashboard</span>
+                Panel Principal
+            </a>
+
+            <a href="{% url 'inventariostock' %}"
+               class="flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors
+                      {% if request.resolver_match.url_name == 'inventariostock' %}text-green-800 bg-green-100{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-700{% endif %}">
+                <span class="material-icons mr-3 {% if request.resolver_match.url_name == 'inventariostock' %}text-green-700{% else %}text-gray-400{% endif %}">inventory_2</span>
+                Materias Primas
+            </a>
+
+            <a href="{% url 'registrar_materia_prima' %}"
+               class="flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors
+                      {% if request.resolver_match.url_name == 'registrar_materia_prima' %}text-green-800 bg-green-100{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-700{% endif %}">
+                <span class="material-icons mr-3 {% if request.resolver_match.url_name == 'registrar_materia_prima' %}text-green-700{% else %}text-gray-400{% endif %}">receipt_long</span>
+                Registro de Ingresos
+            </a>
+
+            <a href="{% url 'consumos' %}"
+               class="flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors
+                      {% if request.resolver_match.url_name in 'consumos registrar_consumo' %}text-green-800 bg-green-100{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-700{% endif %}">
+                <span class="material-icons mr-3 {% if request.resolver_match.url_name in 'consumos registrar_consumo' %}text-green-700{% else %}text-gray-400{% endif %}">shopping_cart</span>
+                Consumo y Salidas
+            </a>
+
+            <a href="{% url 'historial' %}"
+               class="flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors
+                      {% if request.resolver_match.url_name == 'historial' %}text-green-800 bg-green-100{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-700{% endif %}">
+                <span class="material-icons mr-3 {% if request.resolver_match.url_name == 'historial' %}text-green-700{% else %}text-gray-400{% endif %}">shopping_cart</span>
+                Historial de Movimientos
+            </a>
+
+            <a href="{% url 'proveedores' %}"
+               class="flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors
+                      {% if request.resolver_match.url_name in 'proveedores crear_proveedor editar_proveedor' %}text-green-800 bg-green-100{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-700{% endif %}">
+                <span class="material-icons mr-3 {% if request.resolver_match.url_name in 'proveedores crear_proveedor editar_proveedor' %}text-green-700{% else %}text-gray-400{% endif %}">local_shipping</span>
+                Proveedores
+            </a>
+            
+            <a href="{% url 'reportes' %}"
+               class="flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors
+                      {% if request.resolver_match.url_name == 'reportes' %}text-green-800 bg-green-100{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-700{% endif %}">
+                <span class="material-icons mr-3 {% if request.resolver_match.url_name == 'reportes' %}text-green-700{% else %}text-gray-400{% endif %}">description</span>
+                Reportes
+            </a>
+        </div>
+        </nav>
+    </aside>
+
+    <!-- CONTENEDOR DERECHO (Top Bar + Contenido Principal) -->
+    <div class="flex-1 flex flex-col h-screen overflow-hidden">
+        
+        <!-- BARRA SUPERIOR (Top Navbar) -->
+        <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 z-10">
+            <!-- Izquierda: Menú y Título -->
+            <div class="flex items-center">
+                <button class="text-gray-500 hover:text-gray-700 focus:outline-none mr-4">
+                    <span class="material-icons">menu</span>
+                </button>
+                <span class="text-gray-600 font-medium">Dashboard</span>
+            </div>
+
+            <!-- Derecha: Buscador e Íconos -->
+            <div class="flex items-center space-x-5">
+                
+                <!-- Contenedor relativo de la campanita -->
+                <div class="relative ml-4">
+                    <button id="btnCampanita" class="text-gray-400 hover:text-gray-600 focus:outline-none relative p-1 mt-1 transition-colors">
+                        <span class="material-icons">notifications</span>
+                        
+                        <!-- Puntito rojo animado (solo aparece si hay alertas) -->
+                        {% if total_alertas > 0 %}
+                        <span class="absolute top-0 right-0 flex h-3 w-3">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500 border-2 border-white"></span>
+                        </span>
+                        {% endif %}
+                    </button>
+
+                    <!-- El "Cuadrito" Desplegable (oculto por defecto con la clase 'hidden') -->
+                    <div id="menuNotificaciones" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-100 z-50 overflow-hidden transform origin-top-right transition-all">
+                        
+                        <!-- Cabecera del menú -->
+                        <div class="bg-red-50 px-4 py-3 border-b border-red-100 flex justify-between items-center">
+                            <h3 class="text-sm font-bold text-red-800">Alertas de Stock</h3>
+                            <span class="bg-red-200 text-red-800 text-xs font-bold px-2.5 py-0.5 rounded-full">{{ total_alertas }}</span>
+                        </div>
+                        
+                        <!-- Lista de notificaciones -->
+                        <div class="max-h-72 overflow-y-auto">
+                            {% if total_alertas > 0 %}
+                                {% for alerta in alertas_recientes %}
+                                <a href="#" class="block px-4 py-3 border-b border-gray-50 hover:bg-red-50/50 transition-colors">
+                                    <p class="text-sm font-bold text-gray-800">{{ alerta.nombre }}</p>
+                                    <p class="text-xs text-red-600 mt-1">Stock: {{ alerta.stock_actual }} {{ alerta.get_unidad_medida_display }} (Mín: {{ alerta.stock_minimo }})</p>
+                                </a>
+                                {% endfor %}
+                                
+                                {% if total_alertas > 5 %}
+                                <a href="{% url 'alertas_stock' %}" class="block px-4 py-2.5 text-center text-xs font-medium text-gray-500 hover:text-green-700 bg-gray-50 transition-colors">
+                                    Ver todas las alertas
+                                </a>
+                                {% endif %}
+                            {% else %}
+                                <!-- Mensaje cuando todo está bien -->
+                                <div class="px-4 py-8 text-center">
+                                    <span class="material-icons text-green-400 text-4xl mb-2">check_circle</span>
+                                    <p class="text-sm font-medium text-gray-800">Stock controlado</p>
+                                    <p class="text-xs text-gray-500 mt-1">No hay alertas críticas en este momento.</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Perfil de usuario -->
+                <div class="relative" id="user-menu">
+                    <button id="user-menu-btn" type="button" class="flex items-center focus:outline-none">
+                        <span class="material-icons text-green-800 text-3xl">account_circle</span>
+                    </button>
+
+                    <div id="user-menu-panel" class="hidden absolute right-0 mt-2 w-60 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
+                        <div class="px-4 py-3 border-b border-gray-100">
+                            <p class="text-sm font-semibold text-gray-800">
+                                {{ user.get_full_name|default:user.username }}
+                            </p>
+                            <p class="text-xs text-gray-500">@{{ user.username }}</p>
+                        </div>
+
+                        {% if user.is_staff %}
+                        <a href="{% url 'admin:index' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-green-50">
+                            Administración
+                        </a>
+                        {% endif %}
+
+                        <form method="post" action="{% url 'logout' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                                Cerrar sesión
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- CONTENIDO DINÁMICO (El espacio donde se inyecta dashboard.html, etc.) -->
+        <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-8">
+            {% block content %}
+            {% endblock %}
+        </main>
+    </div>
+    
+    <script>
+        const userBtn = document.getElementById("user-menu-btn");
+        const userPanel = document.getElementById("user-menu-panel");
+
+        userBtn.addEventListener("click", (e) => {
+            e.stopPropagation();
+            userPanel.classList.toggle("hidden");
+        });
+
+        document.addEventListener("click", (e) => {
+            if (!document.getElementById("user-menu").contains(e.target)) {
+                userPanel.classList.add("hidden");
+            }
+        });
+    </script>
+</body>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const btnCampanita = document.getElementById('btnCampanita');
+        const menuNotificaciones = document.getElementById('menuNotificaciones');
+
+        if (btnCampanita && menuNotificaciones) {
+            // Mostrar/ocultar el menú al tocar la campanita
+            btnCampanita.addEventListener('click', function(event) {
+                event.stopPropagation(); // Evita que el clic se propague al documento
+                menuNotificaciones.classList.toggle('hidden');
+            });
+
+            // Cerrar el menú si hacemos clic en cualquier otro lado de la pantalla
+            document.addEventListener('click', function(event) {
+                if (!btnCampanita.contains(event.target) && !menuNotificaciones.contains(event.target)) {
+                    menuNotificaciones.classList.add('hidden');
+                }
+            });
+        }
+    });
+</script>
+</body>
+</html>

@@ -5,8 +5,14 @@ from django.core.exceptions import ValidationError
 from django.db.models import F
 
 class Proveedor(models.Model):
-    nombre = models.CharField(max_length=150, unique=True) 
-    telefono = models.CharField(max_length=50, blank=True, null=True) # Datos extra opcionales
+    nombre = models.CharField(max_length=150, unique=True)
+    telefono = models.CharField(max_length=50, blank=True, null=True)
+    materias_primas = models.ManyToManyField(
+        "MateriaPrima",
+        blank=True,
+        related_name="proveedores",
+        verbose_name="Materias primas que provee",
+    )
 
     def __str__(self):
         return self.nombre

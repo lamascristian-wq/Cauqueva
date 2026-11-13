@@ -30,7 +30,25 @@
                 {{ formulario.telefono }}
                 {% for e in formulario.telefono.errors %}<p class="text-xs text-red-600 mt-1">{{ e }}</p>{% endfor %}
             </div>
-
+<div>
+    <label class="block text-sm font-medium text-gray-700 mb-1">
+        {{ formulario.materias_primas.label }}
+    </label>
+    <div class="max-h-56 overflow-y-auto rounded-lg border border-gray-200 p-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+        {% for checkbox in formulario.materias_primas %}
+        <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+            {{ checkbox.tag }} {{ checkbox.choice_label }}
+        </label>
+        {% empty %}
+        <p class="text-sm text-gray-500 sm:col-span-2">
+            Todavía no hay materias primas.
+            <a href="{% url 'crear_materia_prima' %}" class="text-green-700 underline">Registrá una</a> primero.
+        </p>
+        {% endfor %}
+    </div>
+    <p class="text-xs text-gray-500 mt-1">{{ formulario.materias_primas.help_text }}</p>
+    {% for e in formulario.materias_primas.errors %}<p class="text-xs text-red-600 mt-1">{{ e }}</p>{% endfor %}
+</div>
             <div class="pt-6 border-t border-gray-100 flex items-center justify-end space-x-3">
                 <a href="{% url 'proveedores' %}"
                    class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium py-2 px-4 rounded-lg transition-colors text-sm">Cancelar</a>

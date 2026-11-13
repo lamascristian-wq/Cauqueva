@@ -3,6 +3,7 @@ from django.utils import timezone
 from .models import MateriaPrima, MovimientoStock,Proveedor
 from .forms import MateriaPrimaForm,MovimientoStockForm, ProveedorForm,ConsumoForm
 import csv 
+from collections import defaultdict
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from django.http import HttpResponse
@@ -13,6 +14,8 @@ from django.utils.dateparse import parse_date
 from django.db.models import Count, Max, Prefetch, Q, Sum
 from django.core.paginator import Paginator
 
+
+A_KG = {"KG": Decimal("1"), "TN": Decimal("1000")}
 # Función auxiliar para comprobar si el usuario es "Gerente" (Staff)
 def es_gerente(user):
     return user.is_staff
@@ -20,39 +23,90 @@ def es_gerente(user):
 # Vista del Panel Principal
 @login_required(login_url='login')
 def panel_principal(request):
-    # materias primas
     materias_primas = MateriaPrima.objects.all()
-    
+
     resumen = []
-    stock_total_kilos = 0
-    alertas_criticas = 0
-    #'stock_actual'
+    stock_total_kilos = Decimal("0")
+    alertas_criticas = []  # ahora es una lista de materias primas, no un número
+
     for mp in materias_primas:
         stock = mp.stock_actual
-        stock_total_kilos += stock
+        # Solo se suma en kg lo que se mide en KG o TN (las "UN" no son kilos)
+        if mp.unidad_medida in A_KG:
+            stock_total_kilos += stock * A_KG[mp.unidad_medida]
         alerta = stock <= mp.stock_minimo
-        
+
         if alerta:
-            alertas_criticas += 1
+            alertas_criticas.append(mp)
 
         resumen.append({
             'id_materia': mp.id,
             'nombre': mp.nombre,
             'variedad': mp.variedad if mp.variedad else 'Sin variedad',
             'stock': stock,
-            'unidad': mp.get_unidad_medida_display(), # Muestra 'Kg' o 'Tn' según el modelo
+            'unidad': mp.get_unidad_medida_display(),
             'stock_minimo': mp.stock_minimo,
-            'alerta': alerta
+            'alerta': alerta,
         })
 
-    # rellenar gráficos o tablas del inicio
     ultimos_movimientos = MovimientoStock.objects.all().order_by('-fecha')[:10]
 
+    # --- Gráfico: ingresos y consumos por mes (últimos 12 meses) ---
+    materia_id = request.GET.get("materia", "")
+    if not materia_id.isdigit():
+        materia_id = ""
+
+    movs = MovimientoStock.objects.filter(
+        fecha__gte=timezone.now() - timedelta(days=365)
+    ).select_related("materia_prima")
+    unidad_grafico = "Kg"
+    if materia_id:
+        movs = movs.filter(materia_prima_id=materia_id)
+        elegida = materias_primas.filter(pk=materia_id).first()
+        if elegida:
+            unidad_grafico = elegida.get_unidad_medida_display()
+
+    datos = defaultdict(lambda: {"INGRESO": 0.0, "CONSUMO": 0.0})
+    for mov in movs:
+        if materia_id:
+            factor = Decimal("1")  # una sola materia: se muestra en su propia unidad
+        else:
+            factor = A_KG.get(mov.materia_prima.unidad_medida)
+            if factor is None:
+                continue
+        mes = timezone.localtime(mov.fecha).strftime("%Y-%m")
+        datos[mes][mov.tipo] += float(mov.cantidad * factor)
+
+    meses = sorted(datos)
+    grafico = {
+        "labels": [f"{m[5:]}/{m[:4]}" for m in meses],
+        "ingresos": [datos[m]["INGRESO"] for m in meses],
+        "consumos": [datos[m]["CONSUMO"] for m in meses],
+        "unidad": unidad_grafico,
+    }
+
+    # --- Consumo del mes actual, en kg ---
+    ahora = timezone.localtime()
+    consumo_mes = Decimal("0")
+    consumos = MovimientoStock.objects.filter(
+        tipo="CONSUMO", fecha__year=ahora.year, fecha__month=ahora.month
+    ).select_related("materia_prima")
+    for mov in consumos:
+        factor = A_KG.get(mov.materia_prima.unidad_medida)
+        if factor:
+            consumo_mes += mov.cantidad * factor
+
     contexto = {
-        'productos': resumen,               # Alimenta tu tabla de catálogo
-        'stock_total': stock_total_kilos,   # Alimenta la tarjeta 1 de tu HTML
-        'alertas': alertas_criticas,        # Alimenta la tarjeta 3 de tu HTML
-        'movimientos': ultimos_movimientos  # Alimenta el historial reciente
+        'productos': resumen,
+        'stock_total': stock_total_kilos,
+        'alertas': alertas_criticas,             # lista para la tabla
+        'cant_alertas': len(alertas_criticas),   # número para la tarjeta
+        'movimientos': ultimos_movimientos,
+        'materias': materias_primas.order_by("nombre"),
+        'materia_id': materia_id,
+        'grafico': grafico,
+        'consumo_mes': consumo_mes,
+        'seccion': 'panel',
     }
 
     return render(request, 'inventario/panelprincipal.html', contexto)
@@ -63,22 +117,16 @@ def registrar_materia_prima(request):
     if request.method == "POST":
         formulario = MateriaPrimaForm(request.POST)
         if formulario.is_valid():
-            with transaction.atomic():
-                materia = formulario.save()  # nace con stock_actual = 0
-                inicial = formulario.cleaned_data.get("stock_inicial")
-                if inicial and inicial > 0:
-                    MovimientoStock.objects.create(
-                        materia_prima=materia,
-                        tipo="INGRESO",
-                        cantidad=inicial,
-                        observaciones="Stock inicial al registrar la materia prima",
-                    )
-            messages.success(request, f"Se registró «{materia}» correctamente.")
-            return redirect("inventariostock")
+            materia = formulario.save()  # nace con stock 0
+            messages.success(
+                request,
+                f"Se registró «{materia}». Cargale stock desde Registro de Ingresos.",
+            )
+            return redirect("inventario_stock")
     else:
         formulario = MateriaPrimaForm()
 
-    return render(request, "inventario/registrarmateriaprima.html", {"formulario": formulario,'titulo_formulario': 'Registrar Nueva Materia Prima'})
+    return render(request, "inventario/registrarmateriaprima.html", {"formulario": formulario})
 
 # Registrar Movimiento de Stock (Ingresos / Consumos)
 @login_required(login_url='login')
@@ -376,6 +424,7 @@ def registrar_consumo(request):
     return render(request, "inventario/registrarconsumo.html", {"formulario": formulario, "stocks": stocks})
 
 #Operaciones con proveedor
+
 @login_required(login_url='login')
 def proveedores(request):
     q = request.GET.get("q", "").strip()
@@ -384,14 +433,19 @@ def proveedores(request):
     lista = Proveedor.objects.annotate(
         num_ingresos=Count("movimientostock", filter=Q(movimientostock__tipo="INGRESO")),
         ultimo_ingreso=Max("movimientostock__fecha", filter=Q(movimientostock__tipo="INGRESO")),
-    ).prefetch_related(Prefetch("movimientostock_set", queryset=ingresos, to_attr="ingresos_cargados"))
+    ).prefetch_related(
+        "materias_primas",
+        Prefetch("movimientostock_set", queryset=ingresos, to_attr="ingresos_cargados"),
+    )
 
     if q:
         lista = lista.filter(Q(nombre__icontains=q) | Q(telefono__icontains=q))
     lista = list(lista.order_by("nombre"))
 
     for p in lista:
-        p.materias = sorted({m.materia_prima.nombre for m in p.ingresos_cargados})
+        declaradas = {str(m) for m in p.materias_primas.all()}
+        entregadas = {str(mov.materia_prima) for mov in p.ingresos_cargados}
+        p.materias = sorted(declaradas | entregadas)
 
     return render(request, "inventario/proveedores.html", {
         "proveedores": lista,

@@ -1,331 +1,222 @@
+
 from decimal import Decimal
-from io import StringIO
 
 from django.contrib.auth import get_user_model
-from django.core.management import call_command, CommandError
-from django.test import Client, TestCase, override_settings
+from django.test import TestCase
 from django.urls import reverse
-from datetime import timedelta
+from django.utils import timezone
 
-from .management.commands.cargar_datos_demo import (
-    DEMO_OBSERVATION_PREFIX,
-    DEMO_PREFIX,
+from .forms import (
+    MateriaPrimaForm,
+    MovimientoStockForm,
+    ConsumoForm,
+    ProveedorForm,
 )
-from .models import (
-    MateriaPrima,
-    Movimiento,
-    TipoMovimiento,
-    UnidadMedida,
-    Variedad,
-)
-from .forms import MateriaPrimaForm, MovimientoForm
+from .models import MateriaPrima, MovimientoStock, Proveedor
 
-
-class CargarDatosDemoTests(TestCase):
-    def setUp(self):
-        self.unit = UnidadMedida.objects.create(
-            nombre="kilogramo",
-            simbolo="kg",
-            factor_kg=Decimal("1"),
-        )
-        self.income_type = TipoMovimiento.objects.create(
-            nombre="ingreso",
-            efecto_predeterminado=1,
-        )
-        self.consumption_type = TipoMovimiento.objects.create(
-            nombre="consumo",
-            efecto_predeterminado=-1,
-        )
-        self.existing_product = MateriaPrima.objects.create(
-            nombre="Producto preexistente",
-            stock_minimo=Decimal("10"),
-        )
-        self.existing_variety = Variedad.objects.create(
-            materia_prima=self.existing_product,
-            nombre="Lote existente",
-        )
-        self.existing_movement = Movimiento.objects.create(
-            materia_prima=self.existing_product,
-            variedad=self.existing_variety,
-            unidad=self.unit,
-            tipo=self.income_type,
-            cantidad=Decimal("500"),
-            observacion="Registro preexistente",
-        )
-
-    def load_demo(self):
-        output = StringIO()
-        with override_settings(DEBUG=True):
-            call_command(
-                "cargar_datos_demo",
-                confirmar_entorno_demo=True,
-                stdout=output,
-            )
-        return output.getvalue()
-
-    def test_creates_coherent_stock_and_preserves_existing_records(self):
-        output = self.load_demo()
-
-        self.assertIn("3 productos, 6 variedades y 36 movimientos", output)
-        self.assertEqual(MateriaPrima.objects.count(), 4)
-        self.assertEqual(Variedad.objects.count(), 7)
-        self.assertEqual(Movimiento.objects.count(), 37)
-        self.existing_movement.refresh_from_db()
-        self.assertEqual(self.existing_movement.cantidad_kg, Decimal("500.000"))
-        self.assertEqual(self.existing_movement.observacion, "Registro preexistente")
-
-        expected_stocks = {
-            ("DEMO - Papa andina", "Morada"): Decimal("155.000"),
-            ("DEMO - Papa andina", "Colorada"): Decimal("45.000"),
-            ("DEMO - Papa andina", "Amarilla"): Decimal("125.000"),
-            ("DEMO - Maíz", "Amarillo"): Decimal("100.000"),
-            ("DEMO - Maíz", "Blanco"): Decimal("20.000"),
-            ("DEMO - Poroto", "Pallar"): Decimal("15.000"),
-        }
-        for (product_name, variety_name), expected_stock in expected_stocks.items():
-            product = MateriaPrima.objects.get(nombre=product_name)
-            variety = Variedad.objects.get(
-                materia_prima=product,
-                nombre=variety_name,
-            )
-            stock = sum(
-                movement.cantidad_kg * movement.efecto_stock
-                for movement in Movimiento.objects.filter(variedad=variety)
-            )
-            self.assertEqual(stock, expected_stock)
-
-    def test_repeated_run_does_not_duplicate_demo_records(self):
-        self.load_demo()
-        output = self.load_demo()
-
-        self.assertIn("ya están cargados", output)
-        self.assertEqual(
-            MateriaPrima.objects.filter(nombre__startswith=DEMO_PREFIX).count(),
-            3,
-        )
-        self.assertEqual(
-            Movimiento.objects.filter(
-                observacion__startswith=DEMO_OBSERVATION_PREFIX
-            ).count(),
-            36,
-        )
-
-    def test_requires_explicit_confirmation(self):
-        with self.assertRaises(CommandError):
-            call_command("cargar_datos_demo", stdout=StringIO())
-        self.assertFalse(
-            MateriaPrima.objects.filter(nombre__startswith=DEMO_PREFIX).exists()
-        )
-
-    @override_settings(DEBUG=False)
-    def test_refuses_to_load_when_debug_is_disabled(self):
-        with self.assertRaises(CommandError):
-            call_command(
-                "cargar_datos_demo",
-                confirmar_entorno_demo=True,
-                stdout=StringIO(),
-            )
-        self.assertFalse(
-            MateriaPrima.objects.filter(nombre__startswith=DEMO_PREFIX).exists()
-        )
-
-    def test_dashboard_history_report_and_csv_show_demo_data(self):
-        self.load_demo()
-        user = get_user_model().objects.create_user(username="demo-test-user")
-        client = Client()
-        client.force_login(user)
-
-        dashboard = client.get(reverse("dashboard"))
-        self.assertEqual(dashboard.status_code, 200)
-        self.assertContains(dashboard, "DEMO - Papa andina")
-        dashboard_products = dashboard.context["productos"]
-        critical_products = {
-            (product["nombre"], product["variedad"])
-            for product in dashboard_products
-            if product["alerta"]
-        }
-        self.assertIn(("DEMO - Maíz", "Blanco"), critical_products)
-        self.assertIn(("DEMO - Poroto", "Pallar"), critical_products)
-        self.assertNotIn(("DEMO - Papa andina", "Colorada"), critical_products)
-
-        demo_potato = MateriaPrima.objects.get(nombre="DEMO - Papa andina")
-        demo_variety = Variedad.objects.get(
-            materia_prima=demo_potato,
-            nombre="Morada",
-        )
-        history = client.get(
-            reverse("historial_producto", args=[demo_potato.id])
-        )
-        self.assertEqual(history.status_code, 200)
-        self.assertEqual(
-            history.context["movimientos"].filter(variedad=demo_variety).count(),
-            6,
-        )
-
-        sample_movement = Movimiento.objects.filter(
-            variedad=demo_variety,
-            observacion__startswith=DEMO_OBSERVATION_PREFIX,
-        ).first()
-        report_params = {
-            "mes": sample_movement.fecha.month,
-            "anio": sample_movement.fecha.year,
-        }
-        # Una variedad inactiva debe seguir apareciendo en el informe.
-        demo_variety.activo = False
-        demo_variety.save(update_fields=["activo"])
-        # Este movimiento ocurre después del mes seleccionado.
-        # No debe modificar el stock al cierre de ese mes.
-        Movimiento.objects.create(
-            materia_prima=demo_potato,
-            variedad=demo_variety,
-            unidad=sample_movement.unidad,
-            tipo=sample_movement.tipo,
-            cantidad=Decimal("1000"),
-            fecha=sample_movement.fecha + timedelta(days=40),
-            observacion="Prueba de movimiento posterior al período",
-        )
-        # También debe aparecer el stock de movimientos sin variedad.
-        Movimiento.objects.create(
-            materia_prima=demo_potato,
-            unidad=sample_movement.unidad,
-            tipo=TipoMovimiento.objects.get(nombre="ingreso"),
-            cantidad=Decimal("7"),
-            fecha=sample_movement.fecha,
-            observacion="Prueba de movimiento sin variedad",
-        )
-        report = client.get(reverse("informes"), report_params)
-        self.assertEqual(report.status_code, 200)
-        report_row = next(
-            row
-            for row in report.context["reporte"]
-            if row["nombre"] == "DEMO - Papa andina"
-            and row["variedad"] == "Morada"
-        )
-        unassigned_row = next(
-            row
-            for row in report.context["reporte"]
-            if row["nombre"] == "DEMO - Papa andina"
-            and row["variedad"] == "Sin variedad"
-        )
-
-        self.assertEqual(
-            unassigned_row["stock_total"],
-            Decimal("7.000"),
-        )
-        self.assertEqual(
-            unassigned_row["ingresos"],
-            Decimal("7.000"),
-        )
-        month_movements = Movimiento.objects.filter(
-            variedad=demo_variety,
-            fecha__year=report_params["anio"],
-            fecha__month=report_params["mes"],
-        )
-        expected_income = sum(
-            movement.cantidad_kg
-            for movement in month_movements
-            if movement.efecto_stock == 1
-        )
-        expected_consumption = sum(
-            movement.cantidad_kg
-            for movement in month_movements
-            if movement.efecto_stock == -1
-        )
-        self.assertEqual(report_row["ingresos"], expected_income)
-        self.assertEqual(report_row["consumos"], expected_consumption)
-        self.assertEqual(report_row["stock_total"], Decimal("155.000"))
-
-        csv_response = client.get(
-            reverse("exportar_informe"),
-            report_params,
-        )
-        self.assertEqual(csv_response.status_code, 200)
-        self.assertEqual(csv_response["Content-Type"], "text/csv")
-        self.assertIn(b"DEMO - Papa andina", csv_response.content)
-        self.assertIn(b"Sin variedad", csv_response.content)
-        self.assertIn(b"155.00", csv_response.content)
-        self.assertIn(b"7.00", csv_response.content)
-        self.assertIn(b"Morada", csv_response.content)
 
 class MateriaPrimaFormTests(TestCase):
 
-    def test_rechaza_nombres_duplicados_sin_distinguir_mayusculas(self):
+    def test_crea_materia_prima_correctamente(self):
+        formulario = MateriaPrimaForm(data={
+            "nombre": "Papa",
+            "variedad": "Andina",
+            "unidad_medida": "KG",
+            "descripcion": "Papa para producción",
+        })
+
+        self.assertTrue(formulario.is_valid(), formulario.errors)
+
+        materia = formulario.save()
+
+        self.assertEqual(materia.nombre, "Papa")
+        self.assertEqual(materia.variedad, "Andina")
+        self.assertEqual(materia.stock_actual, Decimal("0.00"))
+
+    def test_rechaza_materia_prima_duplicada(self):
         MateriaPrima.objects.create(
             nombre="Quinoa",
-            stock_minimo=Decimal("10")
+            variedad="Real",
         )
 
         formulario = MateriaPrimaForm(data={
             "nombre": "QUINOA",
+            "variedad": "REAL",
+            "unidad_medida": "KG",
             "descripcion": "",
-            "stock_minimo": "10",
         })
 
         self.assertFalse(formulario.is_valid())
         self.assertIn(
-            "Ya existe una materia prima con ese nombre.",
-            formulario.errors["nombre"]
+            "Ya existe una materia prima con ese nombre y esa variedad.",
+            formulario.non_field_errors(),
         )
 
-    def test_rechaza_stock_minimo_negativo(self):
-        formulario = MateriaPrimaForm(data={
-            "nombre": "Producto de prueba",
-            "descripcion": "",
-            "stock_minimo": "-5",
+
+class ProveedorFormTests(TestCase):
+
+    def test_crea_proveedor_correctamente(self):
+        formulario = ProveedorForm(data={
+            "nombre": "Finca Norte",
+            "telefono": "3884123456",
+        })
+
+        self.assertTrue(formulario.is_valid(), formulario.errors)
+
+        proveedor = formulario.save()
+
+        self.assertEqual(proveedor.nombre, "Finca Norte")
+        self.assertEqual(proveedor.telefono, "3884123456")
+
+    def test_rechaza_proveedor_duplicado_sin_distinguir_mayusculas(self):
+        Proveedor.objects.create(nombre="Finca Norte")
+
+        formulario = ProveedorForm(data={
+            "nombre": "FINCA NORTE",
+            "telefono": "",
         })
 
         self.assertFalse(formulario.is_valid())
         self.assertIn(
-            "El stock mínimo no puede ser negativo.",
-            formulario.errors["stock_minimo"]
+            "Ya existe un proveedor con ese nombre.",
+            formulario.errors["nombre"],
         )
-class MovimientoFormTests(TestCase):
+
+
+class MovimientoStockTests(TestCase):
 
     def setUp(self):
-        self.materia_activa = MateriaPrima.objects.create(
-            nombre="Materia activa",
-            activo=True
+        self.materia = MateriaPrima.objects.create(
+            nombre="Papa",
+            variedad="Andina",
         )
 
-        self.materia_inactiva = MateriaPrima.objects.create(
-            nombre="Materia inactiva",
-            activo=False
+        self.proveedor = Proveedor.objects.create(
+            nombre="Finca Norte",
+            telefono="3884123456",
         )
 
-        self.variedad_activa = Variedad.objects.create(
-            materia_prima=self.materia_activa,
-            nombre="Variedad activa",
-            activo=True
+    def crear_ingreso(self, cantidad="10.00"):
+        return MovimientoStock.objects.create(
+            materia_prima=self.materia,
+            tipo="INGRESO",
+            cantidad=Decimal(cantidad),
+            observaciones="Ingreso de prueba",
         )
 
-        self.variedad_inactiva = Variedad.objects.create(
-            materia_prima=self.materia_activa,
-            nombre="Variedad inactiva",
-            activo=False
+    def crear_formulario_consumo(self, cantidad):
+        fecha = timezone.localtime(timezone.now()).strftime(
+            "%Y-%m-%dT%H:%M"
         )
 
-        self.variedad_materia_inactiva = Variedad.objects.create(
-            materia_prima=self.materia_inactiva,
-            nombre="Variedad de materia inactiva",
-            activo=True
+        return ConsumoForm(data={
+            "materia_prima": self.materia.pk,
+            "cantidad": cantidad,
+            "fecha": fecha,
+            "observaciones": "Consumo de prueba",
+        })
+
+    def test_registrar_ingreso_aumenta_el_stock(self):
+        formulario = MovimientoStockForm(data={
+            "materia_prima": self.materia.pk,
+            "proveedor": self.proveedor.pk,
+            "cantidad": "10.00",
+            "observaciones": "Ingreso inicial",
+        })
+
+        self.assertTrue(formulario.is_valid(), formulario.errors)
+
+        movimiento = formulario.save()
+        self.materia.refresh_from_db()
+
+        self.assertEqual(movimiento.tipo, "INGRESO")
+        self.assertEqual(self.materia.stock_actual, Decimal("10.00"))
+
+    def test_registrar_consumo_disminuye_el_stock(self):
+        self.crear_ingreso("10.00")
+
+        formulario = self.crear_formulario_consumo("3.00")
+
+        self.assertTrue(formulario.is_valid(), formulario.errors)
+
+        movimiento = formulario.save()
+        self.materia.refresh_from_db()
+
+        self.assertEqual(movimiento.tipo, "CONSUMO")
+        self.assertEqual(self.materia.stock_actual, Decimal("7.00"))
+
+    def test_rechaza_consumo_superior_al_stock(self):
+        self.crear_ingreso("10.00")
+
+        formulario = self.crear_formulario_consumo("15.00")
+
+        self.assertFalse(formulario.is_valid())
+        self.assertTrue(formulario.non_field_errors())
+
+        self.materia.refresh_from_db()
+        self.assertEqual(self.materia.stock_actual, Decimal("10.00"))
+
+    def test_eliminar_movimiento_revierte_el_stock(self):
+        self.crear_ingreso("10.00")
+
+        formulario = self.crear_formulario_consumo("3.00")
+        self.assertTrue(formulario.is_valid(), formulario.errors)
+
+        consumo = formulario.save()
+
+        self.materia.refresh_from_db()
+        self.assertEqual(self.materia.stock_actual, Decimal("7.00"))
+
+        consumo.delete()
+
+        self.materia.refresh_from_db()
+        self.assertEqual(self.materia.stock_actual, Decimal("10.00"))
+
+
+class InventarioViewsTests(TestCase):
+
+    def setUp(self):
+        usuario = get_user_model().objects.create_user(
+            username="usuario_prueba",
+            password="clave_prueba_123",
+        )
+        self.client.force_login(usuario)
+
+    def test_inventario_muestra_materias_primas(self):
+        MateriaPrima.objects.create(
+            nombre="Maiz",
+            variedad="Amarillo",
         )
 
-    def test_solo_muestra_materias_primas_activas(self):
-        formulario = MovimientoForm()
+        respuesta = self.client.get(reverse("inventariostock"))
 
-        materias = set(
-            formulario.fields["materia_prima"].queryset.values_list(
-                "id", flat=True
-            )
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertContains(respuesta, "Maiz")
+
+    def test_registrar_materia_prima_guarda_el_registro(self):
+        respuesta = self.client.post(
+            reverse("registrar_materia_prima"),
+            {
+                "nombre": "Poroto",
+                "variedad": "Pallar",
+                "unidad_medida": "KG",
+                "descripcion": "Poroto para producción",
+            },
         )
-        self.assertEqual(materias, {self.materia_activa.id})
 
-    def test_solo_muestra_variedades_activas_de_materias_activas(self):
-        formulario = MovimientoForm()
+        self.assertEqual(respuesta.status_code, 302)
 
-        variedades = set(
-            formulario.fields["variedad"].queryset.values_list(
-                "id", flat=True
-            )
+        self.assertTrue(
+            MateriaPrima.objects.filter(
+                nombre="Poroto",
+                variedad="Pallar",
+            ).exists()
         )
-        self.assertEqual(variedades, {self.variedad_activa.id})
+
+    def test_registro_de_ingresos_requiere_inicio_de_sesion(self):
+        self.client.logout()
+
+        respuesta = self.client.get(reverse("registrar_movimiento"))
+
+        self.assertEqual(respuesta.status_code, 302)
+        self.assertIn(reverse("login"), respuesta.url)

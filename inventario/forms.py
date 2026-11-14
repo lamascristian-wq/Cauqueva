@@ -1,125 +1,136 @@
-from django import forms
-from .models import Movimiento, MateriaPrima, Variedad
+﻿from django import forms
+from django.utils import timezone
+from django.contrib.auth.forms import AuthenticationForm
+from .models import MateriaPrima, MovimientoStock, Proveedor
+from django.db.models import Q
 
-class MovimientoForm(forms.ModelForm):
-    class Meta:
-        model = Movimiento
-        fields = ['materia_prima', 'variedad', 'unidad', 'tipo', 'cantidad', 'observacion']
-        widgets = {
-            'materia_prima': forms.Select(attrs={
-            'class': 'form-select',
-            'id': 'id_materia_prima',
-            }),
-            'variedad': forms.Select(attrs={
-            'class': 'form-select',
-            'id': 'id_variedad',
-            }),
-            'unidad': forms.Select(attrs={'class': 'form-select'}),
-            'tipo': forms.Select(attrs={'class': 'form-select'}),
-            'cantidad': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'step': 'any',}),
-            'observacion': forms.TextInput(attrs={'class': 'form-control'}),
-        }
+ESTILO = (
+    "w-full rounded-lg border border-gray-300 px-3 py-2 text-sm "
+    "focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600"
+)
 
-
-    def clean_cantidad(self):
-        cantidad = self.cleaned_data.get('cantidad')
-        unidad = self.cleaned_data.get('unidad')
-
-        if cantidad is not None and unidad is not None:
-            cantidad_en_kg = cantidad * unidad.factor_kg
-
-            if cantidad_en_kg < 1:
-                raise forms.ValidationError(
-                    "La cantidad mínima por movimiento es 1 kg. "
-                    "Revisá la cantidad y la unidad seleccionada."
-                )
-
-        return cantidad
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        # Mostrar solamente materias primas activas
-        self.fields['materia_prima'].queryset = MateriaPrima.objects.filter(
-            activo=True
-        ).order_by('nombre')
-
-        # Mostrar solamente variedades activas de materias primas activas
-        self.fields['variedad'].queryset = Variedad.objects.filter(
-            activo=True,
-            materia_prima__activo=True
-        ).order_by('nombre')
-
-        self.fields['cantidad'].error_messages['max_decimal_places'] = (
-            "La cantidad admite como máximo 3 decimales."
-        )
-
-    # Esta función intercepta los datos antes de guardarlos en la base de datos
-    def clean(self):
-        # 1. Recuperamos los datos que el usuario escribió
-        cleaned_data = super().clean()
-        materia = cleaned_data.get('materia_prima')
-        variedad = cleaned_data.get('variedad')
-        unidad = cleaned_data.get('unidad')
-        tipo = cleaned_data.get('tipo')
-        cantidad = cleaned_data.get('cantidad')
-
-        # Comprobar que la variedad pertenezca a la materia prima
-        if materia and variedad:
-            if variedad.materia_prima_id != materia.id:
-                self.add_error(
-                    'variedad',
-                    'La variedad seleccionada no pertenece a la materia prima elegida.'
-                )
-
-        # 2. Si todos los datos requeridos están presentes, verificamos el stock
-        if materia and unidad and tipo and cantidad and not self.has_error('variedad'):
-            
-            # Solo validamos si es un movimiento de salida (efecto -1)
-            if tipo.efecto_predeterminado == -1:
-                cantidad_a_restar = cantidad * unidad.factor_kg
-                
-                # Calculamos el stock actual de esa materia/variedad específica
-                if variedad:
-                    movs = Movimiento.objects.filter(materia_prima=materia, variedad=variedad)
-                else:
-                    movs = Movimiento.objects.filter(materia_prima=materia, variedad__isnull=True)
-                    
-                stock_actual = sum(m.cantidad_kg * m.efecto_stock for m in movs)
-
-                # 3. Si intentan restar más de lo que hay, bloqueamos con un error
-                if cantidad_a_restar > stock_actual:
-                    # self.add_error muestra el mensaje rojo debajo del campo específico
-                    self.add_error(
-                        'cantidad', 
-                        f"Stock insuficiente. Tienes {stock_actual:.2f} kg disponibles, pero intentas registrar una salida de {cantidad_a_restar:.2f} kg."
-                    )
-        
-        return cleaned_data
 class MateriaPrimaForm(forms.ModelForm):
-
     class Meta:
         model = MateriaPrima
-        fields = ['nombre', 'descripcion', 'stock_minimo']
+        fields = ["nombre", "variedad", "unidad_medida", "descripcion"]
+        labels = {
+            "nombre": "Nombre",
+            "variedad": "Variedad",
+            "unidad_medida": "Unidad de medida",
+            "descripcion": "Descripción",
+        }
+        widgets = {
+            "nombre": forms.TextInput(attrs={"class": ESTILO, "placeholder": "Ej: Papa, Maíz, Apio"}),
+            "variedad": forms.TextInput(attrs={"class": ESTILO, "placeholder": "Ej: Andina (opcional)"}),
+            "unidad_medida": forms.Select(attrs={"class": ESTILO}),
+            "descripcion": forms.Textarea(attrs={"class": ESTILO, "rows": 3}),
+        }
+
+    def clean(self):
+        datos = super().clean()
+        nombre = (datos.get("nombre") or "").strip()
+        variedad = (datos.get("variedad") or "").strip()
+        if nombre:
+            repetidas = MateriaPrima.objects.filter(nombre__iexact=nombre)
+            if variedad:
+                repetidas = repetidas.filter(variedad__iexact=variedad)
+            else:
+                repetidas = repetidas.filter(Q(variedad__isnull=True) | Q(variedad=""))
+            if repetidas.exists():
+                raise forms.ValidationError(
+                    "Ya existe una materia prima con ese nombre y esa variedad."
+                )
+        return datos
+
+class MovimientoStockForm(forms.ModelForm):
+    """Registro de ingresos: el tipo siempre es INGRESO y suma al stock."""
+
+    class Meta:
+        model = MovimientoStock
+        fields = ["materia_prima", "proveedor", "cantidad", "observaciones"]
+        labels = {
+            "materia_prima": "Materia prima",
+            "proveedor": "Proveedor / Productor",
+            "cantidad": "Cantidad que ingresa",
+            "observaciones": "Observaciones",
+        }
+        widgets = {
+            "materia_prima": forms.Select(attrs={"class": ESTILO}),
+            "proveedor": forms.Select(attrs={"class": ESTILO}),
+            "cantidad": forms.NumberInput(attrs={"class": ESTILO, "step": "0.01", "min": "0.01"}),
+            "observaciones": forms.Textarea(attrs={"class": ESTILO, "rows": 3}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.instance.tipo = "INGRESO"
+        self.fields["proveedor"].required = True
+        self.fields["proveedor"].empty_label = "Seleccioná un proveedor"
+        self.fields["materia_prima"].queryset = MateriaPrima.objects.order_by("nombre")
+        # Muestra la unidad y el stock actual en el desplegable
+        self.fields["materia_prima"].label_from_instance = (
+            lambda m: f"{m} ({m.get_unidad_medida_display()}) · stock: {m.stock_actual:g}"
+        )
+
+class ConsumoForm(forms.ModelForm):
+    fecha = forms.DateTimeField(
+        label="Fecha y hora",
+        initial=timezone.now,
+        input_formats=["%Y-%m-%dT%H:%M"],
+        widget=forms.DateTimeInput(
+            attrs={"type": "datetime-local", "class": ESTILO},
+            format="%Y-%m-%dT%H:%M",
+        ),
+    )
+
+    class Meta:
+        model = MovimientoStock
+        fields = ["materia_prima", "cantidad", "fecha", "observaciones"]
+        labels = {
+            "materia_prima": "Materia prima",
+            "cantidad": "Cantidad consumida",
+            "observaciones": "Observaciones",
+        }
+        widgets = {
+            "materia_prima": forms.Select(attrs={"class": ESTILO}),
+            "cantidad": forms.NumberInput(attrs={"class": ESTILO, "step": "0.01", "min": "0.01"}),
+            "observaciones": forms.Textarea(
+                attrs={"class": ESTILO, "rows": 3, "placeholder": "Ej: Lote de producción del día (opcional)"}
+            ),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # El tipo no se elige: acá todo es consumo. Se fija antes de validar
+        # para que el clean() del modelo controle el stock disponible.
+        self.instance.tipo = "CONSUMO"
+        self.fields["materia_prima"].queryset = self.fields["materia_prima"].queryset.order_by("nombre")
+
+class ProveedorForm(forms.ModelForm):
+    class Meta:
+        model = Proveedor
+        fields = ["nombre", "telefono"]
+        labels = {"nombre": "Nombre o razón social", "telefono": "Teléfono"}
+        widgets = {
+            "nombre": forms.TextInput(attrs={"class": ESTILO, "placeholder": "Ej: Finca Los Álamos"}),
+            "telefono": forms.TextInput(attrs={"class": ESTILO, "placeholder": "Ej: 388 4123456 (opcional)"}),
+        }
 
     def clean_nombre(self):
-        nombre = self.cleaned_data.get('nombre')
-
-        if MateriaPrima.objects.filter(nombre__iexact=nombre).exists():
-            raise forms.ValidationError(
-                "Ya existe una materia prima con ese nombre."
-            )
-
+        nombre = self.cleaned_data["nombre"].strip()
+        repetido = Proveedor.objects.filter(nombre__iexact=nombre).exclude(pk=self.instance.pk)
+        if repetido.exists():
+            raise forms.ValidationError("Ya existe un proveedor con ese nombre.")
         return nombre
 
-    def clean_stock_minimo(self):
-        stock_minimo = self.cleaned_data.get('stock_minimo')
-
-        if stock_minimo is not None and stock_minimo < 0:
-            raise forms.ValidationError(
-                "El stock mínimo no puede ser negativo."
-            )
-
-        return stock_minimo
+class LoginForm(AuthenticationForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["username"].label = "Usuario"
+        self.fields["password"].label = "Contraseña"
+        self.fields["username"].widget.attrs.update(
+            {"class": ESTILO, "placeholder": "Tu usuario", "autofocus": True, "autocomplete": "username"}
+        )
+        self.fields["password"].widget.attrs.update(
+            {"class": ESTILO, "placeholder": "Tu contraseña", "autocomplete": "current-password"}
+        )

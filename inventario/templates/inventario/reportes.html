@@ -1,0 +1,154 @@
+{% extends 'inventario/base.html' %}
+
+{% block content %}
+<style>
+  @media print {
+    aside, header, .no-print { display: none !important; }
+    body, body > div { display: block !important; height: auto !important; overflow: visible !important; }
+    main { overflow: visible !important; padding: 0 !important; background: #fff !important; }
+    .tarjeta { box-shadow: none !important; break-inside: avoid; }
+  }
+</style>
+
+<div class="max-w-6xl mx-auto">
+
+    <!-- Encabezado y controles -->
+    <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
+        <div>
+            <h2 class="text-2xl font-bold text-gray-800">Informe mensual</h2>
+            <p class="text-sm text-gray-500 mt-1">CAUQUEVA · <span class="capitalize">{{ mes_nombre }}</span></p>
+            <p class="hidden print:block text-xs text-gray-400">Generado el {{ generado|date:"d/m/Y H:i" }}</p>
+        </div>
+
+        <div class="no-print flex flex-wrap items-center gap-2">
+            <a href="?mes={{ mes_anterior }}" title="Mes anterior"
+               class="p-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 flex items-center">
+                <span class="material-icons text-base">chevron_left</span>
+            </a>
+            <form method="get" class="flex items-center">
+                <input type="month" name="mes" value="{{ mes_valor }}" onchange="this.form.submit()"
+                       class="py-2 px-3 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-green-600">
+            </form>
+            {% if hay_siguiente %}
+            <a href="?mes={{ mes_siguiente }}" title="Mes siguiente"
+               class="p-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 flex items-center">
+                <span class="material-icons text-base">chevron_right</span>
+            </a>
+            {% endif %}
+
+            <a href="{% url 'reportes_csv' %}?mes={{ mes_valor }}"
+               class="inline-flex items-center text-sm font-medium text-green-700 bg-green-50 hover:bg-green-100 px-3 py-2 rounded-lg transition-colors">
+                <span class="material-icons text-base mr-1">table_view</span> Descargar CSV
+            </a>
+            <button type="button" onclick="window.print()"
+                    class="inline-flex items-center bg-green-700 hover:bg-green-800 text-white text-sm font-medium py-2 px-4 rounded-lg shadow-sm transition-colors">
+                <span class="material-icons text-base mr-1.5">print</span> Imprimir / PDF
+            </button>
+        </div>
+    </div>
+
+    <!-- Resumen -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div class="tarjeta bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+            <p class="text-xs text-gray-500">Compras (ingresos)</p>
+            <p class="text-2xl font-semibold text-green-800 mt-1">{{ ing_kg|floatformat:"-2g" }} <span class="text-base">Kg</span></p>
+        </div>
+        <div class="tarjeta bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+            <p class="text-xs text-gray-500">Consumos y salidas</p>
+            <p class="text-2xl font-semibold text-gray-800 mt-1">{{ con_kg|floatformat:"-2g" }} <span class="text-base">Kg</span></p>
+        </div>
+        <div class="tarjeta bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+            <p class="text-xs text-gray-500">Balance del mes</p>
+            <p class="text-2xl font-semibold mt-1 {% if balance_kg < 0 %}text-red-600{% else %}text-green-800{% endif %}">
+                {% if balance_kg > 0 %}+{% endif %}{{ balance_kg|floatformat:"-2g" }} <span class="text-base">Kg</span>
+            </p>
+        </div>
+        <div class="tarjeta bg-white rounded-xl border border-gray-100 shadow-sm p-4">
+            <p class="text-xs text-gray-500">Movimientos / críticas al cierre</p>
+            <p class="text-2xl font-semibold text-gray-800 mt-1">
+                {{ movimientos }} <span class="text-base text-gray-400">/</span>
+                <span class="{% if criticas_cierre %}text-red-600{% endif %}">{{ criticas_cierre }}</span>
+            </p>
+        </div>
+    </div>
+    {% if hay_unidades %}
+    <p class="text-xs text-gray-500 -mt-3 mb-6">Los totales en Kg no incluyen materias primas medidas en unidades (UN); figuran en la tabla de abajo.</p>
+    {% endif %}
+
+    <!-- Materias primas -->
+    <section class="tarjeta bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden mb-6">
+        <div class="px-5 py-4 border-b border-gray-100">
+            <h3 class="font-semibold text-gray-800">Movimiento por materia prima</h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+                <thead class="bg-gray-50 text-xs uppercase text-gray-500">
+                    <tr>
+                        <th class="px-5 py-3 font-semibold">Materia prima</th>
+                        <th class="px-5 py-3 font-semibold text-right">Stock inicial</th>
+                        <th class="px-5 py-3 font-semibold text-right">Ingresos</th>
+                        <th class="px-5 py-3 font-semibold text-right">Consumos</th>
+                        <th class="px-5 py-3 font-semibold text-right">Stock final</th>
+                        <th class="px-5 py-3 font-semibold">Estado</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% for f in filas %}
+                    <tr>
+                        <td class="px-5 py-3 font-medium text-gray-800">{{ f.materia }}</td>
+                        <td class="px-5 py-3 text-right text-gray-600">{{ f.inicial|floatformat:"-2g" }} {{ f.unidad }}</td>
+                        <td class="px-5 py-3 text-right text-green-700">+{{ f.ingresos|floatformat:"-2g" }}</td>
+                        <td class="px-5 py-3 text-right text-gray-700">−{{ f.consumos|floatformat:"-2g" }}</td>
+                        <td class="px-5 py-3 text-right font-semibold {% if f.critica %}text-red-600{% else %}text-gray-800{% endif %}">
+                            {{ f.final|floatformat:"-2g" }} {{ f.unidad }}
+                        </td>
+                        <td class="px-5 py-3">
+                            {% if f.critica %}
+                                <span class="rounded-full bg-red-100 px-3 py-0.5 text-xs font-medium text-red-700">Crítica</span>
+                            {% else %}
+                                <span class="rounded-full bg-green-100 px-3 py-0.5 text-xs font-medium text-green-800">Normal</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="6" class="px-5 py-10 text-center text-gray-500">Todavía no hay materias primas registradas.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <!-- Compras por proveedor -->
+    <section class="tarjeta bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+        <div class="px-5 py-4 border-b border-gray-100">
+            <h3 class="font-semibold text-gray-800">Compras por proveedor</h3>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+                <thead class="bg-gray-50 text-xs uppercase text-gray-500">
+                    <tr>
+                        <th class="px-5 py-3 font-semibold">Proveedor</th>
+                        <th class="px-5 py-3 font-semibold">Materia prima</th>
+                        <th class="px-5 py-3 font-semibold text-right">Cantidad</th>
+                        <th class="px-5 py-3 font-semibold text-right">Ingresos</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                    {% for c in compras %}
+                    <tr>
+                        <td class="px-5 py-3 font-medium text-gray-800">{{ c.proveedor__nombre|default:"Sin proveedor" }}</td>
+                        <td class="px-5 py-3 text-gray-600">
+                            {{ c.materia_prima__nombre }}{% if c.materia_prima__variedad %} - {{ c.materia_prima__variedad }}{% endif %}
+                        </td>
+                        <td class="px-5 py-3 text-right font-semibold text-gray-800">{{ c.total|floatformat:"-2g" }} {{ c.materia_prima__unidad_medida }}</td>
+                        <td class="px-5 py-3 text-right text-gray-600">{{ c.veces }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="4" class="px-5 py-10 text-center text-gray-500">No hay compras registradas en este mes.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</div>
+{% endblock %}

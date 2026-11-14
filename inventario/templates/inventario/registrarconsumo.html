@@ -1,0 +1,88 @@
+{% extends 'inventario/base.html' %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+
+    <div class="mb-6 flex items-center justify-between">
+        <div>
+            <h2 class="text-2xl font-bold text-gray-800">Registrar consumo</h2>
+            <p class="text-sm text-gray-500 mt-1">El stock de la materia prima se descuenta automáticamente.</p>
+        </div>
+        <a href="{% url 'consumos' %}"
+           class="text-sm font-medium text-green-700 hover:text-green-900 bg-green-50 hover:bg-green-100 px-3 py-2 rounded-lg transition-colors flex items-center">
+            <span class="material-icons text-sm mr-1">arrow_back</span> Volver
+        </a>
+    </div>
+
+    <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+
+        {% if formulario.non_field_errors %}
+        <div class="mb-6 p-4 rounded-lg text-sm bg-red-50 text-red-700 border border-red-200 flex items-start">
+            <span class="material-icons text-base mr-2">error</span>
+            <div>{% for e in formulario.non_field_errors %}<p>{{ e }}</p>{% endfor %}</div>
+        </div>
+        {% endif %}
+
+        <form method="POST" class="space-y-5">
+            {% csrf_token %}
+
+            <div>
+                <label for="{{ formulario.materia_prima.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                    {{ formulario.materia_prima.label }} <span class="text-red-500">*</span>
+                </label>
+                {{ formulario.materia_prima }}
+                <p id="stockDisponible" class="text-xs text-gray-500 mt-1"></p>
+                {% for e in formulario.materia_prima.errors %}<p class="text-xs text-red-600 mt-1">{{ e }}</p>{% endfor %}
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label for="{{ formulario.cantidad.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        {{ formulario.cantidad.label }} <span class="text-red-500">*</span>
+                    </label>
+                    {{ formulario.cantidad }}
+                    {% for e in formulario.cantidad.errors %}<p class="text-xs text-red-600 mt-1">{{ e }}</p>{% endfor %}
+                </div>
+                <div>
+                    <label for="{{ formulario.fecha.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                        {{ formulario.fecha.label }} <span class="text-red-500">*</span>
+                    </label>
+                    {{ formulario.fecha }}
+                    {% for e in formulario.fecha.errors %}<p class="text-xs text-red-600 mt-1">{{ e }}</p>{% endfor %}
+                </div>
+            </div>
+
+            <div>
+                <label for="{{ formulario.observaciones.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
+                    {{ formulario.observaciones.label }}
+                </label>
+                {{ formulario.observaciones }}
+                {% for e in formulario.observaciones.errors %}<p class="text-xs text-red-600 mt-1">{{ e }}</p>{% endfor %}
+            </div>
+
+            <div class="pt-6 border-t border-gray-100 flex items-center justify-end space-x-3">
+                <a href="{% url 'consumos' %}"
+                   class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium py-2 px-4 rounded-lg transition-colors text-sm">Cancelar</a>
+                <button type="submit"
+                        class="bg-green-700 hover:bg-green-800 text-white font-medium py-2 px-6 rounded-lg transition-colors shadow-sm text-sm flex items-center">
+                    <span class="material-icons text-sm mr-1.5">save</span> Guardar consumo
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{ stocks|json_script:"datos-stock" }}
+<script>
+  const stocks = JSON.parse(document.getElementById("datos-stock").textContent);
+  const select = document.getElementById("{{ formulario.materia_prima.id_for_label }}");
+  const aviso = document.getElementById("stockDisponible");
+
+  function mostrarStock() {
+    const s = stocks[select.value];
+    aviso.textContent = s ? "Stock disponible: " + s.stock.toLocaleString("es-AR") + " " + s.unidad : "";
+  }
+  select.addEventListener("change", mostrarStock);
+  mostrarStock();
+</script>
+{% endblock %}

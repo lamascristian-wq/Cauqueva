@@ -1,0 +1,92 @@
+{% extends 'inventario/base.html' %}
+
+{% block content %}
+<div class="mb-8 flex justify-between items-center">
+    <div>
+        <h2 class="text-2xl font-bold text-gray-800">Historial de Movimientos</h2>
+        <p class="text-sm text-gray-500 mt-1">Registro general de ingresos de proveedores y salidas a producción.</p>
+    </div>
+    
+    <!-- Botón opcional para exportar (lo conectaremos a tu vista de CSV luego) -->
+    <a href="#" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium py-2 px-4 rounded-lg transition-colors flex items-center shadow-sm text-sm">
+        <span class="material-icons text-gray-500 mr-2 text-sm">download</span> Exportar
+    </a>
+</div>
+
+<!-- Contenedor de la Tabla -->
+<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-gray-50 border-b border-gray-200 text-gray-500 text-xs uppercase tracking-wider">
+                    <th class="p-4 font-medium">Fecha y Hora</th>
+                    <th class="p-4 font-medium">Operación</th>
+                    <th class="p-4 font-medium">Materia Prima</th>
+                    <th class="p-4 font-medium">Cantidad</th>
+                    <th class="p-4 font-medium">Proveedor</th>
+                    <th class="p-4 font-medium">Observaciones</th>
+                </tr>
+            </thead>
+            <tbody class="text-gray-700 text-sm divide-y divide-gray-100">
+                
+                {% for mov in movimientos %}
+                <tr class="hover:bg-gray-50 transition-colors">
+                    
+                    <!-- Fecha formateada (Día/Mes/Año Hora:Minuto) -->
+                    <td class="p-4 whitespace-nowrap">{{ mov.fecha|date:"d/m/Y H:i" }}</td>
+                    
+                    <!-- Columna de Tipo con colores dinámicos -->
+                    <td class="p-4 whitespace-nowrap">
+                        {% if mov.tipo == 'INGRESO' %}
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                <span class="material-icons text-[14px] mr-1">arrow_downward</span> Ingreso
+                            </span>
+                        {% else %}
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                                <span class="material-icons text-[14px] mr-1">arrow_upward</span> Consumo
+                            </span>
+                        {% endif %}
+                    </td>
+                    
+                    <!-- Nombre del Producto -->
+                    <td class="p-4 font-medium text-gray-900">
+                        {{ mov.materia_prima.nombre }} 
+                        {% if mov.materia_prima.variedad %}
+                            <span class="text-gray-500 font-normal text-xs ml-1">({{ mov.materia_prima.variedad }})</span>
+                        {% endif %}
+                    </td>
+                    
+                    <!-- Columna de Cantidad con colores matemáticos (+ / -) -->
+                    <td class="p-4 whitespace-nowrap font-bold">
+                        {% if mov.tipo == 'INGRESO' %}
+                            <span class="text-green-600">+{{ mov.cantidad }}</span>
+                        {% else %}
+                            <span class="text-orange-600">-{{ mov.cantidad }}</span>
+                        {% endif %}
+                        <span class="text-gray-500 font-normal text-xs">{{ mov.materia_prima.get_unidad_medida_display }}</span>
+                    </td>
+                    
+                    <!-- Proveedor (Si está vacío, muestra un guión gracias al filtro 'default') -->
+                    <td class="p-4">{{ mov.proveedor.nombre|default:"-" }}</td>
+                    
+                    <!-- Observaciones (Se corta si es muy largo, o muestra guión si no hay) -->
+                    <td class="p-4 text-gray-500 truncate max-w-xs">{{ mov.observaciones|default:"-" }}</td>
+                    
+                </tr>
+                
+                <!-- Este bloque se activa automáticamente si la tabla de la base de datos está vacía -->
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="p-12 text-center text-gray-500">
+                        <span class="material-icons text-gray-300 text-5xl mb-3 block">history</span>
+                        <p class="text-lg font-medium text-gray-700">No hay movimientos registrados</p>
+                        <p class="text-sm">Cuando registres ingresos o consumos, aparecerán aquí.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+                
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

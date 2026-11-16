@@ -1,204 +1,226 @@
 from decimal import Decimal
-from io import StringIO
 
 from django.contrib.auth import get_user_model
-from django.core.management import call_command, CommandError
-from django.test import Client, TestCase, override_settings
+from django.core.exceptions import ValidationError
+from django.test import Client, TestCase
 from django.urls import reverse
 
-from .management.commands.cargar_datos_demo import (
-    DEMO_OBSERVATION_PREFIX,
-    DEMO_PREFIX,
-)
-from .models import (
-    MateriaPrima,
-    Movimiento,
-    TipoMovimiento,
-    UnidadMedida,
-    Variedad,
-)
+from .forms import ProveedorForm
+from .models import MateriaPrima, MovimientoStock, Proveedor
 
 
-class CargarDatosDemoTests(TestCase):
+class MovimientoStockTests(TestCase):
     def setUp(self):
-        self.unit = UnidadMedida.objects.create(
-            nombre="kilogramo",
-            simbolo="kg",
-            factor_kg=Decimal("1"),
+        self.papa = MateriaPrima.objects.create(
+            nombre="Papa",
+            variedad="Andina",
+            stock_minimo=Decimal("10.00"),
         )
-        self.income_type = TipoMovimiento.objects.create(
-            nombre="ingreso",
-            efecto_predeterminado=1,
-        )
-        self.consumption_type = TipoMovimiento.objects.create(
-            nombre="consumo",
-            efecto_predeterminado=-1,
-        )
-        self.existing_product = MateriaPrima.objects.create(
-            nombre="Producto preexistente",
-            stock_minimo=Decimal("10"),
-        )
-        self.existing_variety = Variedad.objects.create(
-            materia_prima=self.existing_product,
-            nombre="Lote existente",
-        )
-        self.existing_movement = Movimiento.objects.create(
-            materia_prima=self.existing_product,
-            variedad=self.existing_variety,
-            unidad=self.unit,
-            tipo=self.income_type,
-            cantidad=Decimal("500"),
-            observacion="Registro preexistente",
+        self.maiz = MateriaPrima.objects.create(
+            nombre="Maíz",
+            variedad="Blanco",
+            stock_minimo=Decimal("10.00"),
         )
 
-    def load_demo(self):
-        output = StringIO()
-        with override_settings(DEBUG=True):
-            call_command(
-                "cargar_datos_demo",
-                confirmar_entorno_demo=True,
-                stdout=output,
-            )
-        return output.getvalue()
-
-    def test_creates_coherent_stock_and_preserves_existing_records(self):
-        output = self.load_demo()
-
-        self.assertIn("3 productos, 6 variedades y 36 movimientos", output)
-        self.assertEqual(MateriaPrima.objects.count(), 4)
-        self.assertEqual(Variedad.objects.count(), 7)
-        self.assertEqual(Movimiento.objects.count(), 37)
-        self.existing_movement.refresh_from_db()
-        self.assertEqual(self.existing_movement.cantidad_kg, Decimal("500.000"))
-        self.assertEqual(self.existing_movement.observacion, "Registro preexistente")
-
-        expected_stocks = {
-            ("DEMO - Papa andina", "Morada"): Decimal("155.000"),
-            ("DEMO - Papa andina", "Colorada"): Decimal("45.000"),
-            ("DEMO - Papa andina", "Amarilla"): Decimal("125.000"),
-            ("DEMO - Maíz", "Amarillo"): Decimal("100.000"),
-            ("DEMO - Maíz", "Blanco"): Decimal("20.000"),
-            ("DEMO - Poroto", "Pallar"): Decimal("15.000"),
-        }
-        for (product_name, variety_name), expected_stock in expected_stocks.items():
-            product = MateriaPrima.objects.get(nombre=product_name)
-            variety = Variedad.objects.get(
-                materia_prima=product,
-                nombre=variety_name,
-            )
-            stock = sum(
-                movement.cantidad_kg * movement.efecto_stock
-                for movement in Movimiento.objects.filter(variedad=variety)
-            )
-            self.assertEqual(stock, expected_stock)
-
-    def test_repeated_run_does_not_duplicate_demo_records(self):
-        self.load_demo()
-        output = self.load_demo()
-
-        self.assertIn("ya están cargados", output)
-        self.assertEqual(
-            MateriaPrima.objects.filter(nombre__startswith=DEMO_PREFIX).count(),
-            3,
-        )
-        self.assertEqual(
-            Movimiento.objects.filter(
-                observacion__startswith=DEMO_OBSERVATION_PREFIX
-            ).count(),
-            36,
+    def crear_movimiento(self, materia, tipo, cantidad, proveedor=None):
+        return MovimientoStock.objects.create(
+            materia_prima=materia,
+            proveedor=proveedor,
+            tipo=tipo,
+            cantidad=Decimal(str(cantidad)),
         )
 
-    def test_requires_explicit_confirmation(self):
-        with self.assertRaises(CommandError):
-            call_command("cargar_datos_demo", stdout=StringIO())
-        self.assertFalse(
-            MateriaPrima.objects.filter(nombre__startswith=DEMO_PREFIX).exists()
-        )
+    def test_income_changes_stock_once(self):
+        self.crear_movimiento(self.papa, "INGRESO", "12.50")
 
-    @override_settings(DEBUG=False)
-    def test_refuses_to_load_when_debug_is_disabled(self):
-        with self.assertRaises(CommandError):
-            call_command(
-                "cargar_datos_demo",
-                confirmar_entorno_demo=True,
-                stdout=StringIO(),
-            )
-        self.assertFalse(
-            MateriaPrima.objects.filter(nombre__startswith=DEMO_PREFIX).exists()
-        )
+        self.papa.refresh_from_db()
+        self.assertEqual(self.papa.stock_actual, Decimal("12.50"))
 
-    def test_dashboard_history_report_and_csv_show_demo_data(self):
-        self.load_demo()
-        user = get_user_model().objects.create_user(username="demo-test-user")
+    def test_edit_reverses_old_delta_and_applies_new_delta(self):
+        movimiento = self.crear_movimiento(self.papa, "INGRESO", "20")
+        self.crear_movimiento(self.maiz, "INGRESO", "10")
+
+        movimiento.materia_prima = self.maiz
+        movimiento.tipo = "CONSUMO"
+        movimiento.cantidad = Decimal("5")
+        movimiento.save()
+
+        self.papa.refresh_from_db()
+        self.maiz.refresh_from_db()
+        self.assertEqual(self.papa.stock_actual, Decimal("0.00"))
+        self.assertEqual(self.maiz.stock_actual, Decimal("5.00"))
+
+    def test_insufficient_consumption_rolls_back_movement_and_stock(self):
+        self.crear_movimiento(self.papa, "INGRESO", "5")
+
+        with self.assertRaises(ValidationError):
+            self.crear_movimiento(self.papa, "CONSUMO", "6")
+
+        self.papa.refresh_from_db()
+        self.assertEqual(self.papa.stock_actual, Decimal("5.00"))
+        self.assertEqual(MovimientoStock.objects.count(), 1)
+
+    def test_queryset_delete_reverses_stock_delta(self):
+        ingreso = self.crear_movimiento(self.papa, "INGRESO", "20")
+        consumo = self.crear_movimiento(self.papa, "CONSUMO", "5")
+
+        MovimientoStock.objects.filter(pk=consumo.pk).delete()
+        self.papa.refresh_from_db()
+        self.assertEqual(self.papa.stock_actual, Decimal("20.00"))
+
+        MovimientoStock.objects.filter(pk=ingreso.pk).delete()
+        self.papa.refresh_from_db()
+        self.assertEqual(self.papa.stock_actual, Decimal("0.00"))
+
+    def test_editing_consumption_keeps_its_type_and_reconciles_stock(self):
+        self.crear_movimiento(self.papa, "INGRESO", "10")
+        consumo = self.crear_movimiento(self.papa, "CONSUMO", "4")
+        user = get_user_model().objects.create_user(
+            username="gerente",
+            password="test-password",
+            is_staff=True,
+        )
         client = Client()
         client.force_login(user)
 
-        dashboard = client.get(reverse("dashboard"))
-        self.assertEqual(dashboard.status_code, 200)
-        self.assertContains(dashboard, "DEMO - Papa andina")
-        dashboard_products = dashboard.context["productos"]
-        critical_products = {
-            (product["nombre"], product["variedad"])
-            for product in dashboard_products
-            if product["alerta"]
-        }
-        self.assertIn(("DEMO - Maíz", "Blanco"), critical_products)
-        self.assertIn(("DEMO - Poroto", "Pallar"), critical_products)
-        self.assertNotIn(("DEMO - Papa andina", "Colorada"), critical_products)
-
-        demo_potato = MateriaPrima.objects.get(nombre="DEMO - Papa andina")
-        demo_variety = Variedad.objects.get(
-            materia_prima=demo_potato,
-            nombre="Morada",
-        )
-        history = client.get(
-            reverse("historial_producto", args=[demo_potato.id])
-        )
-        self.assertEqual(history.status_code, 200)
-        self.assertEqual(
-            history.context["movimientos"].filter(variedad=demo_variety).count(),
-            6,
+        response = client.post(
+            reverse("editar_movimiento", kwargs={"id": consumo.pk}),
+            {
+                "materia_prima": self.papa.pk,
+                "proveedor": "",
+                "cantidad": "7",
+                "observaciones": "",
+            },
         )
 
-        sample_movement = Movimiento.objects.filter(
-            variedad=demo_variety,
-            observacion__startswith=DEMO_OBSERVATION_PREFIX,
-        ).first()
-        report_params = {
-            "mes": sample_movement.fecha.month,
-            "anio": sample_movement.fecha.year,
-        }
-        report = client.get(reverse("informes"), report_params)
-        self.assertEqual(report.status_code, 200)
-        report_row = next(
-            row
-            for row in report.context["reporte"]
-            if row["nombre"] == "DEMO - Papa andina"
-            and row["variedad"] == "Morada"
-        )
-        month_movements = Movimiento.objects.filter(
-            variedad=demo_variety,
-            fecha__year=report_params["anio"],
-            fecha__month=report_params["mes"],
-        )
-        expected_income = sum(
-            movement.cantidad_kg
-            for movement in month_movements
-            if movement.efecto_stock == 1
-        )
-        expected_consumption = sum(
-            movement.cantidad_kg
-            for movement in month_movements
-            if movement.efecto_stock == -1
-        )
-        self.assertEqual(report_row["ingresos"], expected_income)
-        self.assertEqual(report_row["consumos"], expected_consumption)
-        self.assertEqual(report_row["stock_total"], Decimal("155.000"))
+        self.assertEqual(response.status_code, 302)
+        consumo.refresh_from_db()
+        self.papa.refresh_from_db()
+        self.assertEqual(consumo.tipo, "CONSUMO")
+        self.assertEqual(consumo.cantidad, Decimal("7"))
+        self.assertEqual(self.papa.stock_actual, Decimal("3.00"))
 
-        csv_response = client.get(
-            reverse("exportar_informe"),
-            report_params,
+    def test_failed_edit_rolls_back_movement_and_stock(self):
+        self.crear_movimiento(self.papa, "INGRESO", "10")
+        consumo = self.crear_movimiento(self.papa, "CONSUMO", "4")
+        user = get_user_model().objects.create_user(
+            username="gerente",
+            password="test-password",
+            is_staff=True,
         )
-        self.assertEqual(csv_response.status_code, 200)
-        self.assertEqual(csv_response["Content-Type"], "text/csv")
-        self.assertIn(b"DEMO - Papa andina", csv_response.content)
+        client = Client()
+        client.force_login(user)
+
+        response = client.post(
+            reverse("editar_movimiento", kwargs={"id": consumo.pk}),
+            {
+                "materia_prima": self.papa.pk,
+                "proveedor": "",
+                "cantidad": "11",
+                "observaciones": "",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        consumo.refresh_from_db()
+        self.papa.refresh_from_db()
+        self.assertEqual(consumo.cantidad, Decimal("4"))
+        self.assertEqual(self.papa.stock_actual, Decimal("6.00"))
+
+    def test_income_view_does_not_double_stock(self):
+        proveedor = Proveedor.objects.create(nombre="Finca de prueba")
+        user = get_user_model().objects.create_user(
+            username="operario",
+            password="test-password",
+        )
+        client = Client()
+        client.force_login(user)
+
+        response = client.post(
+            reverse("registrar_movimiento"),
+            {
+                "materia_prima": self.papa.pk,
+                "proveedor": proveedor.pk,
+                "cantidad": "12.50",
+                "observaciones": "",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.papa.refresh_from_db()
+        self.assertEqual(self.papa.stock_actual, Decimal("12.50"))
+
+
+class ProveedorFormTests(TestCase):
+    def test_form_saves_selected_materias_primas(self):
+        materia = MateriaPrima.objects.create(
+            nombre="Quinoa",
+            variedad="Real",
+        )
+        formulario = ProveedorForm(
+            data={
+                "nombre": "Cooperativa de prueba",
+                "telefono": "",
+                "materias_primas": [str(materia.pk)],
+            }
+        )
+
+        self.assertTrue(formulario.is_valid(), formulario.errors)
+        proveedor = formulario.save()
+        self.assertQuerySetEqual(
+            proveedor.materias_primas.all(),
+            [materia],
+            transform=lambda item: item,
+        )
+
+    def test_supplier_form_renders_empty_materia_link(self):
+        user = get_user_model().objects.create_user(
+            username="gerente",
+            password="test-password",
+            is_staff=True,
+        )
+        client = Client()
+        client.force_login(user)
+
+        response = client.get(reverse("crear_proveedor"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, reverse("registrar_materia_prima"))
+
+    def test_alertas_template_resolves_replenish_link(self):
+        MateriaPrima.objects.create(
+            nombre="Tomate",
+            variedad="Perita",
+            stock_minimo=Decimal("10.00"),
+        )
+        user = get_user_model().objects.create_user(
+            username="operario",
+            password="test-password",
+        )
+        client = Client()
+        client.force_login(user)
+
+        response = client.get(reverse("alertas"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, reverse("registrar_movimiento"))
+
+    def test_new_materia_redirects_to_inventory(self):
+        user = get_user_model().objects.create_user(
+            username="operario",
+            password="test-password",
+        )
+        client = Client()
+        client.force_login(user)
+
+        response = client.post(
+            reverse("registrar_materia_prima"),
+            {
+                "nombre": "Arveja",
+                "variedad": "",
+                "unidad_medida": "KG",
+                "descripcion": "",
+            },
+        )
+
+        self.assertRedirects(response, reverse("inventariostock"), fetch_redirect_response=False)

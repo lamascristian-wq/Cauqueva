@@ -63,10 +63,15 @@ class MovimientoStockForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.instance.tipo = "INGRESO"
-        self.fields["proveedor"].required = True
+        if self.instance._state.adding:
+            self.instance.tipo = "INGRESO"
+        self.fields["proveedor"].required = self.instance.tipo == "INGRESO"
+        if self.instance.tipo == "CONSUMO":
+            self.fields["cantidad"].label = "Cantidad consumida"
         self.fields["proveedor"].empty_label = "Seleccioná un proveedor"
-        self.fields["materia_prima"].queryset = MateriaPrima.objects.order_by("nombre")
+        self.fields["materia_prima"].queryset = MateriaPrima.objects.order_by(
+            "nombre", "variedad"
+        )
         # Muestra la unidad y el stock actual en el desplegable
         self.fields["materia_prima"].label_from_instance = (
             lambda m: f"{m} ({m.get_unidad_medida_display()}) · stock: {m.stock_actual:g}"
@@ -101,15 +106,23 @@ class ConsumoForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # El tipo no se elige: acá todo es consumo. Se fija antes de validar
-        # para que el clean() del modelo controle el stock disponible.
         self.instance.tipo = "CONSUMO"
         self.fields["materia_prima"].queryset = self.fields["materia_prima"].queryset.order_by("nombre")        
         
 class ProveedorForm(forms.ModelForm):
+    materias_primas = forms.ModelMultipleChoiceField(
+        queryset=MateriaPrima.objects.order_by("nombre", "variedad"),
+        required=False,
+        label="Materias primas que provee",
+        help_text="Seleccioná las materias primas que ofrece este proveedor.",
+        widget=forms.CheckboxSelectMultiple(
+            attrs={"class": "rounded border-gray-300 text-green-700"}
+        ),
+    )
+
     class Meta:
         model = Proveedor
-        fields = ["nombre", "telefono"]
+        fields = ["nombre", "telefono", "materias_primas"]
         labels = {"nombre": "Nombre o razón social", "telefono": "Teléfono"}
         widgets = {
             "nombre": forms.TextInput(attrs={"class": ESTILO, "placeholder": "Ej: Finca Los Álamos"}),
@@ -133,5 +146,4 @@ class LoginForm(AuthenticationForm):
         )
         self.fields["password"].widget.attrs.update(
             {"class": ESTILO, "placeholder": "Tu contraseña", "autocomplete": "current-password"}
-        )        
-        
+        )

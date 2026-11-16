@@ -1,4 +1,6 @@
-from django.db import models,transaction
+from django.db import models, router, transaction
+from django.db.models.signals import pre_delete
+from django.dispatch import receiver
 from django.utils import timezone
 from django.core.validators import MinValueValidator
 from django.core.exceptions import ValidationError
@@ -79,20 +81,94 @@ class MovimientoStock(models.Model):
                 )
 
     def _delta(self):
-        return self.cantidad if self.tipo == 'INGRESO' else -self.cantidad
+        return self._stock_delta(self.tipo, self.cantidad)
+
+    @staticmethod
+    def _stock_delta(tipo, cantidad):
+        if cantidad is None or cantidad <= 0:
+            raise ValidationError({"cantidad": "La cantidad debe ser mayor que cero."})
+        if tipo == "INGRESO":
+            return cantidad
+        if tipo == "CONSUMO":
+            return -cantidad
+        raise ValidationError({"tipo": "El tipo de movimiento no es válido."})
+
+    @staticmethod
+    def _aplicar_delta_stock(materia_prima_id, tipo, cantidad, using):
+        MovimientoStock._stock_delta(tipo, cantidad)
+        materias = MateriaPrima.objects.using(using).filter(pk=materia_prima_id)
+        if tipo == "INGRESO":
+            materias.update(stock_actual=F("stock_actual") + cantidad)
+            return
+
+        actualizadas = materias.filter(stock_actual__gte=cantidad).update(
+            stock_actual=F("stock_actual") - cantidad
+        )
+        if not actualizadas:
+            raise ValidationError(
+                {"cantidad": "Stock insuficiente para registrar este consumo."}
+            )
 
     def save(self, *args, **kwargs):
-        es_nuevo = self.pk is None
-        with transaction.atomic():
-            super().save(*args, **kwargs)
-            if es_nuevo:
-                MateriaPrima.objects.filter(pk=self.materia_prima_id).update(
-                    stock_actual=F('stock_actual') + self._delta()
+        using = kwargs.get("using") or router.db_for_write(type(self), instance=self)
+        update_fields = kwargs.get("update_fields")
+        if update_fields is not None:
+            update_fields = set(update_fields)
+            kwargs["update_fields"] = update_fields
+
+        stock_fields = {"materia_prima", "materia_prima_id", "tipo", "cantidad"}
+        with transaction.atomic(using=using):
+            anterior = None
+            if self.pk is not None:
+                anterior = (
+                    type(self).objects.using(using)
+                    .select_for_update()
+                    .filter(pk=self.pk)
+                    .first()
                 )
 
-    def delete(self, *args, **kwargs):
-        with transaction.atomic():
-            MateriaPrima.objects.filter(pk=self.materia_prima_id).update(
-                stock_actual=F('stock_actual') - self._delta()
+            if (
+                anterior is not None
+                and update_fields is not None
+                and not stock_fields.intersection(update_fields)
+            ):
+                return super().save(*args, **kwargs)
+
+            if anterior is not None and update_fields is not None:
+                materia_prima_id = (
+                    self.materia_prima_id
+                    if {"materia_prima", "materia_prima_id"}.intersection(update_fields)
+                    else anterior.materia_prima_id
+                )
+                tipo = self.tipo if "tipo" in update_fields else anterior.tipo
+                cantidad = self.cantidad if "cantidad" in update_fields else anterior.cantidad
+            else:
+                materia_prima_id = self.materia_prima_id
+                tipo = self.tipo
+                cantidad = self.cantidad
+
+            self._stock_delta(tipo, cantidad)
+            ids_materias = {materia_prima_id}
+            if anterior is not None:
+                ids_materias.add(anterior.materia_prima_id)
+            list(
+                MateriaPrima.objects.using(using)
+                .select_for_update()
+                .filter(pk__in=ids_materias)
+                .order_by("pk")
             )
-            super().delete(*args, **kwargs)
+
+            if anterior is not None:
+                MateriaPrima.objects.using(using).filter(
+                    pk=anterior.materia_prima_id
+                ).update(stock_actual=F("stock_actual") - anterior._delta())
+
+            super().save(*args, **kwargs)
+            self._aplicar_delta_stock(materia_prima_id, tipo, cantidad, using)
+
+
+@receiver(pre_delete, sender=MovimientoStock)
+def revertir_stock_al_eliminar_movimiento(sender, instance, using, **kwargs):
+    MateriaPrima.objects.using(using).filter(
+        pk=instance.materia_prima_id
+    ).update(stock_actual=F("stock_actual") - instance._delta())

@@ -6,14 +6,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils import timezone
 
-from inventario.models import (
-    MateriaPrima,
-    Movimiento,
-    TipoMovimiento,
-    UnidadMedida,
-    Variedad,
-)
-
+from inventario.models import MateriaPrima, MovimientoStock
 
 DEMO_PREFIX = "DEMO - "
 DEMO_OBSERVATION_PREFIX = "[DEMO CAUQUEVA]"
@@ -81,148 +74,68 @@ class Command(BaseCommand):
                 )
                 return
 
-            unit, unit_created = self._get_unit()
-            income_type, income_type_created = self._get_movement_type(
-                "ingreso", 1
-            )
-            consumption_type, consumption_type_created = self._get_movement_type(
-                "consumo", -1
-            )
-            movement_types = {
-                "ingreso": income_type,
-                "consumo": consumption_type,
-            }
-
             products_created = 0
-            varieties_created = 0
             movements_created = 0
             now = timezone.now()
 
             for product_data in PRODUCTS:
-                product = MateriaPrima.objects.create(
-                    nombre=f"{DEMO_PREFIX}{product_data['name']}",
-                    descripcion="Datos ficticios de demostración; no son datos de producción.",
-                    stock_minimo=product_data["minimum"],
-                )
-                products_created += 1
-
                 for variety_name, quantities in product_data["varieties"]:
-                    variety = Variedad.objects.create(
-                        materia_prima=product,
-                        nombre=variety_name,
+                    # Se crea un registro de MateriaPrima por cada variedad en la nueva estructura
+                    product = MateriaPrima.objects.create(
+                        nombre=f"{DEMO_PREFIX}{product_data['name']}",
+                        variedad=variety_name,
+                        unidad_medida="KG",
+                        descripcion="Datos ficticios de demostración; no son datos de producción.",
+                        stock_minimo=product_data["minimum"],
+                        stock_actual=Decimal("0.00")
                     )
-                    varieties_created += 1
+                    products_created += 1
 
                     for index, quantity in enumerate(quantities):
-                        movement_name = "ingreso" if index < 3 else "consumo"
-                        movement_type = movement_types[movement_name]
+                        movement_name = "INGRESO" if index < 3 else "CONSUMO"
                         movement_date = now - timedelta(
                             days=MOVEMENT_DAYS_AGO[index]
                         )
-                        Movimiento.objects.create(
+                        
+                        mov = MovimientoStock(
                             materia_prima=product,
-                            variedad=variety,
-                            unidad=unit,
-                            tipo=movement_type,
-                            usuario_registro="DEMO CAUQUEVA",
+                            tipo=movement_name,
                             cantidad=Decimal(quantity),
-                            fecha=movement_date,
-                            observacion=(
+                            observaciones=(
                                 f"{DEMO_OBSERVATION_PREFIX} "
                                 f"{movement_name.capitalize()} ficticio para probar "
                                 f"el stock de {product_data['name']} {variety_name}."
                             ),
                         )
+                        mov.save() # Calcula el stock automáticamente según la lógica del modelo
+                        
+                        # Actualizamos la fecha post-save para evitar que timezone.now() la sobrescriba
+                        MovimientoStock.objects.filter(pk=mov.pk).update(fecha=movement_date)
                         movements_created += 1
 
         self.stdout.write(
             self.style.SUCCESS(
                 "Datos demo creados: "
-                f"{products_created} productos, "
-                f"{varieties_created} variedades y "
+                f"{products_created} materias primas (incluyendo variedades) y "
                 f"{movements_created} movimientos. "
-                "Registros auxiliares creados: "
-                f"{int(unit_created)} unidades de medida y "
-                f"{int(income_type_created) + int(consumption_type_created)} "
-                "tipos de movimiento."
+                "El stock actual se calculó automáticamente."
             )
         )
 
     def _check_existing_demo_data(self):
-        expected_varieties = {
-            f"{DEMO_PREFIX}{product['name']}": {
-                variety_name for variety_name, _ in product["varieties"]
-            }
-            for product in PRODUCTS
-        }
-        product_names = list(expected_varieties)
-        existing_products = MateriaPrima.objects.filter(nombre__in=product_names)
-        existing_movements = Movimiento.objects.filter(
-            observacion__startswith=DEMO_OBSERVATION_PREFIX
+        expected_names = [f"{DEMO_PREFIX}{product['name']}" for product in PRODUCTS]
+        existing_products = MateriaPrima.objects.filter(nombre__in=expected_names)
+        existing_movements = MovimientoStock.objects.filter(
+            observaciones__startswith=DEMO_OBSERVATION_PREFIX
         )
 
         if not existing_products.exists() and not existing_movements.exists():
             return False
 
-        existing_products_by_name = {
-            product.nombre: product for product in existing_products
-        }
-        if set(existing_products_by_name) == set(expected_varieties):
-            complete = True
-            for product_name, variety_names in expected_varieties.items():
-                product = existing_products_by_name[product_name]
-                actual_varieties = set(
-                    Variedad.objects.filter(materia_prima=product).values_list(
-                        "nombre",
-                        flat=True,
-                    )
-                )
-                demo_movements = existing_movements.filter(
-                    materia_prima=product
-                )
-                if (
-                    actual_varieties != variety_names
-                    or demo_movements.count() != len(variety_names) * 6
-                ):
-                    complete = False
-                    break
-
-            if complete and existing_movements.count() == sum(
-                len(names) * 6 for names in expected_varieties.values()
-            ):
-                return True
-
-        raise CommandError(
-            "Se encontraron registros con nombres u observaciones reservados para "
-            "la demo, pero la carga está incompleta. No se modificó ningún dato."
-        )
-
-    @staticmethod
-    def _get_unit():
-        # Reutiliza el catálogo existente sin cambiar sus registros.
-        unit, created = UnidadMedida.objects.get_or_create(
-            simbolo="kg",
-            defaults={
-                "nombre": "kilogramo",
-                "factor_kg": Decimal("1"),
-            },
-        )
-        if unit.factor_kg != Decimal("1"):
+        if existing_products.exists() or existing_movements.exists():
             raise CommandError(
-                "La unidad kg existente no equivale a un kilogramo. "
-                "No se crearon datos demo."
+                "Se encontraron registros con nombres u observaciones reservados para "
+                "la demo. Para evitar duplicados, no se modificó ningún dato."
             )
-        return unit, created
-
-    @staticmethod
-    def _get_movement_type(name, effect):
-        movement_type, created = TipoMovimiento.objects.get_or_create(
-            nombre=name,
-            defaults={"efecto_predeterminado": effect},
-        )
-        if movement_type.efecto_predeterminado != effect:
-            raise CommandError(
-                f"El tipo de movimiento «{name}» tiene un efecto incompatible. "
-                "No se crearon datos demo."
-            )
-        return movement_type, created
+        
+        return True

@@ -1,7 +1,11 @@
+import logging
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
+from django.core.exceptions import ValidationError
 from .models import MateriaPrima, MovimientoStock,Proveedor
 from .forms import MateriaPrimaForm,MovimientoStockForm, ProveedorForm,ConsumoForm
+from .notificaciones import enviar_alerta_stock
 import csv 
 from collections import defaultdict
 from datetime import date, datetime, time, timedelta
@@ -11,18 +15,23 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.db import transaction
 from django.utils.dateparse import parse_date
-from django.db.models import Count, Max, Prefetch, Q, Sum
+from django.db.models import Count, F, Max, Prefetch, Q, Sum
 from django.core.paginator import Paginator
 
+
+logger = logging.getLogger(__name__)
 
 A_KG = {"KG": Decimal("1"), "TN": Decimal("1000")}
 # Función auxiliar para comprobar si el usuario es "Gerente" (Staff)
 def es_gerente(user):
     return user.is_staff
 
-# Vista del Panel Principal
 @login_required(login_url='login')
 def panel_principal(request):
+    # Si es operario, lo mandamos directo a la pantalla de consumos
+    if not request.user.is_staff:
+        return redirect('consumos')
+
     materias_primas = MateriaPrima.objects.all()
 
     resumen = []
@@ -122,7 +131,7 @@ def registrar_materia_prima(request):
                 request,
                 f"Se registró «{materia}». Cargale stock desde Registro de Ingresos.",
             )
-            return redirect("inventario_stock")
+            return redirect("inventariostock")
     else:
         formulario = MateriaPrimaForm()
 
@@ -134,26 +143,7 @@ def registrar_movimiento(request):
     if request.method == 'POST':
         formulario = MovimientoStockForm(request.POST)
         if formulario.is_valid():
-            # commit=False pausa el guardado para que podamos hacer la matemática primero
-            movimiento = formulario.save(commit=False)
-            materia = movimiento.materia_prima
-            
-            if movimiento.tipo == 'INGRESO':
-                materia.stock_actual += movimiento.cantidad
-                
-            elif movimiento.tipo == 'CONSUMO':
-                # Validación fundamental: evitar consumos fantasma
-                if movimiento.cantidad > materia.stock_actual:
-                    messages.error(request, f"Stock insuficiente. Solo quedan {materia.stock_actual} Kg de {materia.nombre}.")
-                    return render(request, 'inventario/registrarproducto.html', {
-                        'formulario': formulario,
-                        'titulo_formulario': 'Registrar Movimiento'
-                    })
-                materia.stock_actual -= movimiento.cantidad
-            #guardamos los cambios en la base de datos
-            materia.save()
-            movimiento.save()
-            
+            formulario.save()
             messages.success(request, '¡Movimiento de stock registrado correctamente!')
             return redirect('panelprincipal') # Acá podrías redirigir a 'historial' si lo preferís
     else:
@@ -269,12 +259,15 @@ def _datos_reporte(valor):
     }
 
 
+@login_required(login_url='login')
+@user_passes_test(es_gerente, login_url='/')
 def reportes(request):
     datos = _datos_reporte(request.GET.get("mes", ""))
     datos["seccion"] = "reportes"
     return render(request, "inventario/reportes.html", datos)
 
-
+@login_required(login_url='login')
+@user_passes_test(es_gerente, login_url='/')
 def reportes_csv(request):
     d = _datos_reporte(request.GET.get("mes", ""))
     n = lambda x: str(x).replace(".", ",")  # coma decimal para Excel en español
@@ -300,36 +293,51 @@ def reportes_csv(request):
     return resp
 
 
+# Le agregamos el candado para que solo el gerente pueda ver la lista general
+@login_required(login_url='login')
+@user_passes_test(es_gerente, login_url='/consumos/')
 def listar_inventario(request):
-    # 1. Traemos todas las materias primas activas desde la base de datos
-    materias_primas = MateriaPrima.objects.all()
-    
-    lista_inventario = []
+    q = request.GET.get("q", "").strip()
+    estado = request.GET.get("estado", "").strip()
+    if estado not in {"criticas", "normales"}:
+        estado = ""
 
-    # 2. Recorremos cada producto para evaluar su stock real y su alerta
-    for mp in materias_primas:
-        stock = mp.stock_actual
-        # Comparamos si el stock actual es menor o igual al mínimo permitido
-        alerta = stock <= mp.stock_minimo
+    todas_las_materias = MateriaPrima.objects.all()
+    total = todas_las_materias.count()
+    normales = todas_las_materias.filter(
+        stock_actual__gt=F("stock_minimo")
+    ).count()
+    criticas = todas_las_materias.filter(
+        stock_actual__lte=F("stock_minimo")
+    ).count()
 
-        lista_inventario.append({
-            'id_materia': mp.id,
-            'nombre': mp.nombre,
-            'variedad': mp.variedad if mp.variedad else 'Sin variedad',
-            'stock': stock,
-            'unidad': mp.get_unidad_medida_display(), # Muestra 'Kg', 'Tn', etc.
-            'stock_minimo': mp.stock_minimo,
-            'alerta': alerta # Variable booleana (True/False) para el diseño rojo/verde
-        })
+    materias = todas_las_materias
+    if q:
+        materias = materias.filter(
+            Q(nombre__icontains=q) | Q(variedad__icontains=q)
+        )
+    if estado == "criticas":
+        materias = materias.filter(stock_actual__lte=F("stock_minimo"))
+    elif estado == "normales":
+        materias = materias.filter(stock_actual__gt=F("stock_minimo"))
 
-    contexto = {
-        'productos': lista_inventario
-    }
-    
-    # Renderiza el HTML específico de esta sección
-    return render(request, 'inventario/inventariostock.html', contexto)
+    materias = materias.order_by("nombre", "variedad")
+
+    return render(
+        request,
+        "inventario/inventariostock.html",
+        {
+            "materias": materias,
+            "total": total,
+            "normales": normales,
+            "criticas": criticas,
+            "q": q,
+            "estado": estado,
+        },
+    )
 
 
+@login_required(login_url='login')
 def alertas_stock(request):
     # Traemos todas las materias primas activas
     materias_primas = MateriaPrima.objects.all()
@@ -404,16 +412,37 @@ def consumos(request):
     })
 
 
+@login_required(login_url='login')
 def registrar_consumo(request):
     if request.method == "POST":
         formulario = ConsumoForm(request.POST)
         if formulario.is_valid():
-            mov = formulario.save()
-            messages.success(
-                request,
-                f"Se registró el consumo de {mov.cantidad:g} {mov.materia_prima.unidad_medida} de {mov.materia_prima}.",
-            )
-            return redirect("consumos")
+            try:
+                mov = formulario.save()
+            except ValidationError as error:
+                formulario.add_error(None, error)
+            else:
+                materia_prima = mov.materia_prima
+                materia_prima.refresh_from_db(fields=["stock_actual", "stock_minimo"])
+
+                messages.success(
+                    request,
+                    f"Se registró el consumo de {mov.cantidad:g} "
+                    f"{mov.materia_prima.unidad_medida} de {mov.materia_prima}.",
+                )
+                if materia_prima.stock_actual <= materia_prima.stock_minimo:
+                    try:
+                        enviar_alerta_stock(materia_prima)
+                    except Exception:
+                        logger.exception(
+                            "No se pudo enviar la alerta de stock crítico para la materia prima %s.",
+                            materia_prima.pk,
+                        )
+                        messages.warning(
+                            request,
+                            "El consumo se registró, pero no se pudieron enviar las alertas de stock.",
+                        )
+                return redirect("consumos")
     else:
         formulario = ConsumoForm()
 
@@ -426,6 +455,7 @@ def registrar_consumo(request):
 #Operaciones con proveedor
 
 @login_required(login_url='login')
+@user_passes_test(es_gerente, login_url='/')
 def proveedores(request):
     q = request.GET.get("q", "").strip()
     ingresos = MovimientoStock.objects.filter(tipo="INGRESO").select_related("materia_prima")
@@ -454,6 +484,7 @@ def proveedores(request):
     })
 
 @login_required(login_url='login')
+@user_passes_test(es_gerente, login_url='/')
 def crear_proveedor(request):
     if request.method == "POST":
         formulario = ProveedorForm(request.POST)
@@ -467,7 +498,8 @@ def crear_proveedor(request):
         "formulario": formulario, "titulo": "Nuevo proveedor",
     })
 
-
+@login_required(login_url='login')
+@user_passes_test(es_gerente, login_url='/')
 def editar_proveedor(request, pk):
     proveedor = get_object_or_404(Proveedor, pk=pk)
     if request.method == "POST":
@@ -481,6 +513,52 @@ def editar_proveedor(request, pk):
     return render(request, "inventario/formularioproveedor.html", {
         "formulario": formulario, "titulo": f"Editar proveedor: {proveedor}",
     })
+# --- FUNCIONES DEL HISTORIAL (Exportar y Editar) ---
+
+# Vista para Exportar el Historial Completo a CSV
+@login_required(login_url='login')
+def exportar_historial(request):
+    movimientos = MovimientoStock.objects.all().select_related('materia_prima', 'proveedor').order_by('-fecha')
     
+    response = HttpResponse(content_type='text/csv; charset=utf-8')
+    response['Content-Disposition'] = 'attachment; filename="historial_movimientos.csv"'
+    response.write("\ufeff") # Soporte para Excel en español (acentos)
     
+    writer = csv.writer(response, delimiter=';')
+    writer.writerow(['Fecha', 'Tipo', 'Materia Prima', 'Unidad', 'Cantidad', 'Proveedor', 'Observaciones'])
     
+    for mov in movimientos:
+        writer.writerow([
+            mov.fecha.strftime("%d/%m/%Y %H:%M"),
+            mov.get_tipo_display(),
+            f"{mov.materia_prima.nombre} {mov.materia_prima.variedad or ''}",
+            mov.materia_prima.unidad_medida,
+            str(mov.cantidad).replace('.', ','),
+            mov.proveedor.nombre if mov.proveedor else "Proveedor Externo",
+            mov.observaciones
+        ])
+    return response
+
+
+# Vista para Modificar Movimiento (Solo Gerente)
+@login_required(login_url='login')
+@user_passes_test(es_gerente, login_url='/')
+def editar_movimiento(request, id):
+    movimiento = get_object_or_404(MovimientoStock, id=id)
+    if request.method == "POST":
+        formulario = MovimientoStockForm(request.POST, instance=movimiento)
+        if formulario.is_valid():
+            try:
+                formulario.save()
+            except ValidationError as error:
+                formulario.add_error(None, error)
+            else:
+                messages.success(request, "Movimiento actualizado correctamente.")
+                return redirect('historial')
+    else:
+        formulario = MovimientoStockForm(instance=movimiento)
+        
+    return render(request, "inventario/registrarproducto.html", {
+        "formulario": formulario,
+        "titulo_formulario": f"Editar Movimiento #{movimiento.id}"
+    })

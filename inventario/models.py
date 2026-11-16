@@ -36,6 +36,14 @@ class MateriaPrima(models.Model):
         validators=[MinValueValidator(0.00)])
     stock_minimo = models.DecimalField(max_digits=10, decimal_places=2, default=50.00, verbose_name="Stock Mínimo (kg)")
     variedad = models.CharField(max_length=100, blank=True, null=True)
+    # Precio estimado usado como sugerencia al registrar un ingreso.
+    precio_referencia = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0.00,
+        validators=[MinValueValidator(0.00)],
+        verbose_name="Precio de referencia",
+    )
     
     class Meta:
         verbose_name = "Materia Prima"
@@ -60,6 +68,14 @@ class MovimientoStock(models.Model):
         decimal_places=2,
         validators=[MinValueValidator(0.01)] 
     )
+    # Conserva el precio efectivamente informado para cada movimiento.
+    precio_unitario = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0.00,
+        validators=[MinValueValidator(0.00)],
+        verbose_name="Precio unitario",
+    )
     fecha = models.DateTimeField(default=timezone.now)
     observaciones = models.TextField(blank=True, null=True)
 
@@ -70,6 +86,11 @@ class MovimientoStock(models.Model):
 
     def __str__(self):
         return f"{self.get_tipo_display()} - {self.materia_prima} ({self.cantidad} {self.materia_prima.unidad_medida})"
+
+    @property
+    def costo_total(self):
+        """Calcula el costo del movimiento con el precio unitario registrado."""
+        return self.cantidad * self.precio_unitario
     
     def clean(self):
         # No permitir consumir más de lo que hay en stock

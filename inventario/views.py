@@ -143,6 +143,7 @@ def registrar_movimiento(request):
     if request.method == 'POST':
         formulario = MovimientoStockForm(request.POST)
         if formulario.is_valid():
+            # El ModelForm persiste el precio; el modelo mantiene la responsabilidad de actualizar el stock.
             formulario.save()
             messages.success(request, '¡Movimiento de stock registrado correctamente!')
             return redirect('panelprincipal') # Acá podrías redirigir a 'historial' si lo preferís
@@ -549,6 +550,7 @@ def editar_movimiento(request, id):
         formulario = MovimientoStockForm(request.POST, instance=movimiento)
         if formulario.is_valid():
             try:
+                # El precio se guarda junto con el movimiento y el modelo reconcilia el delta del stock.
                 formulario.save()
             except ValidationError as error:
                 formulario.add_error(None, error)

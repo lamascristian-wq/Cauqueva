@@ -12,17 +12,22 @@ ESTILO = (
 class MateriaPrimaForm(forms.ModelForm):
     class Meta:
         model = MateriaPrima
-        fields = ["nombre", "variedad", "unidad_medida", "descripcion"]
+        # El precio de referencia queda disponible para sugerirlo en futuros ingresos.
+        fields = ["nombre", "variedad", "unidad_medida", "precio_referencia", "descripcion"]
         labels = {
             "nombre": "Nombre",
             "variedad": "Variedad",
             "unidad_medida": "Unidad de medida",
+            "precio_referencia": "Precio de referencia por unidad",
             "descripcion": "Descripción",
         }
         widgets = {
             "nombre": forms.TextInput(attrs={"class": ESTILO, "placeholder": "Ej: Papa, Maíz, Apio"}),
             "variedad": forms.TextInput(attrs={"class": ESTILO, "placeholder": "Ej: Andina (opcional)"}),
             "unidad_medida": forms.Select(attrs={"class": ESTILO}),
+            "precio_referencia": forms.NumberInput(
+                attrs={"class": ESTILO, "step": "0.01", "min": "0"}
+            ),
             "descripcion": forms.Textarea(attrs={"class": ESTILO, "rows": 3}),
         }
 
@@ -47,17 +52,22 @@ class MovimientoStockForm(forms.ModelForm):
 
     class Meta:
         model = MovimientoStock
-        fields = ["materia_prima", "proveedor", "cantidad", "observaciones"]
+        # Guarda el precio efectivo de la compra junto con la cantidad ingresada.
+        fields = ["materia_prima", "proveedor", "cantidad", "precio_unitario", "observaciones"]
         labels = {
             "materia_prima": "Materia prima",
             "proveedor": "Proveedor / Productor",
             "cantidad": "Cantidad que ingresa",
+            "precio_unitario": "Precio unitario",
             "observaciones": "Observaciones",
         }
         widgets = {
             "materia_prima": forms.Select(attrs={"class": ESTILO}),
             "proveedor": forms.Select(attrs={"class": ESTILO}),
             "cantidad": forms.NumberInput(attrs={"class": ESTILO, "step": "0.01", "min": "0.01"}),
+            "precio_unitario": forms.NumberInput(
+                attrs={"class": ESTILO, "step": "0.01", "min": "0"}
+            ),
             "observaciones": forms.Textarea(attrs={"class": ESTILO, "rows": 3}),
         }
 

@@ -12,17 +12,22 @@ ESTILO = (
 class MateriaPrimaForm(forms.ModelForm):
     class Meta:
         model = MateriaPrima
-        fields = ["nombre", "variedad", "unidad_medida", "descripcion"]
+        # El precio de referencia queda disponible para sugerirlo en futuros ingresos.
+        fields = ["nombre", "variedad", "unidad_medida", "precio_referencia", "descripcion"]
         labels = {
             "nombre": "Nombre",
             "variedad": "Variedad",
             "unidad_medida": "Unidad de medida",
+            "precio_referencia": "Precio de referencia por unidad",
             "descripcion": "Descripción",
         }
         widgets = {
             "nombre": forms.TextInput(attrs={"class": ESTILO, "placeholder": "Ej: Papa, Maíz, Apio"}),
             "variedad": forms.TextInput(attrs={"class": ESTILO, "placeholder": "Ej: Andina (opcional)"}),
             "unidad_medida": forms.Select(attrs={"class": ESTILO}),
+            "precio_referencia": forms.NumberInput(
+                attrs={"class": ESTILO, "step": "0.01", "min": "0"}
+            ),
             "descripcion": forms.Textarea(attrs={"class": ESTILO, "rows": 3}),
         }
 
@@ -47,26 +52,36 @@ class MovimientoStockForm(forms.ModelForm):
 
     class Meta:
         model = MovimientoStock
-        fields = ["materia_prima", "proveedor", "cantidad", "observaciones"]
+        # Guarda el precio efectivo de la compra junto con la cantidad ingresada.
+        fields = ["materia_prima", "proveedor", "cantidad", "precio_unitario", "observaciones"]
         labels = {
             "materia_prima": "Materia prima",
             "proveedor": "Proveedor / Productor",
             "cantidad": "Cantidad que ingresa",
+            "precio_unitario": "Precio unitario",
             "observaciones": "Observaciones",
         }
         widgets = {
             "materia_prima": forms.Select(attrs={"class": ESTILO}),
             "proveedor": forms.Select(attrs={"class": ESTILO}),
             "cantidad": forms.NumberInput(attrs={"class": ESTILO, "step": "0.01", "min": "0.01"}),
+            "precio_unitario": forms.NumberInput(
+                attrs={"class": ESTILO, "step": "0.01", "min": "0"}
+            ),
             "observaciones": forms.Textarea(attrs={"class": ESTILO, "rows": 3}),
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.instance.tipo = "INGRESO"
-        self.fields["proveedor"].required = True
+        if self.instance._state.adding:
+            self.instance.tipo = "INGRESO"
+        self.fields["proveedor"].required = self.instance.tipo == "INGRESO"
+        if self.instance.tipo == "CONSUMO":
+            self.fields["cantidad"].label = "Cantidad consumida"
         self.fields["proveedor"].empty_label = "Seleccioná un proveedor"
-        self.fields["materia_prima"].queryset = MateriaPrima.objects.order_by("nombre")
+        self.fields["materia_prima"].queryset = MateriaPrima.objects.order_by(
+            "nombre", "variedad"
+        )
         # Muestra la unidad y el stock actual en el desplegable
         self.fields["materia_prima"].label_from_instance = (
             lambda m: f"{m} ({m.get_unidad_medida_display()}) · stock: {m.stock_actual:g}"
@@ -101,15 +116,23 @@ class ConsumoForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # El tipo no se elige: acá todo es consumo. Se fija antes de validar
-        # para que el clean() del modelo controle el stock disponible.
         self.instance.tipo = "CONSUMO"
         self.fields["materia_prima"].queryset = self.fields["materia_prima"].queryset.order_by("nombre")
 
 class ProveedorForm(forms.ModelForm):
+    materias_primas = forms.ModelMultipleChoiceField(
+        queryset=MateriaPrima.objects.order_by("nombre", "variedad"),
+        required=False,
+        label="Materias primas que provee",
+        help_text="Seleccioná las materias primas que ofrece este proveedor.",
+        widget=forms.CheckboxSelectMultiple(
+            attrs={"class": "rounded border-gray-300 text-green-700"}
+        ),
+    )
+
     class Meta:
         model = Proveedor
-        fields = ["nombre", "telefono"]
+        fields = ["nombre", "telefono", "materias_primas"]
         labels = {"nombre": "Nombre o razón social", "telefono": "Teléfono"}
         widgets = {
             "nombre": forms.TextInput(attrs={"class": ESTILO, "placeholder": "Ej: Finca Los Álamos"}),

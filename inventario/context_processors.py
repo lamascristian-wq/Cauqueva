@@ -1,19 +1,15 @@
-﻿from .models import MateriaPrima
+from .models import MateriaPrima
+from django.db.models import F
 
 def notificaciones_stock(request):
     # Si el usuario no está logueado, no mostramos nada
     if not request.user.is_authenticated:
         return {}
 
-    materias_primas = MateriaPrima.objects.all()
-    alertas = []
-
-    for mp in materias_primas:
-        if mp.stock_actual <= mp.stock_minimo:
-            alertas.append(mp)
-
+    alertas = MateriaPrima.objects.filter(
+        stock_actual__lte=F("stock_minimo")
+    ).order_by("nombre", "variedad")
     return {
-        'total_alertas': len(alertas),
-        # Mandamos solo las 5 primeras alertas para no hacer un menú gigante
-        'alertas_recientes': alertas[:5]
+        "total_alertas": alertas.count(),
+        "alertas_recientes": alertas[:5],
     }

@@ -51,6 +51,10 @@ class MovimientoStock(models.Model):
     ]
     materia_prima = models.ForeignKey(MateriaPrima, on_delete=models.CASCADE)
     proveedor = models.ForeignKey(Proveedor, on_delete=models.SET_NULL, null=True, blank=True)
+    proveedor_externo = models.CharField(
+        max_length=150, blank=True, null=True,
+        help_text="Nombre de un proveedor que no está registrado en el sistema",
+    )
     # RESTRICCIONES
     tipo = models.CharField(max_length=10, choices=TIPO_CHOICES)
     cantidad = models.DecimalField(
@@ -96,3 +100,12 @@ class MovimientoStock(models.Model):
                 stock_actual=F('stock_actual') - self._delta()
             )
             super().delete(*args, **kwargs)
+    @property
+    def proveedor_nombre(self):
+        if self.proveedor_id:
+            return self.proveedor.nombre
+        return self.proveedor_externo or ""
+
+    @property
+    def proveedor_es_externo(self):
+        return not self.proveedor_id and bool(self.proveedor_externo)

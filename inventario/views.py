@@ -122,7 +122,7 @@ def registrar_materia_prima(request):
                 request,
                 f"Se registró «{materia}». Cargale stock desde Registro de Ingresos.",
             )
-            return redirect("inventario_stock")
+            return redirect("inventariostock")
     else:
         formulario = MateriaPrimaForm()
 
@@ -134,28 +134,24 @@ def registrar_movimiento(request):
     if request.method == 'POST':
         formulario = MovimientoStockForm(request.POST)
         if formulario.is_valid():
-            # commit=False pausa el guardado para que podamos hacer la matemática primero
             movimiento = formulario.save(commit=False)
             materia = movimiento.materia_prima
             
-            if movimiento.tipo == 'INGRESO':
-                materia.stock_actual += movimiento.cantidad
-                
-            elif movimiento.tipo == 'CONSUMO':
-                # Validación fundamental: evitar consumos fantasma
+            if movimiento.tipo == 'CONSUMO':
+                # Validación para evitar consumos mayores al stock real
                 if movimiento.cantidad > materia.stock_actual:
                     messages.error(request, f"Stock insuficiente. Solo quedan {materia.stock_actual} Kg de {materia.nombre}.")
                     return render(request, 'inventario/registrarproducto.html', {
                         'formulario': formulario,
                         'titulo_formulario': 'Registrar Movimiento'
                     })
-                materia.stock_actual -= movimiento.cantidad
-            #guardamos los cambios en la base de datos
-            materia.save()
+            
+            # Guardamos el movimiento directamente. 
+            # El def save() de tu models.py ya se encarga de actualizar el stock automáticamente.
             movimiento.save()
             
             messages.success(request, '¡Movimiento de stock registrado correctamente!')
-            return redirect('panelprincipal') # Acá podrías redirigir a 'historial' si lo preferís
+            return redirect('panelprincipal')
     else:
         formulario = MovimientoStockForm()
         

@@ -47,16 +47,19 @@ class MovimientoStockForm(forms.ModelForm):
 
     class Meta:
         model = MovimientoStock
-        fields = ["materia_prima", "proveedor", "cantidad", "observaciones"]
+        # Agregamos 'proveedor_externo' a los campos
+        fields = ["materia_prima", "proveedor", "proveedor_externo", "cantidad", "observaciones"]
         labels = {
             "materia_prima": "Materia prima",
-            "proveedor": "Proveedor / Productor",
+            "proveedor": "Proveedor registrado",
+            "proveedor_externo": "O proveedor externo (Manual)",
             "cantidad": "Cantidad que ingresa",
             "observaciones": "Observaciones",
         }
         widgets = {
             "materia_prima": forms.Select(attrs={"class": ESTILO}),
             "proveedor": forms.Select(attrs={"class": ESTILO}),
+            "proveedor_externo": forms.TextInput(attrs={"class": ESTILO, "placeholder": "Ej: Juan Pérez (Productor particular)"}),
             "cantidad": forms.NumberInput(attrs={"class": ESTILO, "step": "0.01", "min": "0.01"}),
             "observaciones": forms.Textarea(attrs={"class": ESTILO, "rows": 3}),
         }
@@ -64,13 +67,30 @@ class MovimientoStockForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.instance.tipo = "INGRESO"
-        self.fields["proveedor"].required = True
-        self.fields["proveedor"].empty_label = "Seleccioná un proveedor"
+        
+        # Hacemos que ninguno sea obligatorio desde el HTML para validarlos juntos en clean()
+        self.fields["proveedor"].required = False
+        self.fields["proveedor_externo"].required = False
+        self.fields["proveedor"].empty_label = "Seleccioná un proveedor (Opcional)"
+        
         self.fields["materia_prima"].queryset = MateriaPrima.objects.order_by("nombre")
-        # Muestra la unidad y el stock actual en el desplegable
         self.fields["materia_prima"].label_from_instance = (
             lambda m: f"{m} ({m.get_unidad_medida_display()}) · stock: {m.stock_actual:g}"
         )
+
+    # Validamos que se ingrese al menos uno, pero no los dos al mismo tiempo
+    def clean(self):
+        cleaned_data = super().clean()
+        proveedor = cleaned_data.get("proveedor")
+        proveedor_externo = cleaned_data.get("proveedor_externo")
+
+        if not proveedor and not proveedor_externo:
+            raise forms.ValidationError("Debes seleccionar un proveedor registrado o escribir el nombre de uno externo.")
+        
+        if proveedor and proveedor_externo:
+            raise forms.ValidationError("No puedes seleccionar un proveedor y escribir uno externo a la vez. Usa solo un campo.")
+            
+        return cleaned_data
 
 class ConsumoForm(forms.ModelForm):
     fecha = forms.DateTimeField(

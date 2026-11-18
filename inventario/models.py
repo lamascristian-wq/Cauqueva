@@ -9,6 +9,7 @@ from django.db.models import F
 class Proveedor(models.Model):
     nombre = models.CharField(max_length=150, unique=True)
     telefono = models.CharField(max_length=50, blank=True, null=True)
+    email = models.EmailField(max_length=254, blank=True, verbose_name="Correo electrónico",)
     materias_primas = models.ManyToManyField(
         "MateriaPrima",
         blank=True,

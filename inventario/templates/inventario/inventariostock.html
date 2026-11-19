@@ -58,7 +58,8 @@
             Filtrar
         </button>
         {% if q or estado %}
-            <a href="{% url 'inventariostock' %}" class="text-sm text-gray-500 hover:text-gray-700 underline">Limpiar</a>
+            <a href="{% url 'inventariostock' %}" class="bg-green-700 hover:bg-green-800 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors">
+                Restablecer</a>
         {% endif %}
     </form>
 
@@ -70,9 +71,9 @@
                     <tr>
                         <th class="px-5 py-3 font-semibold">Materia prima</th>
                         <th class="px-5 py-3 font-semibold">Variedad</th>
-                        <th class="px-5 py-3 font-semibold">Unidad</th>
                         <th class="px-5 py-3 font-semibold text-right">Stock actual</th>
                         <th class="px-5 py-3 font-semibold text-right">Stock mínimo</th>
+                        <th class="px-5 py-3 font-semibold">Precio(KG)</th>
                         <th class="px-5 py-3 font-semibold">Estado</th>
                     </tr>
                 </thead>
@@ -86,13 +87,14 @@
                             {% endif %}
                         </td>
                         <td class="px-5 py-3 text-gray-600">{{ m.variedad|default:"—" }}</td>
-                        <td class="px-5 py-3 text-gray-600">{{ m.get_unidad_medida_display }}</td>
+                        
                         <td class="px-5 py-3 text-right font-semibold {% if m.stock_actual <= m.stock_minimo %}text-red-600{% else %}text-gray-800{% endif %}">
                             {{ m.stock_actual|floatformat:"-2g" }} {{ m.unidad_medida }}
                         </td>
                         <td class="px-5 py-3 text-right text-gray-600">
                             {{ m.stock_minimo|floatformat:"-2g" }} {{ m.unidad_medida }}
                         </td>
+                        <td class="px-5 py-3 text-gray-600"> ${{ m.precio_referencia|floatformat:2 }}</td>
                         <td class="px-5 py-3">
                             {% if m.stock_actual <= m.stock_minimo %}
                                 <span class="inline-flex items-center rounded-full bg-red-100 px-3 py-0.5 text-xs font-medium text-red-700">

@@ -23,8 +23,10 @@
                     <th class="p-4 font-medium">Operación</th>
                     <th class="p-4 font-medium">Materia Prima</th>
                     <th class="p-4 font-medium">Cantidad</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Precio por Kg</th>
+                    <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Total</th>
                     <th class="p-4 font-medium">Proveedor</th>
-                    <th class="p-4 font-medium">Observaciones</th>
+                    
                 </tr>
             </thead>
             <tbody class="text-gray-700 text-sm divide-y divide-gray-100">
@@ -39,11 +41,11 @@
                     <td class="p-4 whitespace-nowrap">
                         {% if mov.tipo == 'INGRESO' %}
                             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                <span class="material-icons text-[14px] mr-1">arrow_downward</span> Ingreso
+                                <span class="material-icons text-[14px] mr-1">arrow_upward</span> Ingreso
                             </span>
                         {% else %}
                             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
-                                <span class="material-icons text-[14px] mr-1">arrow_upward</span> Consumo
+                                <span class="material-icons text-[14px] mr-1">arrow_downward</span> Consumo
                             </span>
                         {% endif %}
                     </td>
@@ -65,12 +67,14 @@
                         {% endif %}
                         <span class="text-gray-500 font-normal text-xs">{{ mov.materia_prima.get_unidad_medida_display }}</span>
                     </td>
-                    
+                    <td class="px-6 py-4 text-gray-700">
+                        {% if mov.precio_unitario is not None %}${{ mov.precio_unitario|floatformat:"2g" }}{% else %}-{% endif %}
+                    </td>
+                    <td class="px-6 py-4 font-semibold text-gray-800">
+                        {% if mov.costo_total is not None %}${{ mov.costo_total|floatformat:"2g" }}{% else %}-{% endif %}
+                    </td>
                     <!-- Proveedor (Si está vacío, muestra un guión gracias al filtro 'default') -->
                     <td class="p-4">{{ mov.proveedor.nombre|default:"-" }}</td>
-                    
-                    <!-- Observaciones (Se corta si es muy largo, o muestra guión si no hay) -->
-                    <td class="p-4 text-gray-500 truncate max-w-xs">{{ mov.observaciones|default:"-" }}</td>
                     
                 </tr>
                 

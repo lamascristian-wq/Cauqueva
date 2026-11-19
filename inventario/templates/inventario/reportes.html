@@ -47,33 +47,64 @@
         </div>
     </div>
 
-    <!-- Resumen -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div class="tarjeta bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-            <p class="text-xs text-gray-500">Compras (ingresos)</p>
-            <p class="text-2xl font-semibold text-green-800 mt-1">{{ ing_kg|floatformat:"-2g" }} <span class="text-base">Kg</span></p>
+        <!-- Resumen -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+
+        <div class="tarjeta bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center">
+            <span class="material-icons text-green-700 bg-green-100 rounded-lg p-2 mr-3">trending_up</span>
+            <div>
+                <p class="text-xs text-gray-500">Stock total acumulado</p>
+                <p class="text-xl font-semibold">{{ stock_total|floatformat:"-2g" }} Kg</p>
+            </div>
         </div>
-        <div class="tarjeta bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-            <p class="text-xs text-gray-500">Consumos y salidas</p>
-            <p class="text-2xl font-semibold text-gray-800 mt-1">{{ con_kg|floatformat:"-2g" }} <span class="text-base">Kg</span></p>
+
+        <div class="tarjeta bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center">
+            <span class="material-icons text-green-700 bg-green-100 rounded-lg p-2 mr-3">calculate</span>
+            <div>
+                <p class="text-xs text-gray-500">Stock acumulado menos lo producido</p>
+                <p class="text-xl font-semibold">{{ stock_menos_produccion|floatformat:"-2g" }} Kg</p>
+            </div>
         </div>
-        <div class="tarjeta bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-            <p class="text-xs text-gray-500">Balance del mes</p>
-            <p class="text-2xl font-semibold mt-1 {% if balance_kg < 0 %}text-red-600{% else %}text-green-800{% endif %}">
-                {% if balance_kg > 0 %}+{% endif %}{{ balance_kg|floatformat:"-2g" }} <span class="text-base">Kg</span>
-            </p>
+
+        <div class="tarjeta bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center">
+            <span class="material-icons text-green-700 bg-green-100 rounded-lg p-2 mr-3">inventory_2</span>
+            <div>
+                <p class="text-xs text-gray-500">Consumos y producción</p>
+                <p class="text-xl font-semibold">{{ con_kg|floatformat:"-2g" }} Kg</p>
+            </div>
         </div>
-        <div class="tarjeta bg-white rounded-xl border border-gray-100 shadow-sm p-4">
-            <p class="text-xs text-gray-500">Movimientos / críticas al cierre</p>
-            <p class="text-2xl font-semibold text-gray-800 mt-1">
-                {{ movimientos }} <span class="text-base text-gray-400">/</span>
-                <span class="{% if criticas_cierre %}text-red-600{% endif %}">{{ criticas_cierre }}</span>
-            </p>
+
+        <div class="tarjeta bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center">
+            {% if criticas_cierre %}
+                <span class="material-icons text-red-600 bg-red-100 rounded-lg p-2 mr-3">warning</span>
+            {% else %}
+                <span class="material-icons text-green-700 bg-green-100 rounded-lg p-2 mr-3">check_circle</span>
+            {% endif %}
+            <div>
+                <p class="text-xs text-gray-500">Movimientos / críticas al cierre</p>
+                <p class="text-xl font-semibold">
+                    {{ movimientos }} <span class="text-gray-400">/</span>
+                    <span class="{% if criticas_cierre %}text-red-600{% endif %}">{{ criticas_cierre }}</span>
+                </p>
+            </div>
+        </div>
+
+        <div class="tarjeta bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center">
+            <span class="material-icons text-green-700 bg-green-100 rounded-lg p-2 mr-3">event</span>
+            <div>
+                <p class="text-xs text-gray-500">Producciones este mes</p>
+                <p class="text-xl font-semibold">{{ producciones_mes }}</p>
+            </div>
+        </div>
+
+        <div class="tarjeta bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center">
+            <span class="material-icons text-green-700 bg-green-100 rounded-lg p-2 mr-3">payments</span>
+            <div>
+                <p class="text-xs text-gray-500">Ventas del mes</p>
+                <p class="text-xl font-semibold">${{ ventas_mes|floatformat:"2g" }}</p>
+            </div>
         </div>
     </div>
-    {% if hay_unidades %}
-    <p class="text-xs text-gray-500 -mt-3 mb-6">Los totales en Kg no incluyen materias primas medidas en unidades (UN); figuran en la tabla de abajo.</p>
-    {% endif %}
 
     <!-- Materias primas -->
     <section class="tarjeta bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden mb-6">
@@ -85,10 +116,11 @@
                 <thead class="bg-gray-50 text-xs uppercase text-gray-500">
                     <tr>
                         <th class="px-5 py-3 font-semibold">Materia prima</th>
-                        <th class="px-5 py-3 font-semibold text-right">Stock inicial</th>
+                        
                         <th class="px-5 py-3 font-semibold text-right">Ingresos</th>
                         <th class="px-5 py-3 font-semibold text-right">Consumos</th>
-                        <th class="px-5 py-3 font-semibold text-right">Stock final</th>
+                        <th class="px-5 py-3 font-semibold text-right">Stock actual</th>
+                        <th class="px-5 py-3 font-semibold text-right">Precio (KG)</th>
                         <th class="px-5 py-3 font-semibold">Estado</th>
                     </tr>
                 </thead>
@@ -96,12 +128,13 @@
                     {% for f in filas %}
                     <tr>
                         <td class="px-5 py-3 font-medium text-gray-800">{{ f.materia }}</td>
-                        <td class="px-5 py-3 text-right text-gray-600">{{ f.inicial|floatformat:"-2g" }} {{ f.unidad }}</td>
-                        <td class="px-5 py-3 text-right text-green-700">+{{ f.ingresos|floatformat:"-2g" }}</td>
-                        <td class="px-5 py-3 text-right text-gray-700">−{{ f.consumos|floatformat:"-2g" }}</td>
+                        
+                        <td class="px-5 py-3 text-right text-green-700">+{{ f.ingresos|floatformat:"-2" }}</td>
+                        <td class="px-5 py-3 text-right text-gray-700">−{{ f.consumos|floatformat:"-2" }}</td>
                         <td class="px-5 py-3 text-right font-semibold {% if f.critica %}text-red-600{% else %}text-gray-800{% endif %}">
-                            {{ f.final|floatformat:"-2g" }} {{ f.unidad }}
+                            {{ f.final|floatformat:"-2" }} {{ f.unidad }}
                         </td>
+                        <td class="px-5 py-3 text-right text-gray-600">${{ f.precio_referencia|floatformat:"-2" }}</td>
                         <td class="px-5 py-3">
                             {% if f.critica %}
                                 <span class="rounded-full bg-red-100 px-3 py-0.5 text-xs font-medium text-red-700">Crítica</span>
@@ -131,6 +164,7 @@
                         <th class="px-5 py-3 font-semibold">Materia prima</th>
                         <th class="px-5 py-3 font-semibold text-right">Cantidad</th>
                         <th class="px-5 py-3 font-semibold text-right">Ingresos</th>
+                        <th class="px-5 py-3 font-semibold text-right">Total</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
@@ -140,8 +174,9 @@
                         <td class="px-5 py-3 text-gray-600">
                             {{ c.materia_prima__nombre }}{% if c.materia_prima__variedad %} - {{ c.materia_prima__variedad }}{% endif %}
                         </td>
-                        <td class="px-5 py-3 text-right font-semibold text-gray-800">{{ c.total|floatformat:"-2g" }} {{ c.materia_prima__unidad_medida }}</td>
+                        <td class="px-5 py-3 text-right font-semibold text-gray-800">{{ c.total|floatformat:"-2" }} {{ c.materia_prima__unidad_medida }}</td>
                         <td class="px-5 py-3 text-right text-gray-600">{{ c.veces }}</td>
+                        <td class="px-5 py-3 text-right font-semibold text-gray-800">${{ c.precio_total|floatformat:"2g" }}</td>
                     </tr>
                     {% empty %}
                     <tr><td colspan="4" class="px-5 py-10 text-center text-gray-500">No hay compras registradas en este mes.</td></tr>
@@ -150,5 +185,82 @@
             </table>
         </div>
     </section>
+    <!-- Comparativo: pagado en materia prima vs ventas por producción -->
+    <section class="tarjeta bg-white rounded-xl border border-gray-100 shadow-sm p-5 mt-6">
+        <h3 class="font-semibold text-gray-800">Pagado en materia prima vs ventas por producción</h3>
+        <p class="text-xs text-gray-500 mb-4">Últimos 12 meses hasta <span class="capitalize">{{ mes_nombre }}</span>. Las ventas son lo producido (cantidad × precio del producto).</p>
+        <div class="relative h-[320px]">
+            <canvas id="graficoComparativo"></canvas>
+        </div>
+        <p class="text-xs text-gray-400 mt-3">Los ingresos cargados sin precio no se suman a lo pagado en materia prima.</p>
+    </section>
+
+    <!-- Historial del mes: solo se ve al imprimir (el CSV lo incluye siempre) -->
+    <section class="hidden print:block bg-white rounded-xl border border-gray-100 mt-6">
+        <div class="px-5 py-4 border-b border-gray-100">
+            <h3 class="font-semibold text-gray-800">Historial de movimientos de <span class="capitalize">{{ mes_nombre }}</span></h3>
+        </div>
+        <table class="w-full text-xs text-left">
+            <thead class="bg-gray-50 uppercase text-gray-500">
+                <tr>
+                    <th class="px-3 py-2 font-semibold">Fecha y hora</th>
+                    <th class="px-3 py-2 font-semibold">Operación</th>
+                    <th class="px-3 py-2 font-semibold">Materia prima</th>
+                    <th class="px-3 py-2 font-semibold text-right">Cantidad</th>
+                    <th class="px-3 py-2 font-semibold text-right">Precio por Kg</th>
+                    <th class="px-3 py-2 font-semibold text-right">Total</th>
+                    <th class="px-3 py-2 font-semibold">Proveedor</th>
+                    <th class="px-3 py-2 font-semibold">Observaciones</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for mov in historial_mes %}
+                <tr>
+                    <td class="px-3 py-2 whitespace-nowrap">{{ mov.fecha|date:"d/m/Y H:i" }}</td>
+                    <td class="px-3 py-2">{% if mov.tipo == 'INGRESO' %}Ingreso{% else %}Consumo{% endif %}</td>
+                    <td class="px-3 py-2">{{ mov.materia_prima }}</td>
+                    <td class="px-3 py-2 text-right">{% if mov.tipo == 'INGRESO' %}+{% else %}-{% endif %}{{ mov.cantidad|floatformat:"-2g" }} Kg</td>
+                    <td class="px-3 py-2 text-right">{% if mov.precio_unitario is not None %}${{ mov.precio_unitario|floatformat:"2g" }}{% else %}-{% endif %}</td>
+                    <td class="px-3 py-2 text-right">{% if mov.total is not None %}${{ mov.total|floatformat:"2g" }}{% else %}-{% endif %}</td>
+                    <td class="px-3 py-2">{{ mov.proveedor_nombre|default:"-" }}{% if mov.proveedor_es_externo %} (externo){% endif %}</td>
+                    <td class="px-3 py-2">{{ mov.observaciones|default:"-" }}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="8" class="px-3 py-6 text-center text-gray-500">No hay movimientos en este mes.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+    {{ grafico_comparativo|json_script:"datos-comparativo" }}
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script>
+      const comp = JSON.parse(document.getElementById("datos-comparativo").textContent);
+      const pesos = (v) => "$" + Number(v).toLocaleString("es-AR", {minimumFractionDigits: 2, maximumFractionDigits: 2});
+
+      new Chart(document.getElementById("graficoComparativo"), {
+        type: "bar",
+        data: {
+          labels: comp.labels,
+          datasets: [
+            {label: "Pagado en materia prima", data: comp.compras, backgroundColor: "#f59e0b", borderRadius: 4},
+            {label: "Ventas por producción", data: comp.ventas, backgroundColor: "#2f6b4f", borderRadius: 4},
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          animation: false,
+          plugins: {
+            legend: {position: "bottom"},
+            tooltip: {callbacks: {label: (c) => c.dataset.label + ": " + pesos(c.parsed.y)}},
+          },
+          scales: {
+            y: {beginAtZero: true, ticks: {callback: (v) => pesos(v)}},
+            x: {grid: {display: false}},
+          },
+        },
+      });
+    </script>
 </div>
 {% endblock %}

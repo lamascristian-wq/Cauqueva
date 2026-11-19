@@ -16,13 +16,20 @@
     },
   };
 </script>
-<style>#panel, #panel *, #panel *::before, #panel *::after { box-sizing: border-box; }</style>
+<style>
+  html { scroll-behavior: smooth; }
+  #panel, #panel *, #panel *::before, #panel *::after { box-sizing: border-box; }
+
+</style>
 
 <div id="panel" class="text-[#1f2d27]">
 
   <!-- Encabezado -->
   <div class="flex items-center justify-between mb-6">
-    <h1 class="m-0 text-3xl font-semibold">Dashboard</h1>
+    <h1 class="text-2xl font-bold text-gray-800">Dashboard</h1>
+    <p class="text-sm text-gray-500 mt-1">
+    Mostrando {% if materia_seleccionada %}<strong>{{ materia_seleccionada }}</strong>{% else %}todas las materias primas{% endif %}
+    </p>
     <form method="get">
       <select name="materia" onchange="this.form.submit()"
               class="max-w-[260px] cursor-pointer rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm">
@@ -34,46 +41,61 @@
     </form>
   </div>
 
-  <!-- Tarjetas con datos reales -->
-  <section class="grid grid-cols-1 gap-6 mb-6 md:grid-cols-3">
+  <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
 
-    <div class="flex items-center justify-between rounded-2xl bg-white px-6 py-5 shadow-sm">
-      <div>
-        <div class="mb-3 text-[15px] text-gray-600">Stock Actual de Materia Prima</div>
-        <div class="text-4xl font-semibold leading-none text-verde">
-          {{ stock_total|floatformat:"-2g" }} <span class="text-2xl">Kg</span>
+    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center">
+        <span class="material-icons text-green-700 bg-green-100 rounded-lg p-2 mr-3">trending_up</span>
+        <div>
+            <p class="text-xs text-gray-500">{% if materia_seleccionada %}Stock actual{% else %}Stock total acumulado{% endif %}</p>
+            <p class="text-xl font-semibold">{{ stock_total|floatformat:"-2g" }} Kg</p>
         </div>
-      </div>
-      <div class="grid h-14 w-14 place-items-center rounded-xl bg-verde-claro text-2xl text-verde">
-        <i class="bi bi-graph-up-arrow"></i>
-      </div>
     </div>
 
-    <div class="flex items-center justify-between rounded-2xl bg-white px-6 py-5 shadow-sm">
-      <div>
-        <div class="mb-3 text-[15px] text-gray-600">Consumo del Mes</div>
-        <div class="text-4xl font-semibold leading-none text-verde">
-          {{ consumo_mes|floatformat:"-2g" }} <span class="text-2xl">Kg</span>
+    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center">
+        <span class="material-icons text-green-700 bg-green-100 rounded-lg p-2 mr-3">inventory_2</span>
+        <div>
+            <p class="text-xs text-gray-500">Consumo del mes</p>
+            <p class="text-xl font-semibold">{{ consumo_mes|floatformat:"-2g" }} Kg</p>
         </div>
-      </div>
-      <div class="grid h-14 w-14 place-items-center rounded-xl bg-verde-claro text-2xl text-verde">
-        <i class="bi bi-box-seam"></i>
-      </div>
     </div>
 
-    <div class="flex items-center justify-between rounded-2xl bg-white px-6 py-5 shadow-sm">
-      <div>
-        <div class="mb-3 text-[15px] text-gray-600">Alertas de Stock</div>
-        <div class="text-4xl font-semibold leading-none {% if cant_alertas %}text-[#1f2d27]{% else %}text-verde{% endif %}">
-          {{ cant_alertas }} <span class="text-2xl">Crítica{{ cant_alertas|pluralize:"s" }}</span>
-        </div>
-      </div>
-      <div class="grid h-14 w-14 place-items-center rounded-xl text-2xl
-                  {% if cant_alertas %}bg-rojo-claro text-rojo{% else %}bg-verde-claro text-verde{% endif %}">
-        <i class="bi bi-exclamation-triangle-fill"></i>
-      </div>
+    <!-- Tarjeta de Alertas de Stock (Clickeable) -->
+<a href="#seccion-alertas" class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center transition-all hover:shadow-md hover:border-red-200 cursor-pointer no-underline text-inherit">
+    {% if cant_alertas %}
+        <span class="material-icons text-red-600 bg-red-100 rounded-lg p-2 mr-3">warning</span>
+    {% else %}
+        <span class="material-icons text-green-700 bg-green-100 rounded-lg p-2 mr-3">check_circle</span>
+    {% endif %}
+    <div>
+        <p class="text-xs text-gray-500">Alertas de stock</p>
+        <p class="text-xl font-semibold">{{ cant_alertas }} crítica{{ cant_alertas|pluralize }}</p>
     </div>
-  </section>
+</a>
+
+    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center">
+        <span class="material-icons text-green-700 bg-green-100 rounded-lg p-2 mr-3">event</span>
+        <div>
+            <p class="text-xs text-gray-500">{% if materia_seleccionada %}Producciones del mes con esta materia prima{% else %}Producciones este mes{% endif %}</p>
+            <p class="text-xl font-semibold">{{ producciones_mes }}</p>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center">
+        <span class="material-icons text-green-700 bg-green-100 rounded-lg p-2 mr-3">payments</span>
+        <div>
+            <p class="text-xs text-gray-500">{% if materia_seleccionada %}Ventas del mes (productos con esta materia prima){% else %}Ventas del mes{% endif %}</p>
+            <p class="text-xl font-semibold">${{ ventas_mes|floatformat:"2g" }}</p>
+        </div>
+    </div>
+
+    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center">
+        <span class="material-icons text-green-700 bg-green-100 rounded-lg p-2 mr-3">shopping_cart</span>
+        <div>
+            <p class="text-xs text-gray-500">{% if materia_seleccionada %}Ventas totales (productos con esta materia prima){% else %}Ventas totales{% endif %}</p>
+            <p class="text-xl font-semibold">${{ ventas_total|floatformat:"2g" }}</p>
+        </div>
+    </div>
+</section>
 
   <!-- Gráfico -->
   <section class="mb-6 rounded-2xl bg-white px-6 pt-5 pb-4 shadow-sm">
@@ -102,7 +124,7 @@
   </section>
 
   <!-- Listado de alertas -->
-  <section class="rounded-2xl bg-white px-6 py-5 shadow-sm">
+  <section id="seccion-alertas" class="rounded-2xl bg-white px-6 py-5 shadow-sm scroll-mt-6">
     <h2 class="m-0 mb-3 text-lg font-semibold">Listado de alertas</h2>
     {% if alertas %}
     <table class="w-full border-collapse text-sm">

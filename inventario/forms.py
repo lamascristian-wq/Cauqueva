@@ -210,7 +210,7 @@ class ProduccionForm(forms.Form):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["producto"].queryset = Producto.objects.filter(activo=True).order_by("nombre")
-
+    #arregalar advertencia en ingles 
 
 class ProveedorForm(forms.ModelForm):
     materias_primas = forms.ModelMultipleChoiceField(

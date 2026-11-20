@@ -13,7 +13,7 @@ urlpatterns = [
     # --- REPORTES Y GENERACIÓN DE INFORMES ---
     path("reportes/", views.reportes, name="reportes"),
     path("reportes/csv/", views.reportes_csv, name="reportes_csv"),
-    
+#documentar las rutas explicar que hace cada ruta    
     # --- MATERIAS PRIMAS E INGRESOS ---
     path('registrarmateriaprima/', views.registrar_materia_prima, name='registrar_materia_prima'),
     path('ingresos/nuevo/', views.registrar_movimiento, name='registrar_movimiento'), # <--- ESTA ERA LA RUTA FALTANTE

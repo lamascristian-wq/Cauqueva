@@ -59,7 +59,8 @@ def panel_principal(request):
         })
 
     ultimos_movimientos = MovimientoStock.objects.all().order_by('-fecha')[:10]
-
+    
+    """
     # --- Gráfico: ingresos y consumos por mes (últimos 12 meses) ---
     materia_id = request.GET.get("materia", "")
     if not materia_id.isdigit():
@@ -92,6 +93,37 @@ def panel_principal(request):
         "ingresos": [datos[m]["INGRESO"] for m in meses],
         "consumos": [datos[m]["CONSUMO"] for m in meses],
         "unidad": unidad_grafico,
+    }
+    """
+    # --- Gráfico: ingresos y consumos por materia prima ---
+    materia_id = request.GET.get("materia", "")
+    if not materia_id.isdigit():
+        materia_id = ""
+
+    ahora = timezone.localtime()
+    movs = MovimientoStock.objects.filter(
+        fecha__year=ahora.year,
+        fecha__month=ahora.month
+    ).select_related("materia_prima")
+
+    datos = defaultdict(lambda: {"INGRESO": 0.0, "CONSUMO": 0.0})
+    for mov in movs:
+        factor = A_KG.get(mov.materia_prima.unidad_medida)
+        if factor is None:
+            continue
+        mp = mov.materia_prima
+        etiqueta = f"{mp.nombre} ({mp.variedad})" if mp.variedad else mp.nombre
+        datos[etiqueta][mov.tipo] += float(mov.cantidad * factor)
+
+    materias_ordenadas = sorted(datos.keys())
+    mes_actual_texto = ahora.strftime("%m/%Y")  # Ej: "11/2026"
+
+    grafico = {
+        "labels": materias_ordenadas,
+        "meses": [mes_actual_texto for _ in materias_ordenadas],
+        "ingresos": [datos[m]["INGRESO"] for m in materias_ordenadas],
+        "consumos": [datos[m]["CONSUMO"] for m in materias_ordenadas],
+        "unidad": "Kg",
     }
 
     # --- Consumo del mes actual, en kg ---

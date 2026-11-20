@@ -154,12 +154,13 @@
           backgroundColor: "#2f6b4f", borderRadius: 4, barThickness: 14, order: 2,
         },
         {
-          type: "line", label: "Consumos", data: datos.consumos,
+          type: "bar", label: "Consumos", data: datos.consumos,
           borderColor: "#8fc4a8", backgroundColor: "rgba(143, 196, 168, .2)",
-          fill: true, tension: 0.3, pointRadius: 4, pointBackgroundColor: "#8fc4a8", order: 1,
+          backgroundColor: "#6b2f4b", borderRadius: 4, barThickness: 14, order: 1,
         },
       ],
     },
+    /*
     options: {
       responsive: true,
       maintainAspectRatio: false,
@@ -168,6 +169,38 @@
         y: { beginAtZero: true, title: { display: true, text: datos.unidad } },
         x: { grid: { display: false } },
       },
+    }*/
+    options: {
+      responsive: true,
+      scales: {
+        // Eje X principal: Materias primas
+        x: {
+          grid: {
+            display: false
+          }
+        },
+        // Segundo eje X (abajo): Mes
+        x2: {
+          type: 'category',
+          labels: datos.meses,
+          grid: {
+            drawOnChartArea: false // Evita líneas verticales duplicadas
+          },
+          ticks: {
+            color: '#6c757d',
+            font: {
+              weight: 'bold'
+            }
+          }
+        },
+        y: {
+          beginAtZero: true,
+          title: {
+            display: true,
+            text: datos.unidad
+          }
+        }
+      }
     },
   });
 

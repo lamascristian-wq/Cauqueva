@@ -159,12 +159,20 @@ class ConsumoForm(forms.ModelForm):
             "observaciones": forms.Textarea(
                 attrs={"class": ESTILO, "rows": 3, "placeholder": "Ej: Lote de producción del día (opcional)"}
             ),
+            "fecha_hora": forms.DateTimeInput(
+                format="%Y-%m-%dT%H:%M",
+                attrs={'type': 'datetime-local'}
+            ),
+
         }
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.instance.tipo = "CONSUMO"
         self.fields["materia_prima"].queryset = self.fields["materia_prima"].queryset.order_by("nombre")
+        if not self.instance.pk:
+            ahora_local = timezone.localtime(timezone.now())
+            self.initial["fecha"] = ahora_local.strftime("%Y-%m-%dT%H:%M")
 
 
 class ProveedorForm(forms.ModelForm):

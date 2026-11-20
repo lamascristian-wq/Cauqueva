@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -35,7 +36,7 @@
     <aside id="sidebar" class="w-64 bg-white border-r border-gray-200 flex flex-col z-20 transition-all duration-300 overflow-hidden shrink-0">
         <!-- Logo -->
         <div class="h-16 flex items-center px-6 border-b border-gray-200 logo-container transition-all duration-300">
-            <span class="material-icons text-green-700 text-3xl shrink-0">eco</span>
+            <img src="{% static 'img/logocauqueva.webp' %}" alt="Logo Cauqueva" class="h-10 w-auto object-contain shrink-0">
             <div class="leading-tight ml-2 sidebar-text whitespace-nowrap">
                 <h1 class="text-lg font-bold text-gray-800">CAUQUEVA</h1>
                 <span class="text-xs text-gray-500">Sistema de Gestión</span>

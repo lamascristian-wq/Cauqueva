@@ -97,7 +97,7 @@
                         <td class="p-4 text-gray-700">
                             {% if mov.precio_unitario is not None %}${{ mov.precio_unitario|floatformat:"2g" }}{% else %}-{% endif %}
                         </td>
-                        <td class="p-4 font-semibold text-gray-800">
+                        <td class="p-4 font-semibold text-red-700">
                             {% if mov.costo_total is not None %}${{ mov.costo_total|floatformat:"2g" }}{% else %}-{% endif %}
                         </td>
                         <td class="p-4">{{ mov.proveedor_nombre|default:"-" }}</td>

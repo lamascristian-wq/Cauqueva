@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
@@ -14,6 +15,36 @@ from inventario.models import (
 # ---------------------------------------------------------------------------
 # Datos de ejemplo (los teléfonos y nombres de proveedores son inventados)
 # ---------------------------------------------------------------------------
+
+USUARIOS = [
+    {
+        "username": "admin",
+        "email": "admin@cauqueva.org",
+        "password": "admin123",
+        "is_staff": True,
+        "is_superuser": True,
+        "first_name": "Administrador",
+        "last_name": "General",
+    },
+    {
+        "username": "gerente",
+        "email": "gerente@cauqueva.org",
+        "password": "gerente123",
+        "is_staff": True,
+        "is_superuser": False,
+        "first_name": "Gerente",
+        "last_name": "Producción",
+    },
+    {
+        "username": "operario",
+        "email": "operario@cauqueva.org",
+        "password": "operario123",
+        "is_staff": False,
+        "is_superuser": False,
+        "first_name": "Operario",
+        "last_name": "Planta",
+    },
+]
 
 PROVEEDORES = [
     {

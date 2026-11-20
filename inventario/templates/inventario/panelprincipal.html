@@ -19,20 +19,22 @@
 <style>
   html { scroll-behavior: smooth; }
   #panel, #panel *, #panel *::before, #panel *::after { box-sizing: border-box; }
-
 </style>
 
 <div id="panel" class="text-[#1f2d27]">
 
-  <!-- Encabezado -->
-  <div class="flex items-center justify-between mb-6">
-    <h1 class="text-2xl font-bold text-gray-800">Dashboard</h1>
-    <p class="text-sm text-gray-500 mt-1">
-    Mostrando {% if materia_seleccionada %}<strong>{{ materia_seleccionada }}</strong>{% else %}todas las materias primas{% endif %}
-    </p>
-    <form method="get">
+  <!-- Encabezado Responsivo -->
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-800">Dashboard</h1>
+      <p class="text-sm text-gray-500 mt-1">
+        Mostrando {% if materia_seleccionada %}<strong>{{ materia_seleccionada }}</strong>{% else %}todas las materias primas{% endif %}
+      </p>
+    </div>
+
+    <form method="get" class="w-full md:w-auto">
       <select name="materia" onchange="this.form.submit()"
-              class="max-w-[260px] cursor-pointer rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm">
+              class="w-full md:w-[260px] cursor-pointer rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm shadow-sm">
         <option value="">Todas las materias primas</option>
         {% for m in materias %}
           <option value="{{ m.id }}" {% if materia_id == m.id|stringformat:"s" %}selected{% endif %}>{{ m }}</option>
@@ -41,6 +43,7 @@
     </form>
   </div>
 
+  <!-- Grilla de Tarjetas -->
   <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
 
     <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center">
@@ -60,17 +63,17 @@
     </div>
 
     <!-- Tarjeta de Alertas de Stock (Clickeable) -->
-<a href="#seccion-alertas" class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center transition-all hover:shadow-md hover:border-red-200 cursor-pointer no-underline text-inherit">
-    {% if cant_alertas %}
-        <span class="material-icons text-red-600 bg-red-100 rounded-lg p-2 mr-3">warning</span>
-    {% else %}
-        <span class="material-icons text-green-700 bg-green-100 rounded-lg p-2 mr-3">check_circle</span>
-    {% endif %}
-    <div>
-        <p class="text-xs text-gray-500">Alertas de stock</p>
-        <p class="text-xl font-semibold">{{ cant_alertas }} crítica{{ cant_alertas|pluralize }}</p>
-    </div>
-</a>
+    <a href="#seccion-alertas" class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center transition-all hover:shadow-md hover:border-red-200 cursor-pointer no-underline text-inherit">
+        {% if cant_alertas %}
+            <span class="material-icons text-red-600 bg-red-100 rounded-lg p-2 mr-3">warning</span>
+        {% else %}
+            <span class="material-icons text-green-700 bg-green-100 rounded-lg p-2 mr-3">check_circle</span>
+        {% endif %}
+        <div>
+            <p class="text-xs text-gray-500">Alertas de stock</p>
+            <p class="text-xl font-semibold">{{ cant_alertas }} crítica{{ cant_alertas|pluralize }}</p>
+        </div>
+    </a>
 
     <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center">
         <span class="material-icons text-green-700 bg-green-100 rounded-lg p-2 mr-3">event</span>
@@ -95,7 +98,7 @@
             <p class="text-xl font-semibold">${{ ventas_total|floatformat:"2g" }}</p>
         </div>
     </div>
-</section>
+  </section>
 
   <!-- Gráfico -->
   <section class="mb-6 rounded-2xl bg-white px-6 pt-5 pb-4 shadow-sm">
@@ -123,32 +126,53 @@
     </div>
   </section>
 
-  <!-- Listado de alertas -->
+  <!-- Listado de alertas paginado -->
   <section id="seccion-alertas" class="rounded-2xl bg-white px-6 py-5 shadow-sm scroll-mt-6">
-    <h2 class="m-0 mb-3 text-lg font-semibold">Listado de alertas</h2>
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="m-0 text-lg font-semibold">Listado de alertas</h2>
+      {% if alertas %}
+      <span id="info-paginacion" class="text-xs text-gray-500 font-medium"></span>
+      {% endif %}
+    </div>
+
     {% if alertas %}
-    <table class="w-full border-collapse text-sm">
-      <thead>
-        <tr class="text-left text-gray-500">
-          <th class="border-b border-gray-100 p-2.5 font-medium">Materia prima</th>
-          <th class="border-b border-gray-100 p-2.5 font-medium">Stock actual</th>
-          <th class="border-b border-gray-100 p-2.5 font-medium">Stock mínimo</th>
-          <th class="border-b border-gray-100 p-2.5 font-medium">Estado</th>
-        </tr>
-      </thead>
-      <tbody>
-        {% for a in alertas %}
-        <tr>
-          <td class="border-b border-gray-100 p-2.5">{{ a }}</td>
-          <td class="border-b border-gray-100 p-2.5">{{ a.stock_actual|floatformat:"-2g" }} {{ a.unidad_medida }}</td>
-          <td class="border-b border-gray-100 p-2.5">{{ a.stock_minimo|floatformat:"-2g" }} {{ a.unidad_medida }}</td>
-          <td class="border-b border-gray-100 p-2.5">
-            <span class="rounded-full bg-rojo-claro px-3 py-0.5 text-xs text-rojo">Crítica</span>
-          </td>
-        </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    <div class="overflow-x-auto">
+      <table id="tabla-alertas" class="w-full border-collapse text-sm">
+        <thead>
+          <tr class="text-left text-gray-500">
+            <th class="border-b border-gray-100 p-2.5 font-medium">Materia prima</th>
+            <th class="border-b border-gray-100 p-2.5 font-medium">Stock actual</th>
+            <th class="border-b border-gray-100 p-2.5 font-medium">Stock mínimo</th>
+            <th class="border-b border-gray-100 p-2.5 font-medium">Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for a in alertas %}
+          <tr class="fila-alerta">
+            <td class="border-b border-gray-100 p-2.5">{{ a }}</td>
+            <td class="border-b border-gray-100 p-2.5">{{ a.stock_actual|floatformat:"-2g" }} {{ a.unidad_medida }}</td>
+            <td class="border-b border-gray-100 p-2.5">{{ a.stock_minimo|floatformat:"-2g" }} {{ a.unidad_medida }}</td>
+            <td class="border-b border-gray-100 p-2.5">
+              <span class="rounded-full bg-rojo-claro px-3 py-0.5 text-xs text-rojo">Crítica</span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Controles de Paginación -->
+    <div id="contenedor-paginacion" class="mt-4 flex items-center justify-between border-t border-gray-100 pt-3 hidden">
+      <span id="texto-rango" class="text-xs text-gray-500 font-medium"></span>
+      <div class="flex items-center gap-1.5">
+        <button id="btn-prev-alertas" type="button" class="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors">
+          <i class="bi bi-chevron-left text-xs"></i>
+        </button>
+        <button id="btn-next-alertas" type="button" class="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors">
+          <i class="bi bi-chevron-right text-xs"></i>
+        </button>
+      </div>
+    </div>
     {% else %}
       <p class="m-0 text-gray-500">No hay alertas de stock por el momento.</p>
     {% endif %}
@@ -193,7 +217,7 @@
     },
   });
 
-  // Los botones de arriba muestran u ocultan cada serie
+  // Alternar series con los chips
   document.querySelectorAll(".chip").forEach((chip) => {
     chip.addEventListener("click", () => {
       const i = Number(chip.dataset.serie);
@@ -202,6 +226,52 @@
       chip.style.opacity = visible ? 0.4 : 1;
       grafico.update();
     });
+  });
+</script>
+
+<script>
+  document.addEventListener("DOMContentLoaded", function () {
+    const filas = document.querySelectorAll("#tabla-alertas .fila-alerta");
+    const tamanoPagina = 10;
+    const totalFilas = filas.length;
+
+    if (totalFilas <= tamanoPagina) return;
+
+    let paginaActual = 1;
+    const totalPaginas = Math.ceil(totalFilas / tamanoPagina);
+
+    const contenedorPaginacion = document.getElementById("contenedor-paginacion");
+    const textoRango = document.getElementById("texto-rango");
+    const btnPrev = document.getElementById("btn-prev-alertas");
+    const btnNext = document.getElementById("btn-next-alertas");
+
+    contenedorPaginacion.classList.remove("hidden");
+
+    function mostrarPagina(pagina) {
+      paginaActual = pagina;
+      const inicio = (pagina - 1) * tamanoPagina;
+      const fin = inicio + tamanoPagina;
+
+      filas.forEach((fila, i) => {
+        fila.style.display = (i >= inicio && i < fin) ? "" : "none";
+      });
+
+      const mostrandoHasta = Math.min(fin, totalFilas);
+      textoRango.textContent = `Mostrando ${inicio + 1}-${mostrandoHasta} de ${totalFilas} alertas (Página ${pagina} de ${totalPaginas})`;
+
+      btnPrev.disabled = (paginaActual === 1);
+      btnNext.disabled = (paginaActual === totalPaginas);
+    }
+
+    btnPrev.addEventListener("click", () => {
+      if (paginaActual > 1) mostrarPagina(paginaActual - 1);
+    });
+
+    btnNext.addEventListener("click", () => {
+      if (paginaActual < totalPaginas) mostrarPagina(paginaActual + 1);
+    });
+
+    mostrarPagina(1);
   });
 </script>
 {% endblock %}

@@ -8,32 +8,39 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
-        /* Estilos para el estado colapsado del menú lateral */
-        #sidebar.collapsed {
-            width: 5rem; /* Ancho reducido (~80px) */
-        }
-        #sidebar.collapsed .sidebar-text {
-            display: none; /* Oculta títulos y textos del menú */
-        }
-        #sidebar.collapsed nav a {
-            justify-content: center;
-            padding-left: 0;
-            padding-right: 0;
-        }
-        #sidebar.collapsed nav a .material-icons {
-            margin-right: 0;
-        }
-        #sidebar.collapsed .logo-container {
-            justify-content: center;
-            padding-left: 0;
-            padding-right: 0;
+        /* Estilos para el estado colapsado del menú lateral en escritorio */
+        @media (min-width: 1024px) {
+            #sidebar.collapsed {
+                width: 5rem; /* Ancho reducido (~80px) */
+            }
+            #sidebar.collapsed .sidebar-text {
+                display: none; /* Oculta títulos y textos del menú */
+            }
+            #sidebar.collapsed nav a {
+                justify-content: center;
+                padding-left: 0;
+                padding-right: 0;
+            }
+            #sidebar.collapsed nav a .material-icons {
+                margin-right: 0;
+            }
+            #sidebar.collapsed .logo-container {
+                justify-content: center;
+                padding-left: 0;
+                padding-right: 0;
+            }
         }
     </style>
 </head>
 <body class="bg-gray-50 flex h-screen overflow-hidden font-sans text-gray-800">
 
+    <!-- Fondo oscuro traslúcido para móviles (Overlay) -->
+    <div id="sidebarOverlay" class="fixed inset-0 bg-gray-900/50 z-30 hidden lg:hidden transition-opacity"></div>  
+
     <!-- BARRA LATERAL (Sidebar) -->
-    <aside id="sidebar" class="w-64 bg-white border-r border-gray-200 flex flex-col z-20 transition-all duration-300 overflow-hidden shrink-0">
+    <aside id="sidebar" 
+           class="fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-gray-200 flex flex-col transition-all duration-300 overflow-hidden shrink-0 -translate-x-full lg:translate-x-0 lg:static">
+        
         <!-- Logo -->
         <div class="h-16 flex items-center px-6 border-b border-gray-200 logo-container transition-all duration-300">
             <img src="{% static 'img/logocauqueva.webp' %}" alt="Logo Cauqueva" class="h-10 w-auto object-contain shrink-0">
@@ -43,10 +50,9 @@
             </div>
         </div>
 
-        <!-- Menú de navegación organizado según el rol que usan los permisos de las vistas. -->
+        <!-- Menú de navegación -->
         <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
             {% if user.is_staff %}
-            <!-- El gerente accede primero al panel y luego a las opciones de gestión en el orden establecido. -->
             <a href="{% url 'panelprincipal' %}"
                class="flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors
                       {% if request.resolver_match.url_name == 'panelprincipal' %}text-green-800 bg-green-100{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-700{% endif %}">
@@ -95,7 +101,7 @@
             </a>
 
             {% else %}
-            <!-- El operario recibe únicamente las opciones necesarias para la operación diaria. -->
+            <!-- Vista Operario -->
             <a href="{% url 'registrar_movimiento' %}"
                class="flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors
                       {% if request.resolver_match.url_name == 'registrar_movimiento' %}text-green-800 bg-green-100{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-700{% endif %}">
@@ -117,32 +123,29 @@
                 <span class="sidebar-text whitespace-nowrap">Historial de Movimientos</span>
             </a>
             {% endif %}
-
         </nav>
     </aside>
 
-    <!-- CONTENEDOR DERECHO (Top Bar + Contenido Principal) -->
-    <div class="flex-1 flex flex-col h-screen overflow-hidden">
+    <!-- CONTENEDOR DERECHO -->
+    <div class="flex-1 flex flex-col h-screen overflow-hidden min-w-0">
         
         <!-- BARRA SUPERIOR (Top Navbar) -->
-        <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 z-10">
-            <!-- Izquierda: Menú y Título -->
+        <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-6 z-10 shrink-0">
+            <!-- Izquierda: Menú Hamburguesa y Título -->
             <div class="flex items-center">
-                <button id="btnToggleSidebar" class="text-gray-500 hover:text-gray-700 focus:outline-none mr-4 p-1 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
+                <button id="btnToggleSidebar" class="text-gray-500 hover:text-gray-700 focus:outline-none mr-3 p-1 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
                     <span class="material-icons block">menu</span>
                 </button>
-                <span class="text-gray-600 font-medium">Dashboard</span>
+                <span class="text-gray-700 font-semibold text-sm sm:text-base truncate">CAUQUEVA</span>
             </div>
 
-            <!-- Derecha: Buscador e Íconos -->
-            <div class="flex items-center space-x-5">
+            <!-- Derecha: Notificaciones y Perfil -->
+            <div class="flex items-center space-x-3 sm:space-x-5">
                 
-                <!-- Contenedor relativo de la campanita -->
-                <div class="relative ml-4">
+                <!-- Campanita de notificaciones -->
+                <div class="relative">
                     <button id="btnCampanita" class="text-gray-400 hover:text-gray-600 focus:outline-none relative p-1 mt-1 transition-colors">
                         <span class="material-icons">notifications</span>
-                        
-                        <!-- Puntito rojo animado (solo aparece si hay alertas) -->
                         {% if total_alertas > 0 %}
                         <span class="absolute top-0 right-0 flex h-3 w-3">
                             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
@@ -151,16 +154,13 @@
                         {% endif %}
                     </button>
 
-                    <!-- El "Cuadrito" Desplegable (oculto por defecto con la clase 'hidden') -->
-                    <div id="menuNotificaciones" class="hidden absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-lg border border-gray-100 z-50 overflow-hidden transform origin-top-right transition-all">
-                        
-                        <!-- Cabecera del menú -->
+                    <!-- Desplegable Alertas -->
+                    <div id="menuNotificaciones" class="hidden absolute right-0 mt-2 w-72 sm:w-80 bg-white rounded-xl shadow-lg border border-gray-100 z-50 overflow-hidden transform origin-top-right transition-all">
                         <div class="bg-red-50 px-4 py-3 border-b border-red-100 flex justify-between items-center">
                             <h3 class="text-sm font-bold text-red-800">Alertas de Stock</h3>
                             <span class="bg-red-200 text-red-800 text-xs font-bold px-2.5 py-0.5 rounded-full">{{ total_alertas }}</span>
                         </div>
                         
-                        <!-- Lista de notificaciones -->
                         <div class="max-h-72 overflow-y-auto">
                             {% if total_alertas > 0 %}
                                 {% for alerta in alertas_recientes %}
@@ -176,7 +176,6 @@
                                 </a>
                                 {% endif %}
                             {% else %}
-                                <!-- Mensaje cuando todo está bien -->
                                 <div class="px-4 py-8 text-center">
                                     <span class="material-icons text-green-400 text-4xl mb-2">check_circle</span>
                                     <p class="text-sm font-medium text-gray-800">Stock controlado</p>
@@ -193,12 +192,12 @@
                         <span class="material-icons text-green-800 text-3xl">account_circle</span>
                     </button>
 
-                    <div id="user-menu-panel" class="hidden absolute right-0 mt-2 w-60 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
+                    <div id="user-menu-panel" class="hidden absolute right-0 mt-2 w-56 sm:w-60 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
                         <div class="px-4 py-3 border-b border-gray-100">
-                            <p class="text-sm font-semibold text-gray-800">
+                            <p class="text-sm font-semibold text-gray-800 truncate">
                                 {{ user.get_full_name|default:user.username }}
                             </p>
-                            <p class="text-xs text-gray-500">@{{ user.username }}</p>
+                            <p class="text-xs text-gray-500 truncate">@{{ user.username }}</p>
                         </div>
 
                         {% if user.is_staff %}
@@ -209,7 +208,7 @@
 
                         <form method="post" action="{% url 'logout' %}">
                             {% csrf_token %}
-                            <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">
+                            <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 cursor-pointer">
                                 Cerrar sesión
                             </button>
                         </form>
@@ -218,70 +217,103 @@
             </div>
         </header>
 
-        <!-- CONTENIDO DINÁMICO (El espacio donde se inyecta dashboard.html, etc.) -->
-        <main class="flex-1 overflow-x-hidden overflow-y-auto scroll-smooth bg-gray-50 p-8">
+        <!-- CONTENIDO PRINCIPAL -->
+        <main class="flex-1 overflow-x-hidden overflow-y-auto scroll-smooth bg-gray-50 p-4 sm:p-6 md:p-8">
             {% block content %}
             {% endblock %}
         </main>
     </div>
-    
-    <!-- Script de Menú Desplegable Sidebar (Abre al hacer clic en un ícono) -->
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const btnToggle = document.getElementById('btnToggleSidebar');
-        const sidebar = document.getElementById('sidebar');
 
-        // 1. Cargar el estado guardado
-        if (localStorage.getItem('sidebarCollapsed') === 'true') {
-            sidebar.classList.add('collapsed');
-        }
-
-        // 2. Al tocar el botón de hamburguesa, alternamos y guardamos el estado (cerrar/abrir manual)
-        if (btnToggle && sidebar) {
-            btnToggle.addEventListener('click', function() {
-                sidebar.classList.toggle('collapsed');
-                const isCollapsed = sidebar.classList.contains('collapsed');
-                localStorage.setItem('sidebarCollapsed', isCollapsed);
-            });
-        }
-
-        // 3. Al hacer clic en cualquier opción del menú, aseguramos que la barra vuelva a abrirse
-        const enlacesSidebar = document.querySelectorAll('#sidebar nav a');
-        enlacesSidebar.forEach(enlace => {
-            enlace.addEventListener('click', function() {
-                localStorage.setItem('sidebarCollapsed', 'false');
-            });
-        });
-    });
-</script>
-
-    <!-- Scripts de Menú Usuario y Notificaciones -->
-    <script>
-        const userBtn = document.getElementById("user-menu-btn");
-        const userPanel = document.getElementById("user-menu-panel");
-
-        userBtn.addEventListener("click", (e) => {
-            e.stopPropagation();
-            userPanel.classList.toggle("hidden");
-        });
-
-        document.addEventListener("click", (e) => {
-            if (!document.getElementById("user-menu").contains(e.target)) {
-                userPanel.classList.add("hidden");
-            }
-        });
-    </script>
+    <!-- SCRIPT PRINCIPAL DEL SIDEBAR RESPONSIVO -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            const btnToggle = document.getElementById('btnToggleSidebar');
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+
+            // 1. Restaurar colapso en escritorio
+            if (window.innerWidth >= 1024 && localStorage.getItem('sidebarCollapsed') === 'true') {
+                sidebar.classList.add('collapsed');
+            }
+
+            // 2. Función de alternancia adaptativa
+            function toggleSidebar() {
+                if (window.innerWidth < 1024) {
+                    // Móvil / Tablet: abre/cierra drawer deslizable
+                    const estaCerrado = sidebar.classList.contains('-translate-x-full');
+                    if (estaCerrado) {
+                        sidebar.classList.remove('-translate-x-full');
+                        overlay.classList.remove('hidden');
+                    } else {
+                        sidebar.classList.add('-translate-x-full');
+                        overlay.classList.add('hidden');
+                    }
+                } else {
+                    // Escritorio: colapsar/desplegar a íconos
+                    sidebar.classList.toggle('collapsed');
+                    localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+                }
+            }
+
+            if (btnToggle) btnToggle.addEventListener('click', toggleSidebar);
+            if (overlay) overlay.addEventListener('click', toggleSidebar);
+
+            // 3. Cerrar automáticamente el menú al hacer clic en un enlace en celulares
+            document.querySelectorAll('#sidebar nav a').forEach(enlace => {
+                enlace.addEventListener('click', () => {
+                    if (window.innerWidth < 1024) {
+                        sidebar.classList.add('-translate-x-full');
+                        overlay.classList.add('hidden');
+                    } else {
+                        localStorage.setItem('sidebarCollapsed', 'false');
+                    }
+                });
+            });
+
+            // 4. Resetear clases si cambia la resolución al redimensionar la ventana
+            window.addEventListener('resize', () => {
+                if (window.innerWidth >= 1024) {
+                    overlay.classList.add('hidden');
+                    sidebar.classList.remove('-translate-x-full');
+                    if (localStorage.getItem('sidebarCollapsed') === 'true') {
+                        sidebar.classList.add('collapsed');
+                    } else {
+                        sidebar.classList.remove('collapsed');
+                    }
+                } else {
+                    sidebar.classList.remove('collapsed');
+                    sidebar.classList.add('-translate-x-full');
+                }
+            });
+        });
+    </script>
+
+    <!-- SCRIPTS DE MENÚS DESPLEGABLES (Perfil y Notificaciones) -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Menú Usuario
+            const userBtn = document.getElementById("user-menu-btn");
+            const userPanel = document.getElementById("user-menu-panel");
+            if (userBtn && userPanel) {
+                userBtn.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    userPanel.classList.toggle("hidden");
+                });
+                document.addEventListener("click", (e) => {
+                    if (!document.getElementById("user-menu").contains(e.target)) {
+                        userPanel.classList.add("hidden");
+                    }
+                });
+            }
+
+            // Menú Campanita
             const btnCampanita = document.getElementById('btnCampanita');
             const menuNotificaciones = document.getElementById('menuNotificaciones');
-
             if (btnCampanita && menuNotificaciones) {
                 btnCampanita.addEventListener('click', function(event) {
                     event.stopPropagation();
                     menuNotificaciones.classList.toggle('hidden');
                 });
-
                 document.addEventListener('click', function(event) {
                     if (!btnCampanita.contains(event.target) && !menuNotificaciones.contains(event.target)) {
                         menuNotificaciones.classList.add('hidden');

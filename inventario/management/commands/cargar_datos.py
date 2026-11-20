@@ -131,7 +131,24 @@ class Command(BaseCommand):
         campos_movimiento = {f.name for f in MovimientoStock._meta.get_fields()}
         nuevos = {"proveedores": 0, "materias": 0, "ingresos": 0, "productos": 0, "recetas": 0}
 
-        # 1. Proveedores
+        # 1. Usuarios (Admin, Gerente u Operario)
+        for datos_u in USUARIOS:
+            user, creado = User.objects.get_or_create(
+                username=datos_u["username"],
+                defaults={
+                    "email": datos_u["email"],
+                    "first_name": datos_u["first_name"],
+                    "last_name": datos_u["last_name"],
+                    "is_staff": datos_u["is_staff"],
+                    "is_superuser": datos_u["is_superuser"],
+                },
+            )
+            if creado:
+                user.set_password(datos_u["password"])
+                user.save()
+                nuevos["usuarios"] += 1
+
+        # 2. Proveedores
         proveedores = {}
         for datos in PROVEEDORES:
             proveedor, creado = Proveedor.objects.get_or_create(
@@ -140,7 +157,7 @@ class Command(BaseCommand):
             proveedores[proveedor.nombre] = proveedor
             nuevos["proveedores"] += creado
 
-        # 2. Materias primas (y su stock inicial como un ingreso, para que el historial cuadre)
+        # 3. Materias primas (y su stock inicial como un ingreso, para que el historial cuadre)
         materias = {}
         for clave, d in MATERIAS_PRIMAS.items():
             defaults = {
@@ -171,13 +188,13 @@ class Command(BaseCommand):
                 MovimientoStock.objects.create(**ingreso)
                 nuevos["ingresos"] += 1
 
-        # 3. Qué materias primas provee cada proveedor
+        # 4. Qué materias primas provee cada proveedor
         for datos in PROVEEDORES:
             proveedores[datos["nombre"]].materias_primas.add(
                 *[materias[clave] for clave in datos["materias"]]
             )
 
-        # 4. Productos y recetas
+        # 5. Productos y recetas
         for nombre, precio, receta in PRODUCTOS:
             producto, creado = Producto.objects.get_or_create(
                 nombre=nombre, defaults={"precio": precio}

@@ -14,6 +14,7 @@ from django.http import HttpResponse
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.db import transaction
+from django.views.decorators.http import require_POST
 from django.utils.dateparse import parse_date
 from django.db.models import Count, F, Max, Prefetch, Q, Sum
 from django.core.paginator import Paginator
@@ -156,19 +157,53 @@ def registrar_movimiento(request):
         'inventario/registrarmovimiento.html',
         {'formulario': formulario}
     )
-# Vista del Historial General (Todos los movimientos)
+def _fecha(valor):
+    try:
+        return parse_date(valor)
+    except ValueError:
+        return None
+
+
+def _movimientos_filtrados(request):
+    """Devuelve (queryset, desde, hasta) aplicando el rango de fechas del GET."""
+    desde = request.GET.get("desde", "")
+    hasta = request.GET.get("hasta", "")
+
+    movimientos = MovimientoStock.objects.select_related(
+        "materia_prima", "proveedor"
+    ).order_by("-fecha")
+
+    fecha_desde = _fecha(desde)
+    fecha_hasta = _fecha(hasta)
+    if fecha_desde:
+        movimientos = movimientos.filter(fecha__date__gte=fecha_desde)
+    if fecha_hasta:
+        movimientos = movimientos.filter(fecha__date__lte=fecha_hasta)
+
+    return movimientos, desde, hasta
+
+
+# Vista del Historial General (con filtro por rango de fechas)
 @login_required(login_url='login')
 def historial_general(request):
-    # .all() trae todo. 
-    # .select_related() optimiza la carga de las tablas relacionadas.
-    # .order_by('-fecha') garantiza el orden: del más reciente al más viejo.
-    movimientos = MovimientoStock.objects.all().select_related(
-        'materia_prima', 
-        'proveedor'
-    ).order_by('-fecha')
-    
+    movimientos, desde, hasta = _movimientos_filtrados(request)
+
+    # Para imprimir / PDF se muestran todos los movimientos del filtro, sin paginar.
+    imprimir = request.GET.get("imprimir") == "1"
+    por_pagina = max(movimientos.count(), 1) if imprimir else 25
+    pagina = Paginator(movimientos, por_pagina).get_page(request.GET.get("page"))
+    params = request.GET.copy()
+    for k in ("page", "imprimir"):
+        params.pop(k, None)
+
     return render(request, 'inventario/historialgeneral.html', {
-        'movimientos': movimientos
+        'pagina': pagina,
+        'desde': desde,
+        'hasta': hasta,
+        'querystring': params.urlencode(),
+        'imprimir': imprimir,
+        'generado': timezone.localtime(),
+        'total': pagina.paginator.count,
     })
 
 # Vista de Informes Mensuales 
@@ -272,12 +307,14 @@ def reportes(request):
 @user_passes_test(es_gerente, login_url='/')
 def reportes_csv(request):
     d = _datos_reporte(request.GET.get("mes", ""))
-    n = lambda x: str(x).replace(".", ",")  # coma decimal para Excel en español
+    # coma decimal para Excel en español, siempre con 2 decimales
+    n = lambda x: f"{Decimal(x):.2f}".replace(".", ",")
 
     resp = HttpResponse(content_type="text/csv; charset=utf-8")
     resp["Content-Disposition"] = f'attachment; filename="informe-{d["mes_valor"]}.csv"'
     resp.write("\ufeff")  # para que Excel respete los acentos
-    w = csv.writer(resp, delimiter=";")
+    # QUOTE_ALL: la coma decimal nunca se confunde con un separador de columnas
+    w = csv.writer(resp, delimiter=";", quoting=csv.QUOTE_ALL)
 
     w.writerow(["Informe mensual CAUQUEVA", d["mes_nombre"]])
     w.writerow([])
@@ -364,12 +401,6 @@ def alertas_stock(request):
         'alertas': lista_alertas
     })
     
-def _fecha(valor):
-    try:
-        return parse_date(valor)
-    except ValueError:
-        return None
-
 #operaciones con consumo de materias primas
 @login_required(login_url='login')
 def consumos(request):
@@ -515,29 +546,41 @@ def editar_proveedor(request, pk):
     return render(request, "inventario/formularioproveedor.html", {
         "formulario": formulario, "titulo": f"Editar proveedor: {proveedor}",
     })
+@login_required(login_url='login')
+@user_passes_test(es_gerente, login_url='/')
+@require_POST
+def eliminar_proveedor(request, pk):
+    proveedor = get_object_or_404(Proveedor, pk=pk)
+    nombre = proveedor.nombre
+    # Los movimientos históricos se conservan (proveedor queda en blanco).
+    proveedor.delete()
+    messages.success(request, f"Se eliminó al proveedor «{nombre}».")
+    return redirect("proveedores")
+
+
 # --- FUNCIONES DEL HISTORIAL (Exportar y Editar) ---
 
 # Vista para Exportar el Historial Completo a CSV
 @login_required(login_url='login')
 def exportar_historial(request):
-    movimientos = MovimientoStock.objects.all().select_related('materia_prima', 'proveedor').order_by('-fecha')
-    
+    movimientos, _, _ = _movimientos_filtrados(request)
+
     response = HttpResponse(content_type='text/csv; charset=utf-8')
     response['Content-Disposition'] = 'attachment; filename="historial_movimientos.csv"'
     response.write("\ufeff") # Soporte para Excel en español (acentos)
     
-    writer = csv.writer(response, delimiter=';')
+    writer = csv.writer(response, delimiter=';', quoting=csv.QUOTE_ALL)
     writer.writerow(['Fecha', 'Tipo', 'Materia Prima', 'Unidad', 'Cantidad', 'Proveedor', 'Observaciones'])
     
     for mov in movimientos:
         writer.writerow([
-            mov.fecha.strftime("%d/%m/%Y %H:%M"),
+            timezone.localtime(mov.fecha).strftime("%d/%m/%Y %H:%M"),
             mov.get_tipo_display(),
             f"{mov.materia_prima.nombre} {mov.materia_prima.variedad or ''}",
             mov.materia_prima.unidad_medida,
-            str(mov.cantidad).replace('.', ','),
+            f"{mov.cantidad:.2f}".replace('.', ','),
             mov.proveedor.nombre if mov.proveedor else "Proveedor Externo",
-            mov.observaciones
+            mov.observaciones or ""
         ])
     return response
 

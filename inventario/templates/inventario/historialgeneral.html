@@ -1,20 +1,64 @@
 {% extends 'inventario/base.html' %}
 
 {% block content %}
-<div class="mb-8 flex justify-between items-center">
+<style>
+  @media print {
+    aside, header, .no-print { display: none !important; }
+    body, body > div { display: block !important; height: auto !important; overflow: visible !important; }
+    main { overflow: visible !important; padding: 0 !important; background: #fff !important; }
+    .tarjeta { box-shadow: none !important; border: none !important; }
+    tr { break-inside: avoid; }
+    thead { display: table-header-group; }
+  }
+</style>
+
+<div class="mb-8 flex flex-wrap justify-between items-center gap-3">
     <div>
         <h2 class="text-2xl font-bold text-gray-800">Historial de Movimientos</h2>
         <p class="text-sm text-gray-500 mt-1">Registro general de ingresos de proveedores y salidas a producción.</p>
+        <p class="hidden print:block text-xs text-gray-500 mt-1">
+            CAUQUEVA · {% if desde or hasta %}Período: {% if desde %}desde {{ desde }}{% endif %} {% if hasta %}hasta {{ hasta }}{% endif %}{% else %}Todos los movimientos{% endif %}
+            · {{ total }} movimientos · Generado el {{ generado|date:"d/m/Y H:i" }}
+        </p>
     </div>
-    
-    <!-- Botón opcional para exportar (lo conectaremos a tu vista de CSV luego) -->
-    <a href="#" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium py-2 px-4 rounded-lg transition-colors flex items-center shadow-sm text-sm">
-        <span class="material-icons text-gray-500 mr-2 text-sm">download</span> Exportar
-    </a>
+
+    <div class="no-print flex flex-wrap items-center gap-2">
+        <a href="{% url 'exportar_historial' %}{% if querystring %}?{{ querystring }}{% endif %}"
+           class="inline-flex items-center text-sm font-medium text-green-700 bg-green-50 hover:bg-green-100 px-3 py-2 rounded-lg transition-colors">
+            <span class="material-icons text-base mr-1">table_view</span> Descargar CSV
+        </a>
+        {% if imprimir %}
+        <button type="button" onclick="window.print()"
+                class="inline-flex items-center bg-green-700 hover:bg-green-800 text-white text-sm font-medium py-2 px-4 rounded-lg shadow-sm transition-colors">
+            <span class="material-icons text-base mr-1.5">print</span> Imprimir / PDF
+        </button>
+        {% else %}
+        <a href="?{% if querystring %}{{ querystring }}&{% endif %}imprimir=1" target="_blank"
+           class="inline-flex items-center bg-green-700 hover:bg-green-800 text-white text-sm font-medium py-2 px-4 rounded-lg shadow-sm transition-colors">
+            <span class="material-icons text-base mr-1.5">print</span> Imprimir / PDF
+        </a>
+        {% endif %}
+    </div>
 </div>
 
+<!-- Filtro por rango de fechas -->
+<form method="get" class="no-print bg-white rounded-xl border border-gray-100 shadow-sm p-4 mb-4 flex flex-wrap items-end gap-3">
+    <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Desde</label>
+        <input type="date" name="desde" value="{{ desde }}" class="py-2 px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600">
+    </div>
+    <div>
+        <label class="block text-xs font-medium text-gray-500 mb-1">Hasta</label>
+        <input type="date" name="hasta" value="{{ hasta }}" class="py-2 px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600">
+    </div>
+    <button type="submit" class="bg-green-700 hover:bg-green-800 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors">Filtrar</button>
+    {% if desde or hasta %}
+        <a href="{% url 'historial' %}" class="text-sm text-gray-500 hover:text-gray-700 underline pb-2">Limpiar</a>
+    {% endif %}
+</form>
+
 <!-- Contenedor de la Tabla -->
-<div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+<div class="tarjeta bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
     <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse">
             <thead>
@@ -29,7 +73,7 @@
             </thead>
             <tbody class="text-gray-700 text-sm divide-y divide-gray-100">
                 
-                {% for mov in movimientos %}
+                {% for mov in pagina %}
                 <tr class="hover:bg-gray-50 transition-colors">
                     
                     <!-- Fecha formateada (Día/Mes/Año Hora:Minuto) -->
@@ -79,8 +123,13 @@
                 <tr>
                     <td colspan="6" class="p-12 text-center text-gray-500">
                         <span class="material-icons text-gray-300 text-5xl mb-3 block">history</span>
+                        {% if desde or hasta %}
+                        <p class="text-lg font-medium text-gray-700">No hay movimientos en ese rango de fechas</p>
+                        <p class="text-sm">Probá con otras fechas o limpiá el filtro.</p>
+                        {% else %}
                         <p class="text-lg font-medium text-gray-700">No hay movimientos registrados</p>
                         <p class="text-sm">Cuando registres ingresos o consumos, aparecerán aquí.</p>
+                        {% endif %}
                     </td>
                 </tr>
                 {% endfor %}
@@ -88,5 +137,24 @@
             </tbody>
         </table>
     </div>
+
+    {% if pagina.paginator.num_pages > 1 %}
+    <div class="no-print flex items-center justify-between border-t border-gray-100 px-5 py-3 text-sm text-gray-600">
+        <span>Página {{ pagina.number }} de {{ pagina.paginator.num_pages }}</span>
+        <div class="space-x-2">
+            {% if pagina.has_previous %}
+                <a href="?{% if querystring %}{{ querystring }}&{% endif %}page={{ pagina.previous_page_number }}"
+                   class="px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50">Anterior</a>
+            {% endif %}
+            {% if pagina.has_next %}
+                <a href="?{% if querystring %}{{ querystring }}&{% endif %}page={{ pagina.next_page_number }}"
+                   class="px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50">Siguiente</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
 </div>
+{% if imprimir %}
+<script>window.addEventListener("load", function () { window.print(); });</script>
+{% endif %}
 {% endblock %}

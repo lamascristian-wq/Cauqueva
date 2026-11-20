@@ -113,10 +113,17 @@ class MovimientoStockForm(forms.ModelForm):
             "proveedor": forms.Select(attrs={"class": ESTILO}),
             "cantidad": forms.NumberInput(attrs={"class": ESTILO, "step": "0.01", "min": "0.01"}),
             "precio_unitario": forms.NumberInput(
-                attrs={"class": ESTILO, "step": "0.01", "min": "0"}
+                attrs={"class": ESTILO, "step": "0.01", "min": "0.01"}
             ),
             "observaciones": forms.Textarea(attrs={"class": ESTILO, "rows": 3}),
         }
+
+    def clean_precio_unitario(self):
+        precio = self.cleaned_data.get("precio_unitario")
+        # Los ingresos (compras) siempre deben tener un precio real.
+        if self.instance.tipo == "INGRESO" and (precio is None or precio <= 0):
+            raise forms.ValidationError("El precio unitario tiene que ser mayor a 0.")
+        return precio
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

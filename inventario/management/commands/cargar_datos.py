@@ -1,8 +1,10 @@
+from datetime import timedelta
 from decimal import Decimal
 
 from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand
 from django.db import transaction
+from django.utils import timezone
 
 from inventario.models import (
     IngredienteReceta,
@@ -110,6 +112,37 @@ PRODUCTOS = [
     ("Palitos de maíz morado x100g", Decimal("5450"), [("maiz_morado", Decimal("0.100"))]),
 ]
 
+# Movimientos variados distribuidos en los últimos meses para dar vida a los gráficos
+MOVIMIENTOS_HISTORICOS = [
+    # Hace 5 meses (~150 días)
+    {"clave": "papa_andina", "tipo": "INGRESO", "cant": Decimal("100"), "dias": 150, "obs": "Reposición de lote anterior"},
+    {"clave": "papa_andina", "tipo": "CONSUMO", "cant": Decimal("45"), "dias": 145, "obs": "Producción de snacks lote #101"},
+    {"clave": "maiz_amarillo", "tipo": "CONSUMO", "cant": Decimal("30"), "dias": 140, "obs": "Molienda de harina"},
+
+    # Hace 4 meses (~120 días)
+    {"clave": "maiz_capia", "tipo": "CONSUMO", "cant": Decimal("50"), "dias": 115, "obs": "Elaboración de fideos"},
+    {"clave": "quinoa", "tipo": "CONSUMO", "cant": Decimal("35"), "dias": 110, "obs": "Producción de alfajores"},
+    {"clave": "maiz_morado", "tipo": "CONSUMO", "cant": Decimal("25"), "dias": 105, "obs": "Extrusión de palitos"},
+
+    # Hace 3 meses (~90 días)
+    {"clave": "papa_andina", "tipo": "CONSUMO", "cant": Decimal("70"), "dias": 85, "obs": "Producción intensiva snacks"},
+    {"clave": "maiz_amarillo", "tipo": "INGRESO", "cant": Decimal("80"), "dias": 80, "obs": "Ingreso por compra programada"},
+    {"clave": "maiz_amarillo", "tipo": "CONSUMO", "cant": Decimal("60"), "dias": 75, "obs": "Molienda mensual"},
+
+    # Hace 2 meses (~60 días)
+    {"clave": "quinoa", "tipo": "INGRESO", "cant": Decimal("90"), "dias": 55, "obs": "Lote recibido Purmamarca"},
+    {"clave": "quinoa", "tipo": "CONSUMO", "cant": Decimal("40"), "dias": 50, "obs": "Producción galletas y alfajores"},
+    {"clave": "maiz_capia", "tipo": "CONSUMO", "cant": Decimal("45"), "dias": 45, "obs": "Elaboración fideos lote #202"},
+
+    # Hace 1 mes (~30 días)
+    {"clave": "papa_andina", "tipo": "CONSUMO", "cant": Decimal("80"), "dias": 25, "obs": "Lote mensual snacks"},
+    {"clave": "maiz_morado", "tipo": "INGRESO", "cant": Decimal("50"), "dias": 20, "obs": "Ingreso directo de cooperativa"},
+    {"clave": "maiz_morado", "tipo": "CONSUMO", "cant": Decimal("30"), "dias": 15, "obs": "Procesamiento palitos morados"},
+
+    # Mes actual (días recientes)
+    {"clave": "papa_andina", "tipo": "CONSUMO", "cant": Decimal("35"), "dias": 5, "obs": "Consumo de prueba esta semana"},
+    {"clave": "maiz_amarillo", "tipo": "CONSUMO", "cant": Decimal("25"), "dias": 2, "obs": "Consumo de prueba reciente"},
+    ]
 
 class Command(BaseCommand):
     help = (
@@ -129,7 +162,7 @@ class Command(BaseCommand):
     def handle(self, *args, **opciones):
         campos_materia = {f.name for f in MateriaPrima._meta.get_fields()}
         campos_movimiento = {f.name for f in MovimientoStock._meta.get_fields()}
-        nuevos = {"proveedores": 0, "materias": 0, "ingresos": 0, "productos": 0, "recetas": 0}
+        nuevos = {"usuarios": 0,"proveedores": 0, "materias": 0, "ingresos": 0, "productos": 0, "recetas": 0}
 
         # 1. Usuarios (Admin, Gerente u Operario)
         for datos_u in USUARIOS:

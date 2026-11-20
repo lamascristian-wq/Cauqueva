@@ -437,16 +437,29 @@ def reportes_csv(request):
     w.writerow(["HISTORIAL DE MOVIMIENTOS DEL MES"])
     w.writerow(["Fecha y hora", "Operación", "Materia prima", "Cantidad (Kg)",
                 "Precio por Kg ($)", "Total ($)", "Proveedor", "Observaciones"])
+    
     for mov in d["historial_mes"]:
-        proveedor = mov.proveedor_nombre + (" (externo)" if mov.proveedor_es_externo else "")
+        # 1. Obtenemos el nombre del proveedor de forma segura si existe
+        if mov.proveedor:
+            proveedor_str = mov.proveedor.nombre
+            # Si tu modelo Proveedor tiene el campo 'es_externo', lo agrega
+            if getattr(mov.proveedor, 'es_externo', False):
+                proveedor_str += " (externo)"
+        else:
+            proveedor_str = "—"
+
+        # 2. Obtenemos precio unitario y total previniendo campos nulos o inexistentes
+        precio_u = getattr(mov, 'precio_unitario', None)
+        total_mov = getattr(mov, 'total', None)
+
         w.writerow([
             timezone.localtime(mov.fecha).strftime("%d/%m/%Y %H:%M"),
             "Ingreso" if mov.tipo == "INGRESO" else "Consumo",
             mov.materia_prima,
             n(mov.cantidad),
-            n(mov.precio_unitario) if mov.precio_unitario is not None else "",
-            n(mov.total) if mov.total is not None else "",
-            proveedor,
+            n(precio_u) if precio_u is not None else "",
+            n(total_mov) if total_mov is not None else "",
+            proveedor_str,
             mov.observaciones or "",
         ])
     

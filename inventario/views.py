@@ -196,16 +196,29 @@ def registrar_movimiento(request):
 # Vista del Historial General (Todos los movimientos)
 @login_required(login_url='login')
 def historial_general(request):
-    # .all() trae todo. 
-    # .select_related() optimiza la carga de las tablas relacionadas.
-    # .order_by('-fecha') garantiza el orden: del más reciente al más viejo.
-    movimientos = MovimientoStock.objects.all().select_related(
-        'materia_prima', 
-        'proveedor'
-    ).order_by('-fecha')
-    
-    return render(request, 'inventario/historialgeneral.html', {
-        'movimientos': movimientos
+    tipo = request.GET.get("tipo", "")  # "", "ingreso" o "consumo"
+    if tipo not in ("ingreso", "consumo"):
+        tipo = ""
+
+    base = MovimientoStock.objects.all()
+    cant_ingresos = base.filter(tipo="INGRESO").count()
+    cant_consumos = base.filter(tipo="CONSUMO").count()
+
+    movimientos = base.select_related(
+        "materia_prima", "proveedor", "produccion__producto"
+    ).order_by("-fecha")
+
+    if tipo == "ingreso":
+        movimientos = movimientos.filter(tipo="INGRESO")
+    elif tipo == "consumo":
+        movimientos = movimientos.filter(tipo="CONSUMO")
+
+    return render(request, "inventario/historialgeneral.html", {
+        "movimientos": movimientos,
+        "tipo": tipo,
+        "cant_ingresos": cant_ingresos,
+        "cant_consumos": cant_consumos,
+        "cant_todos": cant_ingresos + cant_consumos,
     })
 
 # Vista de Informes Mensuales 
@@ -703,25 +716,60 @@ def editar_proveedor(request, pk):
 # Vista para Exportar el Historial Completo a CSV
 @login_required(login_url='login')
 def exportar_historial(request):
-    movimientos = MovimientoStock.objects.all().select_related('materia_prima', 'proveedor').order_by('-fecha')
+    # 1. Obtenemos el QuerySet con las relaciones optimizadas
+    movimientos = MovimientoStock.objects.select_related("materia_prima", "proveedor").order_by("-fecha")
+
+    # 2. Aplicamos los mismos filtros que tenga el usuario en la interfaz
+    materia_id = request.GET.get("materia")
+    tipo = request.GET.get("tipo")
     
-    response = HttpResponse(content_type='text/csv; charset=utf-8')
-    response['Content-Disposition'] = 'attachment; filename="historial_movimientos.csv"'
-    response.write("\ufeff") # Soporte para Excel en español (acentos)
-    
-    writer = csv.writer(response, delimiter=';')
-    writer.writerow(['Fecha', 'Tipo', 'Materia Prima', 'Unidad', 'Cantidad', 'Proveedor', 'Observaciones'])
-    
+    if materia_id:
+        movimientos = movimientos.filter(materia_prima_id=materia_id)
+    if tipo:
+        movimientos = movimientos.filter(tipo=tipo)
+
+    # 3. Preparamos el HttpResponse con la codificación UTF-8 para Excel
+    response = HttpResponse(content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = 'attachment; filename="historial_movimientos.csv"'
+    response.write("\ufeff")  # Marca BOM para que Excel respete acentos y caracteres
+
+    writer = csv.writer(response, delimiter=";")
+
+    # 4. Escribimos la primera fila con las COLUMNAS / CABECERAS
+    writer.writerow([
+        "Fecha y Hora",
+        "Tipo de Movimiento",
+        "Materia Prima",
+        "Variedad",
+        "Cantidad",
+        "Unidad",
+        "Precio Unitario ($)",
+        "Proveedor",
+        "Observaciones"
+    ])
+
+    # Helper para formatear decimales con coma en español
+    def f_num(val):
+        return str(val).replace(".", ",") if val is not None else ""
+
+    # 5. Escribimos los registros fila por fila
     for mov in movimientos:
+        fecha_str = timezone.localtime(mov.fecha).strftime("%d/%m/%Y %H:%M")
+        proveedor_str = mov.proveedor.nombre if mov.proveedor else "—"
+        precio_u = getattr(mov, "precio_unitario", None)
+
         writer.writerow([
-            mov.fecha.strftime("%d/%m/%Y %H:%M"),
-            mov.get_tipo_display(),
-            f"{mov.materia_prima.nombre} {mov.materia_prima.variedad or ''}",
+            fecha_str,
+            mov.get_tipo_display() if hasattr(mov, "get_tipo_display") else mov.tipo,
+            mov.materia_prima.nombre,
+            mov.materia_prima.variedad or "—",
+            f_num(mov.cantidad),
             mov.materia_prima.unidad_medida,
-            str(mov.cantidad).replace('.', ','),
-            mov.proveedor.nombre if mov.proveedor else "Proveedor Externo",
-            mov.observaciones
+            f_num(precio_u),
+            proveedor_str,
+            mov.observaciones or "",
         ])
+
     return response
 
 

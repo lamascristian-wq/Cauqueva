@@ -1,43 +1,69 @@
 {% extends 'inventario/base.html' %}
 
 {% block content %}
-<div class="mb-8 flex justify-between items-center">
+<div class="mb-6 flex justify-between items-center">
     <div>
         <h2 class="text-2xl font-bold text-gray-800">Historial de Movimientos</h2>
         <p class="text-sm text-gray-500 mt-1">Registro general de ingresos de proveedores y salidas a producción.</p>
     </div>
-    
-    <!-- Botón opcional para exportar (lo conectaremos a tu vista de CSV luego) -->
-    <a href="#" class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium py-2 px-4 rounded-lg transition-colors flex items-center shadow-sm text-sm">
-        <span class="material-icons text-gray-500 mr-2 text-sm">download</span> Exportar
+
+    <a href="{% url 'exportar_historial' %}?{{ request.GET.urlencode }}"
+        class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-xl text-sm font-medium text-gray-700 hover:bg-gray-50 shadow-sm transition-colors">
+        <span class="material-icons text-base">download</span>
+        Exportar
     </a>
 </div>
 
-<!-- Contenedor de la Tabla -->
+<!-- Pestañas -->
+<div class="mb-4 flex flex-wrap gap-2">
+    <a href="?"
+       class="px-4 py-2 rounded-lg text-sm font-medium border transition-colors
+              {% if tipo == '' %}bg-green-700 text-white border-green-700{% else %}bg-white text-gray-700 border-gray-300 hover:bg-gray-50{% endif %}">
+        Todos <span class="ml-1 opacity-75">({{ cant_todos }})</span>
+    </a>
+    <a href="?tipo=ingreso"
+       class="px-4 py-2 rounded-lg text-sm font-medium border transition-colors
+              {% if tipo == 'ingreso' %}bg-green-700 text-white border-green-700{% else %}bg-white text-gray-700 border-gray-300 hover:bg-gray-50{% endif %}">
+        Ingresos <span class="ml-1 opacity-75">({{ cant_ingresos }})</span>
+    </a>
+    <a href="?tipo=consumo"
+       class="px-4 py-2 rounded-lg text-sm font-medium border transition-colors
+              {% if tipo == 'consumo' %}bg-green-700 text-white border-green-700{% else %}bg-white text-gray-700 border-gray-300 hover:bg-gray-50{% endif %}">
+        Consumos <span class="ml-1 opacity-75">({{ cant_consumos }})</span>
+    </a>
+</div>
+
 <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
     <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse">
+
+            <!-- ENCABEZADOS según la pestaña -->
             <thead>
                 <tr class="bg-gray-50 border-b border-gray-200 text-gray-500 text-xs uppercase tracking-wider">
                     <th class="p-4 font-medium">Fecha y Hora</th>
-                    <th class="p-4 font-medium">Operación</th>
+                    {% if tipo == '' %}<th class="p-4 font-medium">Operación</th>{% endif %}
                     <th class="p-4 font-medium">Materia Prima</th>
                     <th class="p-4 font-medium">Cantidad</th>
-                    <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Precio por Kg</th>
-                    <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Total</th>
-                    <th class="p-4 font-medium">Proveedor</th>
-                    
+                    {% if tipo == 'ingreso' %}
+                        <th class="p-4 font-medium">Precio por Kg</th>
+                        <th class="p-4 font-medium">Total Pagado</th>
+                        <th class="p-4 font-medium">Proveedor</th>
+                    {% elif tipo == 'consumo' %}
+                        <th class="p-4 font-medium">Producción</th>
+                        <th class="p-4 font-medium">Venta generada</th>
+                    {% else %}
+                        <th class="p-4 font-medium">Detalle</th>
+                    {% endif %}
                 </tr>
             </thead>
+
             <tbody class="text-gray-700 text-sm divide-y divide-gray-100">
-                
                 {% for mov in movimientos %}
                 <tr class="hover:bg-gray-50 transition-colors">
-                    
-                    <!-- Fecha formateada (Día/Mes/Año Hora:Minuto) -->
+
                     <td class="p-4 whitespace-nowrap">{{ mov.fecha|date:"d/m/Y H:i" }}</td>
-                    
-                    <!-- Columna de Tipo con colores dinámicos -->
+
+                    {% if tipo == '' %}
                     <td class="p-4 whitespace-nowrap">
                         {% if mov.tipo == 'INGRESO' %}
                             <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -49,16 +75,15 @@
                             </span>
                         {% endif %}
                     </td>
-                    
-                    <!-- Nombre del Producto -->
+                    {% endif %}
+
                     <td class="p-4 font-medium text-gray-900">
-                        {{ mov.materia_prima.nombre }} 
+                        {{ mov.materia_prima.nombre }}
                         {% if mov.materia_prima.variedad %}
                             <span class="text-gray-500 font-normal text-xs ml-1">({{ mov.materia_prima.variedad }})</span>
                         {% endif %}
                     </td>
-                    
-                    <!-- Columna de Cantidad con colores matemáticos (+ / -) -->
+
                     <td class="p-4 whitespace-nowrap font-bold">
                         {% if mov.tipo == 'INGRESO' %}
                             <span class="text-green-600">+{{ mov.cantidad }}</span>
@@ -67,28 +92,62 @@
                         {% endif %}
                         <span class="text-gray-500 font-normal text-xs">{{ mov.materia_prima.get_unidad_medida_display }}</span>
                     </td>
-                    <td class="px-6 py-4 text-gray-700">
-                        {% if mov.precio_unitario is not None %}${{ mov.precio_unitario|floatformat:"2g" }}{% else %}-{% endif %}
-                    </td>
-                    <td class="px-6 py-4 font-semibold text-gray-800">
-                        {% if mov.costo_total is not None %}${{ mov.costo_total|floatformat:"2g" }}{% else %}-{% endif %}
-                    </td>
-                    <!-- Proveedor (Si está vacío, muestra un guión gracias al filtro 'default') -->
-                    <td class="p-4">{{ mov.proveedor.nombre|default:"-" }}</td>
-                    
+
+                    {% if tipo == 'ingreso' %}
+                        <td class="p-4 text-gray-700">
+                            {% if mov.precio_unitario is not None %}${{ mov.precio_unitario|floatformat:"2g" }}{% else %}-{% endif %}
+                        </td>
+                        <td class="p-4 font-semibold text-gray-800">
+                            {% if mov.costo_total is not None %}${{ mov.costo_total|floatformat:"2g" }}{% else %}-{% endif %}
+                        </td>
+                        <td class="p-4">{{ mov.proveedor_nombre|default:"-" }}</td>
+
+                    {% elif tipo == 'consumo' %}
+                        <td class="p-4">
+                            {% if mov.produccion %}{{ mov.produccion }}{% else %}<span class="text-gray-400">Consumo manual</span>{% endif %}
+                        </td>
+                        <td class="p-4 whitespace-nowrap">
+                            {% if mov.produccion %}
+                                <span class="font-semibold text-green-700">${{ mov.produccion.total|floatformat:"2g" }}</span>
+                                <span class="block text-xs text-gray-500">${{ mov.produccion.precio_unitario|floatformat:"2g" }} c/u</span>
+                            {% else %}
+                                <span class="text-gray-400">-</span>
+                            {% endif %}
+                        </td>
+                        
+
+                    {% else %}
+                        <td class="p-4">
+                            {% if mov.tipo == 'INGRESO' %}
+                                {{ mov.proveedor_nombre|default:"-" }}
+                                {% if mov.precio_unitario is not None %}
+                                    <span class="block text-xs text-gray-500">
+                                        ${{ mov.precio_unitario|floatformat:"2g" }}/Kg · Total ${{ mov.costo_total|floatformat:"2g" }}
+                                    </span>
+                                {% endif %}
+                            {% else %}
+                                {% if mov.produccion %}
+                                    Producción: {{ mov.produccion }}
+                                    <span class="block text-xs text-green-700 font-medium">
+                                        Venta generada: ${{ mov.produccion.total|floatformat:"2g" }}
+                                    </span>
+                                {% else %}
+                                    <span class="text-gray-400">Consumo manual</span>
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                    {% endif %}
                 </tr>
-                
-                <!-- Este bloque se activa automáticamente si la tabla de la base de datos está vacía -->
+
                 {% empty %}
                 <tr>
-                    <td colspan="6" class="p-12 text-center text-gray-500">
+                    <td colspan="7" class="p-12 text-center text-gray-500">
                         <span class="material-icons text-gray-300 text-5xl mb-3 block">history</span>
-                        <p class="text-lg font-medium text-gray-700">No hay movimientos registrados</p>
+                        <p class="text-lg font-medium text-gray-700">No hay movimientos para mostrar</p>
                         <p class="text-sm">Cuando registres ingresos o consumos, aparecerán aquí.</p>
                     </td>
                 </tr>
                 {% endfor %}
-                
             </tbody>
         </table>
     </div>

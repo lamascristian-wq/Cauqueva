@@ -10,6 +10,7 @@ from inventario.models import (
     IngredienteReceta,
     MateriaPrima,
     MovimientoStock,
+    Produccion,
     Producto,
     Proveedor,
 )
@@ -112,59 +113,78 @@ PRODUCTOS = [
     ("Palitos de maíz morado x100g", Decimal("5450"), [("maiz_morado", Decimal("0.100"))]),
 ]
 
-# Movimientos variados distribuidos en los últimos meses para dar vida a los gráficos
-MOVIMIENTOS_HISTORICOS = [
-    # Hace 5 meses (~150 días)
-    {"clave": "papa_andina", "tipo": "INGRESO", "cant": Decimal("100"), "dias": 150, "obs": "Reposición de lote anterior"},
-    {"clave": "papa_andina", "tipo": "CONSUMO", "cant": Decimal("45"), "dias": 145, "obs": "Producción de snacks lote #101"},
-    {"clave": "maiz_amarillo", "tipo": "CONSUMO", "cant": Decimal("30"), "dias": 140, "obs": "Molienda de harina"},
+# ---------------------------------------------------------------------------
+# Historial de ejemplo para darle vida a los gráficos y reportes
+# ---------------------------------------------------------------------------
 
-    # Hace 4 meses (~120 días)
-    {"clave": "maiz_capia", "tipo": "CONSUMO", "cant": Decimal("50"), "dias": 115, "obs": "Elaboración de fideos"},
-    {"clave": "quinoa", "tipo": "CONSUMO", "cant": Decimal("35"), "dias": 110, "obs": "Producción de alfajores"},
-    {"clave": "maiz_morado", "tipo": "CONSUMO", "cant": Decimal("25"), "dias": 105, "obs": "Extrusión de palitos"},
+# Los datos históricos llevan esta marca en "observaciones" para no duplicarse
+# si el comando se ejecuta más de una vez.
+MARCA = "[Demo]"
 
-    # Hace 3 meses (~90 días)
-    {"clave": "papa_andina", "tipo": "CONSUMO", "cant": Decimal("70"), "dias": 85, "obs": "Producción intensiva snacks"},
-    {"clave": "maiz_amarillo", "tipo": "INGRESO", "cant": Decimal("80"), "dias": 80, "obs": "Ingreso por compra programada"},
-    {"clave": "maiz_amarillo", "tipo": "CONSUMO", "cant": Decimal("60"), "dias": 75, "obs": "Molienda mensual"},
+# El stock inicial se fecha antes que todo el historial, así los reportes
+# mensuales nunca muestran consumos en meses donde todavía no había stock.
+DIAS_STOCK_INICIAL = 160
 
-    # Hace 2 meses (~60 días)
-    {"clave": "quinoa", "tipo": "INGRESO", "cant": Decimal("90"), "dias": 55, "obs": "Lote recibido Purmamarca"},
-    {"clave": "quinoa", "tipo": "CONSUMO", "cant": Decimal("40"), "dias": 50, "obs": "Producción galletas y alfajores"},
-    {"clave": "maiz_capia", "tipo": "CONSUMO", "cant": Decimal("45"), "dias": 45, "obs": "Elaboración fideos lote #202"},
+# Ingresos extra de materia prima (clave, Kg, hace cuántos días, observación)
+INGRESOS_HISTORICOS = [
+    ("papa_andina", Decimal("100"), 150, "Reposición de lote anterior"),
+    ("maiz_amarillo", Decimal("80"), 80, "Ingreso por compra programada"),
+    ("quinoa", Decimal("90"), 55, "Lote recibido de Purmamarca"),
+    ("maiz_morado", Decimal("50"), 20, "Ingreso directo de cooperativa"),
+]
 
-    # Hace 1 mes (~30 días)
-    {"clave": "papa_andina", "tipo": "CONSUMO", "cant": Decimal("80"), "dias": 25, "obs": "Lote mensual snacks"},
-    {"clave": "maiz_morado", "tipo": "INGRESO", "cant": Decimal("50"), "dias": 20, "obs": "Ingreso directo de cooperativa"},
-    {"clave": "maiz_morado", "tipo": "CONSUMO", "cant": Decimal("30"), "dias": 15, "obs": "Procesamiento palitos morados"},
+# Producciones (= ventas). Cada una descuenta la materia prima de su receta,
+# igual que cuando se registra desde la pantalla de Producción.
+# (hace cuántos días, producto, unidades producidas, observación)
+PRODUCCIONES_HISTORICAS = [
+    (145, "Snacks de papa andina x100g", 450, "Lote snacks #101"),                 # 45 Kg de papa
+    (140, "Harina de maíz amarillo x1kg", 30, "Molienda de harina"),               # 30 Kg de maíz amarillo
+    (115, "Fideos de maíz capia x300g", 160, "Elaboración de fideos"),             # 48 Kg de capia
+    (110, "Alfajores grandes de quinoa x150g (caja de 6 u.)", 230, "Alfajores"),   # 34,5 Kg de quinoa
+    (105, "Palitos de maíz morado x100g", 250, "Extrusión de palitos"),            # 25 Kg de maíz morado
+    (85, "Snacks de papa andina x100g", 700, "Producción intensiva de snacks"),    # 70 Kg de papa
+    (75, "Harina de maíz amarillo x1kg", 60, "Molienda mensual"),                  # 60 Kg de maíz amarillo
+    (50, "Alfajores grandes de quinoa x150g (caja de 6 u.)", 260, "Alfajores"),    # 39 Kg de quinoa
+    (45, "Fideos de maíz capia x300g", 150, "Fideos lote #202"),                   # 45 Kg de capia
+    (25, "Snacks de papa andina x100g", 800, "Lote mensual de snacks"),            # 80 Kg de papa
+    (15, "Palitos de maíz morado x100g", 300, "Palitos morados"),                  # 30 Kg de maíz morado
+    (5, "Snacks de papa andina x100g", 350, "Producción de la semana"),            # 35 Kg de papa
+    (2, "Harina de maíz amarillo x1kg", 25, "Molienda reciente"),                  # 25 Kg de maíz amarillo
+]
 
-    # Mes actual (días recientes)
-    {"clave": "papa_andina", "tipo": "CONSUMO", "cant": Decimal("35"), "dias": 5, "obs": "Consumo de prueba esta semana"},
-    {"clave": "maiz_amarillo", "tipo": "CONSUMO", "cant": Decimal("25"), "dias": 2, "obs": "Consumo de prueba reciente"},
-    ]
 
 class Command(BaseCommand):
     help = (
-        "Carga datos iniciales de CAUQUEVA: 4 proveedores, 5 materias primas "
-        "(con su stock inicial como ingresos) y 6 productos con su receta. "
-        "Se puede ejecutar más de una vez sin duplicar datos."
+        "Carga datos iniciales de CAUQUEVA: usuarios, 4 proveedores, 5 materias primas "
+        "(con su stock inicial como ingresos), 6 productos con su receta y un historial "
+        "de ingresos y producciones. Se puede ejecutar más de una vez sin duplicar datos."
     )
 
     def add_arguments(self, parser):
         parser.add_argument(
             "--sin-stock",
             action="store_true",
-            help="No cargar el stock inicial (deja las materias primas en 0).",
+            help="No cargar stock inicial ni historial (deja las materias primas en 0).",
         )
 
     @transaction.atomic
     def handle(self, *args, **opciones):
         campos_materia = {f.name for f in MateriaPrima._meta.get_fields()}
         campos_movimiento = {f.name for f in MovimientoStock._meta.get_fields()}
-        nuevos = {"usuarios": 0,"proveedores": 0, "materias": 0, "ingresos": 0, "productos": 0, "recetas": 0}
+        ahora = timezone.now()
 
-        # 1. Usuarios (Admin, Gerente u Operario)
+        nuevos = {
+            "usuarios": 0,
+            "proveedores": 0,
+            "materias": 0,
+            "stock_inicial": 0,
+            "ingresos_hist": 0,
+            "producciones_hist": 0,
+            "productos": 0,
+            "recetas": 0,
+        }
+
+        # 1. Usuarios (admin, gerente y operario)
         for datos_u in USUARIOS:
             user, creado = User.objects.get_or_create(
                 username=datos_u["username"],
@@ -218,8 +238,11 @@ class Command(BaseCommand):
                 if "precio_unitario" in campos_movimiento:
                     ingreso["precio_unitario"] = d["precio"]
                 # El save() del movimiento suma la cantidad al stock automáticamente
-                MovimientoStock.objects.create(**ingreso)
-                nuevos["ingresos"] += 1
+                mov = MovimientoStock.objects.create(**ingreso)
+                MovimientoStock.objects.filter(pk=mov.pk).update(
+                    fecha=ahora - timedelta(days=DIAS_STOCK_INICIAL)
+                )
+                nuevos["stock_inicial"] += 1
 
         # 4. Qué materias primas provee cada proveedor
         for datos in PROVEEDORES:
@@ -228,10 +251,12 @@ class Command(BaseCommand):
             )
 
         # 5. Productos y recetas
+        productos = {}
         for nombre, precio, receta in PRODUCTOS:
             producto, creado = Producto.objects.get_or_create(
                 nombre=nombre, defaults={"precio": precio}
             )
+            productos[nombre] = producto
             nuevos["productos"] += creado
             for clave, kg_por_unidad in receta:
                 _, creada = IngredienteReceta.objects.get_or_create(
@@ -241,9 +266,46 @@ class Command(BaseCommand):
                 )
                 nuevos["recetas"] += creada
 
+        # 6. Historial de ejemplo: ingresos y producciones repartidos en los últimos meses
+        ya_cargado = (
+            MovimientoStock.objects.filter(observaciones__startswith=MARCA).exists()
+            or Produccion.objects.filter(observaciones__startswith=MARCA).exists()
+        )
+        if not opciones["sin_stock"] and not ya_cargado:
+            # 6a. Primero todos los ingresos, así siempre hay stock para producir
+            for clave, cantidad, dias, obs in INGRESOS_HISTORICOS:
+                datos_ingreso = {
+                    "materia_prima": materias[clave],
+                    "proveedor": proveedores[MATERIAS_PRIMAS[clave]["proveedor"]],
+                    "tipo": "INGRESO",
+                    "cantidad": cantidad,
+                    "observaciones": f"{MARCA} {obs}",
+                }
+                if "precio_unitario" in campos_movimiento:
+                    datos_ingreso["precio_unitario"] = MATERIAS_PRIMAS[clave]["precio"]
+                mov = MovimientoStock.objects.create(**datos_ingreso)
+                MovimientoStock.objects.filter(pk=mov.pk).update(fecha=ahora - timedelta(days=dias))
+                nuevos["ingresos_hist"] += 1
+
+            # 6b. Producciones reales: crean la Produccion y sus consumos vinculados
+            for dias, nombre_producto, unidades, obs in PRODUCCIONES_HISTORICAS:
+                producto = productos[nombre_producto]
+                fecha = ahora - timedelta(days=dias)
+                prod = Produccion.registrar(
+                    producto, unidades, fecha=fecha, observaciones=f"{MARCA} {obs}"
+                )
+                if not isinstance(prod, Produccion):
+                    prod = Produccion.objects.filter(producto=producto).latest("id")
+                # Aseguramos la fecha histórica en la producción y en sus consumos
+                Produccion.objects.filter(pk=prod.pk).update(fecha=fecha)
+                MovimientoStock.objects.filter(produccion=prod).update(fecha=fecha)
+                nuevos["producciones_hist"] += 1
+
         self.stdout.write(self.style.SUCCESS(
             "Datos cargados: "
-            f"{nuevos['proveedores']} proveedores, {nuevos['materias']} materias primas, "
-            f"{nuevos['ingresos']} ingresos de stock inicial, {nuevos['productos']} productos, "
-            f"{nuevos['recetas']} ingredientes de receta."
+            f"{nuevos['usuarios']} usuarios, {nuevos['proveedores']} proveedores, "
+            f"{nuevos['materias']} materias primas, {nuevos['stock_inicial']} ingresos de stock inicial, "
+            f"{nuevos['productos']} productos, {nuevos['recetas']} ingredientes de receta, "
+            f"{nuevos['ingresos_hist']} ingresos históricos y "
+            f"{nuevos['producciones_hist']} producciones históricas."
         ))

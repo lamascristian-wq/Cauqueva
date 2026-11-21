@@ -28,6 +28,7 @@ urlpatterns = [
     path("proveedores/", views.proveedores, name="proveedores"),
     path("proveedores/nuevo/", views.crear_proveedor, name="crear_proveedor"),
     path("proveedores/<int:pk>/editar/", views.editar_proveedor, name="editar_proveedor"),
+    path("proveedores/<int:pk>/eliminar/", views.eliminar_proveedor, name="eliminar_proveedor"),
     
     # --- ACCESO Y AUTENTICACIÓN ---
     path('login/', LoginView.as_view(template_name='inventario/login.html'), name='login'),

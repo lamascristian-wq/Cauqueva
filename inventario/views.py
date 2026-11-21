@@ -6,6 +6,7 @@ from .models import MateriaPrima, MovimientoStock,Proveedor, Producto,Produccion
 from .forms import MateriaPrimaForm,MovimientoStockForm, ProveedorForm, ProduccionForm
 from .notificaciones import enviar_alerta_stock
 import csv 
+from urllib.parse import urlencode
 from collections import defaultdict
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
@@ -13,6 +14,7 @@ from django.http import HttpResponse
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.db import transaction
+from django.views.decorators.http import require_POST
 from django.utils.dateparse import parse_date
 from django.db.models import Count, DecimalField, F, Max, Prefetch, Q, Sum
 from django.core.paginator import Paginator
@@ -193,14 +195,32 @@ def registrar_movimiento(request):
         'inventario/registrarmovimiento.html',
         {'formulario': formulario}
     )
-# Vista del Historial General (Todos los movimientos)
+def _fecha(valor):
+    try:
+        return parse_date(valor)
+    except ValueError:
+        return None
+
+
+def _filtrar_por_fechas(request, queryset):
+    """Aplica el rango desde/hasta (inclusive) del GET. Devuelve (queryset, desde, hasta)."""
+    desde = request.GET.get("desde", "")
+    hasta = request.GET.get("hasta", "")
+    if _fecha(desde):
+        queryset = queryset.filter(fecha__date__gte=_fecha(desde))
+    if _fecha(hasta):
+        queryset = queryset.filter(fecha__date__lte=_fecha(hasta))
+    return queryset, desde, hasta
+
+
+# Vista del Historial General (con filtro por tipo y rango de fechas)
 @login_required(login_url='login')
 def historial_general(request):
     tipo = request.GET.get("tipo", "")  # "", "ingreso" o "consumo"
     if tipo not in ("ingreso", "consumo"):
         tipo = ""
 
-    base = MovimientoStock.objects.all()
+    base, desde, hasta = _filtrar_por_fechas(request, MovimientoStock.objects.all())
     cant_ingresos = base.filter(tipo="INGRESO").count()
     cant_consumos = base.filter(tipo="CONSUMO").count()
 
@@ -213,12 +233,30 @@ def historial_general(request):
     elif tipo == "consumo":
         movimientos = movimientos.filter(tipo="CONSUMO")
 
+    # Para imprimir / PDF se muestran todos los movimientos, sin paginar.
+    imprimir = request.GET.get("imprimir") == "1"
+    por_pagina = max(movimientos.count(), 1) if imprimir else 25
+    pagina = Paginator(movimientos, por_pagina).get_page(request.GET.get("page"))
+
+    params = request.GET.copy()
+    for k in ("page", "imprimir"):
+        params.pop(k, None)
+    fechas = {k: v for k, v in (("desde", desde), ("hasta", hasta)) if v}
+
     return render(request, "inventario/historialgeneral.html", {
-        "movimientos": movimientos,
+        "pagina": pagina,
         "tipo": tipo,
+        "desde": desde,
+        "hasta": hasta,
         "cant_ingresos": cant_ingresos,
         "cant_consumos": cant_consumos,
         "cant_todos": cant_ingresos + cant_consumos,
+        "querystring": params.urlencode(),
+        "qs_fechas": urlencode(fechas),
+        "imprimir": imprimir,
+        "base_template": "inventario/base_imprimir.html" if imprimir else "inventario/base.html",
+        "generado": timezone.localtime(),
+        "total": pagina.paginator.count,
     })
 
 # Vista de Informes Mensuales 
@@ -404,18 +442,31 @@ def _datos_extra(inicio, fin, ini_dt, fin_dt):
 def reportes(request):
     datos = _datos_reporte(request.GET.get("mes", ""))
     datos["seccion"] = "reportes"
+    # Con ?imprimir=1 se muestra una versión simple, lista para imprimir o guardar como PDF
+    datos["imprimir"] = request.GET.get("imprimir") == "1"
+    datos["base_template"] = (
+        "inventario/base_imprimir.html" if datos["imprimir"] else "inventario/base.html"
+    )
     return render(request, "inventario/reportes.html", datos)
+
+def _num_csv(x):
+    """Número con coma decimal y 2 decimales, para Excel/LibreOffice en español."""
+    if x is None or x == "":
+        return ""
+    return f"{Decimal(str(x)):.2f}".replace(".", ",")
+
 
 @login_required(login_url='login')
 @user_passes_test(es_gerente, login_url='/')
 def reportes_csv(request):
     d = _datos_reporte(request.GET.get("mes", ""))
-    n = lambda x: str(x).replace(".", ",")  # coma decimal para Excel en español
+    n = _num_csv
 
     resp = HttpResponse(content_type="text/csv; charset=utf-8")
     resp["Content-Disposition"] = f'attachment; filename="informe-{d["mes_valor"]}.csv"'
     resp.write("\ufeff")  # para que Excel respete los acentos
-    w = csv.writer(resp, delimiter=";")
+    # QUOTE_ALL: la coma decimal nunca se confunde con un separador de columnas
+    w = csv.writer(resp, delimiter=";", quoting=csv.QUOTE_ALL)
 
     w.writerow(["Informe mensual CAUQUEVA", d["mes_nombre"]])
     w.writerow([])
@@ -550,12 +601,6 @@ def alertas_stock(request):
         'alertas': lista_alertas
     })
     
-def _fecha(valor):
-    try:
-        return parse_date(valor)
-    except ValueError:
-        return None
-
 #operaciones con consumo de materias primas
 @login_required(login_url='login')
 def consumos(request):
@@ -711,6 +756,18 @@ def editar_proveedor(request, pk):
     return render(request, "inventario/formularioproveedor.html", {
         "formulario": formulario, "titulo": f"Editar proveedor: {proveedor}",
     })
+@login_required(login_url='login')
+@user_passes_test(es_gerente, login_url='/')
+@require_POST
+def eliminar_proveedor(request, pk):
+    proveedor = get_object_or_404(Proveedor, pk=pk)
+    nombre = proveedor.nombre
+    # Los movimientos históricos se conservan (el proveedor queda en blanco).
+    proveedor.delete()
+    messages.success(request, f"Se eliminó al proveedor «{nombre}».")
+    return redirect("proveedores")
+
+
 # --- FUNCIONES DEL HISTORIAL (Exportar y Editar) ---
 
 # Vista para Exportar el Historial Completo a CSV
@@ -721,19 +778,20 @@ def exportar_historial(request):
 
     # 2. Aplicamos los mismos filtros que tenga el usuario en la interfaz
     materia_id = request.GET.get("materia")
-    tipo = request.GET.get("tipo")
-    
-    if materia_id:
+    tipo = (request.GET.get("tipo") or "").upper()  # la pantalla usa "ingreso"/"consumo"
+
+    if materia_id and materia_id.isdigit():
         movimientos = movimientos.filter(materia_prima_id=materia_id)
-    if tipo:
+    if tipo in ("INGRESO", "CONSUMO"):
         movimientos = movimientos.filter(tipo=tipo)
+    movimientos, _, _ = _filtrar_por_fechas(request, movimientos)
 
     # 3. Preparamos el HttpResponse con la codificación UTF-8 para Excel
     response = HttpResponse(content_type="text/csv; charset=utf-8")
     response["Content-Disposition"] = 'attachment; filename="historial_movimientos.csv"'
     response.write("\ufeff")  # Marca BOM para que Excel respete acentos y caracteres
 
-    writer = csv.writer(response, delimiter=";")
+    writer = csv.writer(response, delimiter=";", quoting=csv.QUOTE_ALL)
 
     # 4. Escribimos la primera fila con las COLUMNAS / CABECERAS
     writer.writerow([
@@ -749,8 +807,7 @@ def exportar_historial(request):
     ])
 
     # Helper para formatear decimales con coma en español
-    def f_num(val):
-        return str(val).replace(".", ",") if val is not None else ""
+    f_num = _num_csv
 
     # 5. Escribimos los registros fila por fila
     for mov in movimientos:

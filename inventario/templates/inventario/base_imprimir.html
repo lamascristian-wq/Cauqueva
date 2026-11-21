@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAUQUEVA - Informe para imprimir</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        /* Diseño simple para imprimir / guardar como PDF: sin menú lateral ni barra superior */
+        body { background: #fff; }
+        @media print {
+            .no-print { display: none !important; }
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }
+    </style>
+</head>
+<body class="font-sans text-gray-800 p-6">
+    {% block content %}{% endblock %}
+</body>
+</html>

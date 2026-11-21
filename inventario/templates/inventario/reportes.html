@@ -1,4 +1,4 @@
-{% extends 'inventario/base.html' %}
+{% extends base_template %}
 
 {% block content %}
 <style>
@@ -40,10 +40,17 @@
                class="inline-flex items-center text-sm font-medium text-green-700 bg-green-50 hover:bg-green-100 px-3 py-2 rounded-lg transition-colors">
                 <span class="material-icons text-base mr-1">table_view</span> Descargar CSV
             </a>
+            {% if imprimir %}
             <button type="button" onclick="window.print()"
                     class="inline-flex items-center bg-green-700 hover:bg-green-800 text-white text-sm font-medium py-2 px-4 rounded-lg shadow-sm transition-colors">
                 <span class="material-icons text-base mr-1.5">print</span> Imprimir / PDF
             </button>
+            {% else %}
+            <a href="?mes={{ mes_valor }}&imprimir=1" target="_blank"
+               class="inline-flex items-center bg-green-700 hover:bg-green-800 text-white text-sm font-medium py-2 px-4 rounded-lg shadow-sm transition-colors">
+                <span class="material-icons text-base mr-1.5">print</span> Imprimir / PDF
+            </a>
+            {% endif %}
         </div>
     </div>
 
@@ -263,4 +270,7 @@
       });
     </script>
 </div>
+{% if imprimir %}
+<script>window.addEventListener("load", function () { setTimeout(function () { window.print(); }, 1500); });</script>
+{% endif %}
 {% endblock %}

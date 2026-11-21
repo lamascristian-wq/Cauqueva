@@ -1,3 +1,4 @@
+
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
@@ -11,10 +12,10 @@
         /* Estilos para el estado colapsado del menú lateral en escritorio */
         @media (min-width: 1024px) {
             #sidebar.collapsed {
-                width: 5rem; /* Ancho reducido (~80px) */
+                width: 5rem;
             }
             #sidebar.collapsed .sidebar-text {
-                display: none; /* Oculta títulos y textos del menú */
+                display: none;
             }
             #sidebar.collapsed nav a {
                 justify-content: center;
@@ -34,13 +35,13 @@
 </head>
 <body class="bg-gray-50 flex h-screen overflow-hidden font-sans text-gray-800">
 
-    <!-- Fondo oscuro traslúcido para móviles (Overlay) -->
-    <div id="sidebarOverlay" class="fixed inset-0 bg-gray-900/50 z-30 hidden lg:hidden transition-opacity"></div>  
+    <!-- Fondo oscuro traslúcido para móviles -->
+    <div id="sidebarOverlay" class="fixed inset-0 bg-gray-900/50 z-30 hidden lg:hidden transition-opacity"></div>
 
-    <!-- BARRA LATERAL (Sidebar) -->
-    <aside id="sidebar" 
+    <!-- BARRA LATERAL -->
+    <aside id="sidebar"
            class="fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-gray-200 flex flex-col transition-all duration-300 overflow-hidden shrink-0 -translate-x-full lg:translate-x-0 lg:static">
-        
+
         <!-- Logo -->
         <div class="h-16 flex items-center px-6 border-b border-gray-200 logo-container transition-all duration-300">
             <img src="{% static 'img/logocauqueva.webp' %}" alt="Logo Cauqueva" class="h-10 w-auto object-contain shrink-0">
@@ -52,45 +53,23 @@
 
         <!-- Menú de navegación -->
         <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+
             {% if user.is_staff %}
+
+            <!-- MENÚ GERENTE -->
+
             <a href="{% url 'panelprincipal' %}"
                class="flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors
                       {% if request.resolver_match.url_name == 'panelprincipal' %}text-green-800 bg-green-100{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-700{% endif %}">
                 <span class="material-icons mr-3 shrink-0 {% if request.resolver_match.url_name == 'panelprincipal' %}text-green-700{% else %}text-gray-400{% endif %}">dashboard</span>
                 <span class="sidebar-text whitespace-nowrap">Panel Principal</span>
             </a>
-            <a href="{% url 'inventariostock' %}"
-               class="flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors
-                      {% if request.resolver_match.url_name == 'inventariostock' %}text-green-800 bg-green-100{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-700{% endif %}">
-                <span class="material-icons mr-3 shrink-0 {% if request.resolver_match.url_name == 'inventariostock' %}text-green-700{% else %}text-gray-400{% endif %}">inventory_2</span>
-                <span class="sidebar-text whitespace-nowrap">Materias Primas</span>
-            </a>
+
             <a href="{% url 'consumos' %}"
                class="flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors
                       {% if request.resolver_match.url_name in 'consumos registrar_consumo' %}text-green-800 bg-green-100{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-700{% endif %}">
                 <span class="material-icons mr-3 shrink-0 {% if request.resolver_match.url_name in 'consumos registrar_consumo' %}text-green-700{% else %}text-gray-400{% endif %}">shopping_cart</span>
-                <span class="sidebar-text whitespace-nowrap">Consumo y Produccion</span>
-            </a>
-
-            <a href="{% url 'registrar_movimiento' %}"
-               class="flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors
-                      {% if request.resolver_match.url_name == 'registrar_movimiento' %}text-green-800 bg-green-100{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-700{% endif %}">
-                <span class="material-icons mr-3 shrink-0 {% if request.resolver_match.url_name == 'registrar_movimiento' %}text-green-700{% else %}text-gray-400{% endif %}">receipt_long</span>
-                <span class="sidebar-text whitespace-nowrap">Registro de Ingresos</span>
-            </a>
-
-            <a href="{% url 'proveedores' %}"
-               class="flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors
-                      {% if request.resolver_match.url_name in 'proveedores crear_proveedor editar_proveedor' %}text-green-800 bg-green-100{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-700{% endif %}">
-                <span class="material-icons mr-3 shrink-0 {% if request.resolver_match.url_name in 'proveedores crear_proveedor editar_proveedor' %}text-green-700{% else %}text-gray-400{% endif %}">local_shipping</span>
-                <span class="sidebar-text whitespace-nowrap">Proveedores</span>
-            </a>
-
-            <a href="{% url 'historial' %}"
-               class="flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors
-                      {% if request.resolver_match.url_name == 'historial' %}text-green-800 bg-green-100{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-700{% endif %}">
-                <span class="material-icons mr-3 shrink-0 {% if request.resolver_match.url_name == 'historial' %}text-green-700{% else %}text-gray-400{% endif %}">history</span>
-                <span class="sidebar-text whitespace-nowrap">Historial de Movimientos</span>
+                <span class="sidebar-text whitespace-nowrap">Consumo y Salidas</span>
             </a>
 
             <a href="{% url 'reportes' %}"
@@ -100,8 +79,38 @@
                 <span class="sidebar-text whitespace-nowrap">Reportes</span>
             </a>
 
+            <a href="{% url 'inventariostock' %}"
+               class="flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors
+                      {% if request.resolver_match.url_name == 'inventariostock' %}text-green-800 bg-green-100{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-700{% endif %}">
+                <span class="material-icons mr-3 shrink-0 {% if request.resolver_match.url_name == 'inventariostock' %}text-green-700{% else %}text-gray-400{% endif %}">inventory_2</span>
+                <span class="sidebar-text whitespace-nowrap">Materias Primas</span>
+            </a>
+
+            <a href="{% url 'proveedores' %}"
+               class="flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors
+                      {% if request.resolver_match.url_name in 'proveedores crear_proveedor editar_proveedor' %}text-green-800 bg-green-100{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-700{% endif %}">
+                <span class="material-icons mr-3 shrink-0 {% if request.resolver_match.url_name in 'proveedores crear_proveedor editar_proveedor' %}text-green-700{% else %}text-gray-400{% endif %}">local_shipping</span>
+                <span class="sidebar-text whitespace-nowrap">Proveedores</span>
+            </a>
+
+            <a href="{% url 'registrar_movimiento' %}"
+               class="flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors
+                      {% if request.resolver_match.url_name == 'registrar_movimiento' %}text-green-800 bg-green-100{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-700{% endif %}">
+                <span class="material-icons mr-3 shrink-0 {% if request.resolver_match.url_name == 'registrar_movimiento' %}text-green-700{% else %}text-gray-400{% endif %}">receipt_long</span>
+                <span class="sidebar-text whitespace-nowrap">Registro de Ingresos</span>
+            </a>
+
+            <a href="{% url 'historial' %}"
+               class="flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors
+                      {% if request.resolver_match.url_name == 'historial' %}text-green-800 bg-green-100{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-700{% endif %}">
+                <span class="material-icons mr-3 shrink-0 {% if request.resolver_match.url_name == 'historial' %}text-green-700{% else %}text-gray-400{% endif %}">history</span>
+                <span class="sidebar-text whitespace-nowrap">Historial de Movimientos</span>
+            </a>
+
             {% else %}
-            <!-- Vista Operario -->
+
+            <!-- MENÚ OPERARIO -->
+
             <a href="{% url 'registrar_movimiento' %}"
                class="flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors
                       {% if request.resolver_match.url_name == 'registrar_movimiento' %}text-green-800 bg-green-100{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-700{% endif %}">
@@ -113,7 +122,7 @@
                class="flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors
                       {% if request.resolver_match.url_name in 'consumos registrar_consumo' %}text-green-800 bg-green-100{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-700{% endif %}">
                 <span class="material-icons mr-3 shrink-0 {% if request.resolver_match.url_name in 'consumos registrar_consumo' %}text-green-700{% else %}text-gray-400{% endif %}">shopping_cart</span>
-                <span class="sidebar-text whitespace-nowrap">Consumo y Produccion</span>
+                <span class="sidebar-text whitespace-nowrap">Consumo y Salidas</span>
             </a>
 
             <a href="{% url 'historial' %}"
@@ -122,16 +131,18 @@
                 <span class="material-icons mr-3 shrink-0 {% if request.resolver_match.url_name == 'historial' %}text-green-700{% else %}text-gray-400{% endif %}">history</span>
                 <span class="sidebar-text whitespace-nowrap">Historial de Movimientos</span>
             </a>
+
             {% endif %}
         </nav>
     </aside>
 
     <!-- CONTENEDOR DERECHO -->
     <div class="flex-1 flex flex-col h-screen overflow-hidden min-w-0">
-        
-        <!-- BARRA SUPERIOR (Top Navbar) -->
+
+        <!-- BARRA SUPERIOR -->
         <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-6 z-10 shrink-0">
-            <!-- Izquierda: Menú Hamburguesa y Título -->
+
+            <!-- Menú Hamburguesa y Título -->
             <div class="flex items-center">
                 <button id="btnToggleSidebar" class="text-gray-500 hover:text-gray-700 focus:outline-none mr-3 p-1 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
                     <span class="material-icons block">menu</span>
@@ -139,9 +150,9 @@
                 <span class="text-gray-700 font-semibold text-sm sm:text-base truncate">CAUQUEVA</span>
             </div>
 
-            <!-- Derecha: Notificaciones y Perfil -->
+            <!-- Notificaciones y Perfil -->
             <div class="flex items-center space-x-3 sm:space-x-5">
-                
+
                 <!-- Campanita de notificaciones -->
                 <div class="relative">
                     <button id="btnCampanita" class="text-gray-400 hover:text-gray-600 focus:outline-none relative p-1 mt-1 transition-colors">
@@ -160,7 +171,7 @@
                             <h3 class="text-sm font-bold text-red-800">Alertas de Stock</h3>
                             <span class="bg-red-200 text-red-800 text-xs font-bold px-2.5 py-0.5 rounded-full">{{ total_alertas }}</span>
                         </div>
-                        
+
                         <div class="max-h-72 overflow-y-auto">
                             {% if total_alertas > 0 %}
                                 {% for alerta in alertas_recientes %}
@@ -169,7 +180,7 @@
                                     <p class="text-xs text-red-600 mt-1">Stock: {{ alerta.stock_actual }} {{ alerta.get_unidad_medida_display }} (Mín: {{ alerta.stock_minimo }})</p>
                                 </a>
                                 {% endfor %}
-                                
+
                                 {% if total_alertas > 5 %}
                                 <a href="{% url 'alertas' %}" class="block px-4 py-2.5 text-center text-xs font-medium text-gray-500 hover:text-green-700 bg-gray-50 transition-colors">
                                     Ver todas las alertas
@@ -185,7 +196,7 @@
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Perfil de usuario -->
                 <div class="relative" id="user-menu">
                     <button id="user-menu-btn" type="button" class="flex items-center focus:outline-none">
@@ -231,16 +242,16 @@
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebarOverlay');
 
-            // 1. Restaurar colapso en escritorio
+            // Restaurar colapso en escritorio
             if (window.innerWidth >= 1024 && localStorage.getItem('sidebarCollapsed') === 'true') {
                 sidebar.classList.add('collapsed');
             }
 
-            // 2. Función de alternancia adaptativa
+            // Alternancia adaptativa
             function toggleSidebar() {
                 if (window.innerWidth < 1024) {
-                    // Móvil / Tablet: abre/cierra drawer deslizable
                     const estaCerrado = sidebar.classList.contains('-translate-x-full');
+
                     if (estaCerrado) {
                         sidebar.classList.remove('-translate-x-full');
                         overlay.classList.remove('hidden');
@@ -249,7 +260,6 @@
                         overlay.classList.add('hidden');
                     }
                 } else {
-                    // Escritorio: colapsar/desplegar a íconos
                     sidebar.classList.toggle('collapsed');
                     localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
                 }
@@ -258,7 +268,7 @@
             if (btnToggle) btnToggle.addEventListener('click', toggleSidebar);
             if (overlay) overlay.addEventListener('click', toggleSidebar);
 
-            // 3. Cerrar automáticamente el menú al hacer clic en un enlace en celulares
+            // Cerrar menú al hacer clic en un enlace en celulares
             document.querySelectorAll('#sidebar nav a').forEach(enlace => {
                 enlace.addEventListener('click', () => {
                     if (window.innerWidth < 1024) {
@@ -270,11 +280,12 @@
                 });
             });
 
-            // 4. Resetear clases si cambia la resolución al redimensionar la ventana
+            // Resetear clases al redimensionar la ventana
             window.addEventListener('resize', () => {
                 if (window.innerWidth >= 1024) {
                     overlay.classList.add('hidden');
                     sidebar.classList.remove('-translate-x-full');
+
                     if (localStorage.getItem('sidebarCollapsed') === 'true') {
                         sidebar.classList.add('collapsed');
                     } else {
@@ -288,17 +299,20 @@
         });
     </script>
 
-    <!-- SCRIPTS DE MENÚS DESPLEGABLES (Perfil y Notificaciones) -->
+    <!-- SCRIPTS DE MENÚS DESPLEGABLES -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+
             // Menú Usuario
             const userBtn = document.getElementById("user-menu-btn");
             const userPanel = document.getElementById("user-menu-panel");
+
             if (userBtn && userPanel) {
                 userBtn.addEventListener("click", (e) => {
                     e.stopPropagation();
                     userPanel.classList.toggle("hidden");
                 });
+
                 document.addEventListener("click", (e) => {
                     if (!document.getElementById("user-menu").contains(e.target)) {
                         userPanel.classList.add("hidden");
@@ -309,11 +323,13 @@
             // Menú Campanita
             const btnCampanita = document.getElementById('btnCampanita');
             const menuNotificaciones = document.getElementById('menuNotificaciones');
+
             if (btnCampanita && menuNotificaciones) {
                 btnCampanita.addEventListener('click', function(event) {
                     event.stopPropagation();
                     menuNotificaciones.classList.toggle('hidden');
                 });
+
                 document.addEventListener('click', function(event) {
                     if (!btnCampanita.contains(event.target) && !menuNotificaciones.contains(event.target)) {
                         menuNotificaciones.classList.add('hidden');

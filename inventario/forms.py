@@ -350,6 +350,78 @@ class ProduccionForm(forms.Form):
             Producto.objects.filter(activo=True).order_by("nombre")
         )
 
+class ConsumoManualForm(forms.Form):
+    materia_prima = forms.ModelChoiceField(
+        label="Materia prima",
+        queryset=MateriaPrima.objects.none(),
+        empty_label="Seleccioná una materia prima",
+        widget=forms.Select(attrs={"class": ESTILO}),
+    )
+
+    cantidad = forms.DecimalField(
+        label="Cantidad consumida",
+        max_digits=10,
+        decimal_places=2,
+        min_value=Decimal("0.01"),
+        widget=forms.NumberInput(attrs={
+            "class": ESTILO,
+            "min": "0.01",
+            "step": "0.01",
+        }),
+    )
+
+    fecha = forms.DateTimeField(
+        label="Fecha y hora",
+        initial=timezone.now,
+        input_formats=["%Y-%m-%dT%H:%M"],
+        widget=forms.DateTimeInput(
+            attrs={
+                "type": "datetime-local",
+                "class": ESTILO,
+            },
+            format="%Y-%m-%dT%H:%M",
+        ),
+    )
+
+    observaciones = forms.CharField(
+        label="Observaciones",
+        required=False,
+        widget=forms.Textarea(attrs={
+            "class": ESTILO,
+            "rows": 3,
+        }),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields["materia_prima"].queryset = (
+            MateriaPrima.objects.order_by("nombre", "variedad")
+        )
+
+        self.fields["materia_prima"].label_from_instance = (
+            lambda m: (
+                f"{m} ({m.get_unidad_medida_display()}) "
+                f"· stock disponible: {m.stock_actual:g}"
+            )
+        )
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        materia = cleaned_data.get("materia_prima")
+        cantidad = cleaned_data.get("cantidad")
+
+        if materia and cantidad is not None:
+            if cantidad > materia.stock_actual:
+                self.add_error(
+                    "cantidad",
+                    f"Stock insuficiente. Hay {materia.stock_actual:g} "
+                    f"{materia.get_unidad_medida_display()} disponibles.",
+                )
+
+        return cleaned_data
+
 
 class ProveedorForm(forms.ModelForm):
     materias_primas = forms.ModelMultipleChoiceField(

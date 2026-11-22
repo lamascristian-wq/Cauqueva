@@ -7,12 +7,19 @@
         <div>
             <h2 class="text-2xl font-bold text-gray-800">Consumo y Produccion</h2>
             <p class="text-sm text-gray-500 mt-1">Producciones registradas: cada una descuenta materia prima y cuenta como venta.</p>
-        </div>
-        <a href="{% url 'registrar_consumo' %}"
-           class="inline-flex items-center bg-green-700 hover:bg-green-800 text-white text-sm font-medium py-2 px-4 rounded-lg shadow-sm transition-colors">
-            <span class="material-icons text-base mr-1.5">add</span> Registrar producción
-        </a>
-    </div>
+        <div class="flex flex-wrap gap-2">
+    <a href="{% url 'registrar_consumo_manual' %}"
+       class="inline-flex items-center bg-blue-700 hover:bg-blue-800 text-white text-sm font-medium py-2 px-4 rounded-lg shadow-sm">
+        <span class="material-icons text-base mr-1.5">inventory_2</span>
+        Consumo manual
+    </a>
+
+    <a href="{% url 'registrar_consumo' %}"
+       class="inline-flex items-center bg-green-700 hover:bg-green-800 text-white text-sm font-medium py-2 px-4 rounded-lg shadow-sm">
+        <span class="material-icons text-base mr-1.5">add</span>
+        Registrar producción
+    </a>
+</div>
 
 
     <!-- Filtros -->

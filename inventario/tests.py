@@ -422,3 +422,80 @@ class NotificacionesStockTests(TestCase):
         self.assertEqual(self.materia.stock_actual, Decimal("9.00"))
         self.assertFalse(self.materia.alerta_stock_enviada)
         enviar.assert_called_once()
+
+
+class ConsumoManualViewTests(TestCase):
+    def setUp(self):
+        usuario = get_user_model().objects.create_user(
+            username="usuario_consumo",
+            password="test-password",
+        )
+        self.client.force_login(usuario)
+
+    def crear_materia_prima(self, stock):
+        return MateriaPrima.objects.create(
+            nombre="Materia prima de prueba",
+            variedad="General",
+            stock_actual=Decimal(str(stock)),
+            stock_minimo=Decimal("5.00"),
+        )
+
+    def datos_formulario(self, materia, cantidad):
+        return {
+            "materia_prima": materia.pk,
+            "cantidad": str(cantidad),
+            "fecha": timezone.now().strftime("%Y-%m-%dT%H:%M"),
+            "observaciones": "Prueba automatizada de consumo manual",
+        }
+
+    def test_consumo_manual_desconta_stock_y_crea_movimiento(self):
+        materia = self.crear_materia_prima("30.00")
+
+        respuesta = self.client.post(
+            reverse("registrar_consumo_manual"),
+            self.datos_formulario(materia, "10.00"),
+        )
+
+        self.assertEqual(respuesta.status_code, 302)
+        self.assertEqual(respuesta.url, reverse("historial"))
+
+        materia.refresh_from_db()
+
+        self.assertEqual(materia.stock_actual, Decimal("20.00"))
+
+        movimiento = MovimientoStock.objects.get(
+            materia_prima=materia,
+            tipo="CONSUMO",
+        )
+
+        self.assertEqual(movimiento.cantidad, Decimal("10.00"))
+        self.assertEqual(movimiento.precio_unitario, Decimal("0.00"))
+
+    def test_consumo_manual_rechaza_cantidad_superior_al_stock(self):
+        materia = self.crear_materia_prima("5.00")
+
+        respuesta = self.client.post(
+            reverse("registrar_consumo_manual"),
+            self.datos_formulario(materia, "8.00"),
+        )
+
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertContains(respuesta, "Stock insuficiente")
+
+        materia.refresh_from_db()
+
+        self.assertEqual(materia.stock_actual, Decimal("5.00"))
+        self.assertFalse(
+            MovimientoStock.objects.filter(
+                materia_prima=materia,
+                tipo="CONSUMO",
+            ).exists()
+        )
+
+    def test_formulario_consumo_manual_abre_correctamente(self):
+        respuesta = self.client.get(
+            reverse("registrar_consumo_manual")
+        )
+
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertContains(respuesta, "Registrar consumo manual")

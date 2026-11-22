@@ -3,7 +3,13 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from django.core.exceptions import ValidationError
 from .models import MateriaPrima, MovimientoStock, Proveedor, Producto, Produccion
-from .forms import MateriaPrimaForm, MovimientoStockForm, ProveedorForm, ProduccionForm
+from .forms import (
+    MateriaPrimaForm,
+    MovimientoStockForm,
+    ProveedorForm,
+    ProduccionForm,
+    ConsumoManualForm,
+)
 import csv
 from urllib.parse import urlencode
 from collections import defaultdict
@@ -734,6 +740,43 @@ def registrar_consumo(request):
         },
     )
 
+@login_required(login_url='login')
+def registrar_consumo_manual(request):
+    if request.method == "POST":
+        formulario = ConsumoManualForm(request.POST)
+
+        if formulario.is_valid():
+            datos = formulario.cleaned_data
+
+            try:
+                MovimientoStock.objects.create(
+                    materia_prima=datos["materia_prima"],
+                    tipo="CONSUMO",
+                    cantidad=datos["cantidad"],
+                    precio_unitario=Decimal("0.00"),
+                    fecha=datos["fecha"],
+                    observaciones=datos["observaciones"],
+                )
+
+            except ValidationError as error:
+                formulario.add_error(None, error)
+
+            else:
+                messages.success(
+                    request,
+                    "Consumo registrado correctamente. "
+                    "El inventario fue actualizado.",
+                )
+                return redirect("historial")
+
+    else:
+        formulario = ConsumoManualForm()
+
+    return render(
+        request,
+        "inventario/registrarconsumomanual.html",
+        {"formulario": formulario},
+    )
 
 # Operaciones con proveedor
 @login_required(login_url='login')

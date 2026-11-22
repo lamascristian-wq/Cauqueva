@@ -23,6 +23,11 @@ urlpatterns = [
     # --- CONSUMO ---
     path("consumos/", views.consumos, name="consumos"),
     path("consumos/nuevo/", views.registrar_consumo, name="registrar_consumo"),
+    path(
+        "consumos/manual/",
+        views.registrar_consumo_manual,
+        name="registrar_consumo_manual",
+    ),
     
     # --- PROVEEDORES ---
     path("proveedores/", views.proveedores, name="proveedores"),

@@ -1,11 +1,10 @@
-import logging
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from django.core.exceptions import ValidationError
-from .models import MateriaPrima, MovimientoStock,Proveedor, Producto,Produccion
-from .forms import MateriaPrimaForm,MovimientoStockForm, ProveedorForm, ProduccionForm
-from .notificaciones import enviar_alerta_stock
-import csv 
+from .models import MateriaPrima, MovimientoStock, Proveedor, Producto, Produccion
+from .forms import MateriaPrimaForm, MovimientoStockForm, ProveedorForm, ProduccionForm
+import csv
 from urllib.parse import urlencode
 from collections import defaultdict
 from datetime import date, datetime, time, timedelta
@@ -20,11 +19,11 @@ from django.db.models import Count, DecimalField, F, Max, Prefetch, Q, Sum
 from django.core.paginator import Paginator
 from django.db.models.functions import TruncMonth
 
-logger = logging.getLogger(__name__)
 
 # Función auxiliar para comprobar si el usuario es "Gerente" (Staff)
 def es_gerente(user):
     return user.is_staff
+
 
 @login_required(login_url='login')
 def panel_principal(request):
@@ -40,7 +39,7 @@ def panel_principal(request):
         materia_id = ""
     materia_seleccionada = materias_primas.filter(pk=materia_id).first() if materia_id else None
 
-    # --- Resumen general y alertas globales ---
+    # Resumen general y alertas globales
     resumen = []
     alertas_criticas = []
 
@@ -61,7 +60,7 @@ def panel_principal(request):
             'alerta': alerta,
         })
 
-    # --- Tarjetas según el filtro (todo en Kg) ---
+    # Tarjetas según el filtro
     unidad_stock = "Kg"
     if materia_seleccionada:
         stock_total = materia_seleccionada.stock_actual
@@ -79,7 +78,7 @@ def panel_principal(request):
         ultimos_movimientos = ultimos_movimientos.filter(materia_prima=materia_seleccionada)
     ultimos_movimientos = ultimos_movimientos.order_by('-fecha')[:10]
 
-    # --- Gráfico: ingresos y consumos por mes (últimos 12 meses) ---
+    # Gráfico: ingresos y consumos por mes (últimos 12 meses)
     movs = MovimientoStock.objects.filter(fecha__gte=timezone.now() - timedelta(days=365))
     if materia_seleccionada:
         movs = movs.filter(materia_prima=materia_seleccionada)
@@ -97,16 +96,16 @@ def panel_principal(request):
         "unidad": "Kg",
     }
 
-    # --- Consumo del mes actual ---
+    # Consumo del mes actual
     ahora = timezone.localtime()
-    consumos = MovimientoStock.objects.filter(
+    consumos_mes_qs = MovimientoStock.objects.filter(
         tipo="CONSUMO", fecha__year=ahora.year, fecha__month=ahora.month
     )
     if materia_seleccionada:
-        consumos = consumos.filter(materia_prima=materia_seleccionada)
-    consumo_mes = consumos.aggregate(t=Sum("cantidad"))["t"] or Decimal("0")
-    
-    # --- Producciones y ventas (según el filtro) ---
+        consumos_mes_qs = consumos_mes_qs.filter(materia_prima=materia_seleccionada)
+    consumo_mes = consumos_mes_qs.aggregate(t=Sum("cantidad"))["t"] or Decimal("0")
+
+    # Producciones y ventas
     suma_ventas = Sum(
         F("cantidad") * F("precio_unitario"),
         output_field=DecimalField(max_digits=14, decimal_places=2),
@@ -122,7 +121,7 @@ def panel_principal(request):
     cant_producciones_mes = producciones_mes.count()
     ventas_mes = producciones_mes.aggregate(t=suma_ventas)["t"] or Decimal("0")
     ventas_total = producciones.aggregate(t=suma_ventas)["t"] or Decimal("0")
-    
+
     contexto = {
         'productos': resumen,
         'stock_total': stock_total,
@@ -143,6 +142,7 @@ def panel_principal(request):
 
     return render(request, 'inventario/panelprincipal.html', contexto)
 
+
 # Registrar Nueva Materia Prima (Catálogo)
 @login_required(login_url='login')
 def registrar_materia_prima(request):
@@ -152,12 +152,12 @@ def registrar_materia_prima(request):
             with transaction.atomic():
                 materia = formulario.save(commit=False)
                 cantidad_inicial = formulario.cleaned_data.get("cantidad_inicial") or Decimal("0.00")
-                
+
                 # Asignamos el stock inicial a la materia prima
                 materia.stock_actual = cantidad_inicial
                 materia.save()
 
-                # Si ingresaron stock inicial > 0, creamos el movimiento automático en el historial
+                # Creamos el movimiento automático en el historial
                 if cantidad_inicial > 0:
                     MovimientoStock.objects.create(
                         materia_prima=materia,
@@ -166,6 +166,7 @@ def registrar_materia_prima(request):
                         precio_unitario=formulario.cleaned_data["precio_unitario"],
                         observaciones="Stock inicial al registrar la materia prima",
                     )
+
             messages.success(
                 request,
                 f"Se registró «{materia}». Cargale stock desde Registro de Ingresos.",
@@ -176,6 +177,7 @@ def registrar_materia_prima(request):
 
     return render(request, "inventario/registrarmateriaprima.html", {"formulario": formulario})
 
+
 # Registrar Movimiento de Stock (Ingresos / Consumos)
 @login_required(login_url='login')
 def registrar_movimiento(request):
@@ -183,7 +185,7 @@ def registrar_movimiento(request):
         formulario = MovimientoStockForm(request.POST)
 
         if formulario.is_valid():
-            # El ModelForm persiste el precio; el modelo mantiene la responsabilidad de actualizar el stock.
+            # El modelo mantiene la responsabilidad de actualizar el stock.
             formulario.save()
             messages.success(request, '¡Movimiento de stock registrado correctamente!')
             return redirect('panelprincipal')
@@ -195,6 +197,8 @@ def registrar_movimiento(request):
         'inventario/registrarmovimiento.html',
         {'formulario': formulario}
     )
+
+
 def _fecha(valor):
     try:
         return parse_date(valor)
@@ -203,20 +207,22 @@ def _fecha(valor):
 
 
 def _filtrar_por_fechas(request, queryset):
-    """Aplica el rango desde/hasta (inclusive) del GET. Devuelve (queryset, desde, hasta)."""
+    """Aplica el rango desde/hasta (inclusive) del GET."""
     desde = request.GET.get("desde", "")
     hasta = request.GET.get("hasta", "")
+
     if _fecha(desde):
         queryset = queryset.filter(fecha__date__gte=_fecha(desde))
     if _fecha(hasta):
         queryset = queryset.filter(fecha__date__lte=_fecha(hasta))
+
     return queryset, desde, hasta
 
 
-# Vista del Historial General (con filtro por tipo y rango de fechas)
+# Vista del Historial General
 @login_required(login_url='login')
 def historial_general(request):
-    tipo = request.GET.get("tipo", "")  # "", "ingreso" o "consumo"
+    tipo = request.GET.get("tipo", "")
     if tipo not in ("ingreso", "consumo"):
         tipo = ""
 
@@ -259,10 +265,12 @@ def historial_general(request):
         "total": pagina.paginator.count,
     })
 
-# Vista de Informes Mensuales 
 
-MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio",
-         "agosto", "septiembre", "octubre", "noviembre", "diciembre"]
+# Vista de Informes Mensuales
+MESES = [
+    "enero", "febrero", "marzo", "abril", "mayo", "junio", "julio",
+    "agosto", "septiembre", "octubre", "noviembre", "diciembre"
+]
 
 
 def _rango_mes(valor):
@@ -272,6 +280,7 @@ def _rango_mes(valor):
         inicio = date(anio, mes, 1)
     except (ValueError, AttributeError):
         inicio = timezone.localdate().replace(day=1)
+
     fin = (inicio.replace(day=28) + timedelta(days=4)).replace(day=1)
     return inicio, fin
 
@@ -301,8 +310,7 @@ def _datos_reporte(valor):
     filas = []
     for m in MateriaPrima.objects.order_by("nombre"):
         t = totales.get(m.id, {})
-        
-        # OBLIGAMOS A QUE CADA RESULTADO DEL SUM SEA UN DECIMAL EXACTO
+
         ing = Decimal(str(t.get("ing") or 0))
         con = Decimal(str(t.get("con") or 0))
         ing_post = Decimal(str(t.get("ing_post") or 0))
@@ -310,8 +318,8 @@ def _datos_reporte(valor):
 
         posterior = ing_post - con_post
         cierre = m.stock_actual - posterior
-        precio_unitario= m.precio_referencia
-        
+        precio_unitario = m.precio_referencia
+
         filas.append({
             "materia": m,
             "unidad": m.unidad_medida,
@@ -327,13 +335,17 @@ def _datos_reporte(valor):
     compras_qs = (
         MovimientoStock.objects.filter(tipo="INGRESO").filter(en_mes)
         .order_by()
-        .values("proveedor__nombre", "materia_prima__nombre", "materia_prima__variedad",
-                "materia_prima__unidad_medida")          # sin "precio_total" acá
+        .values(
+            "proveedor__nombre",
+            "materia_prima__nombre",
+            "materia_prima__variedad",
+            "materia_prima__unidad_medida",
+        )
         .annotate(
             total=Sum("cantidad"),
             veces=Count("id"),
             precio_total=Sum(
-                F("cantidad") * F("precio_unitario"),    # cantidad × precio de cada ingreso
+                F("cantidad") * F("precio_unitario"),
                 output_field=DecimalField(max_digits=14, decimal_places=2),
             ),
         )
@@ -352,7 +364,6 @@ def _datos_reporte(valor):
             "precio_total": c["precio_total"] or Decimal("0"),
         })
 
-    # Totales generales en kg (usando objetos Decimal puros)
     ing_kg = sum((f["ingresos"] for f in filas), cero)
     con_kg = sum((f["consumos"] for f in filas), cero)
     extra = _datos_extra(inicio, fin, ini_dt, fin_dt)
@@ -374,9 +385,12 @@ def _datos_reporte(valor):
         **extra,
     }
 
+
 def _importe():
-    return Sum(F("cantidad") * F("precio_unitario"),
-               output_field=DecimalField(max_digits=14, decimal_places=2))
+    return Sum(
+        F("cantidad") * F("precio_unitario"),
+        output_field=DecimalField(max_digits=14, decimal_places=2)
+    )
 
 
 def _datos_extra(inicio, fin, ini_dt, fin_dt):
@@ -393,7 +407,7 @@ def _datos_extra(inicio, fin, ini_dt, fin_dt):
     producciones_mes = producciones.count()
     ventas_mes = producciones.aggregate(t=_importe())["t"] or cero
 
-    # Comparativo de los últimos 12 meses, terminando en el mes del informe
+    # Comparativo de los últimos 12 meses
     meses, y, m = [], inicio.year, inicio.month
     for _ in range(12):
         meses.append((y, m))
@@ -404,18 +418,28 @@ def _datos_extra(inicio, fin, ini_dt, fin_dt):
     desde = date(meses[0][0], meses[0][1], 1)
 
     def por_mes(qs):
-        filas = qs.annotate(mes=TruncMonth("fecha")).values("mes").annotate(t=_importe()).order_by("mes")
+        filas = qs.annotate(mes=TruncMonth("fecha")).values("mes").annotate(
+            t=_importe()
+        ).order_by("mes")
         return {f["mes"].strftime("%Y-%m"): f["t"] or cero for f in filas}
 
     pagado = por_mes(MovimientoStock.objects.filter(
-        tipo="INGRESO", fecha__date__gte=desde, fecha__date__lt=fin))
-    vendido = por_mes(Produccion.objects.filter(fecha__date__gte=desde, fecha__date__lt=fin))
+        tipo="INGRESO", fecha__date__gte=desde, fecha__date__lt=fin
+    ))
+    vendido = por_mes(Produccion.objects.filter(
+        fecha__date__gte=desde, fecha__date__lt=fin
+    ))
 
     comparativo = []
     for y, m in meses:
         clave = f"{y}-{m:02d}"
         c, v = pagado.get(clave, cero), vendido.get(clave, cero)
-        comparativo.append({"mes": f"{m:02d}/{y}", "compras": c, "ventas": v, "diferencia": v - c})
+        comparativo.append({
+            "mes": f"{m:02d}/{y}",
+            "compras": c,
+            "ventas": v,
+            "diferencia": v - c
+        })
 
     return {
         "stock_total": stock_total,
@@ -429,7 +453,6 @@ def _datos_extra(inicio, fin, ini_dt, fin_dt):
             "compras": [float(c["compras"]) for c in comparativo],
             "ventas": [float(c["ventas"]) for c in comparativo],
         },
-        # Para la versión impresa y el CSV: lo mismo que muestra el Historial, del mes
         "historial_mes": (
             MovimientoStock.objects.filter(fecha__gte=ini_dt, fecha__lt=fin_dt)
             .select_related("materia_prima", "proveedor").order_by("-fecha")
@@ -442,12 +465,12 @@ def _datos_extra(inicio, fin, ini_dt, fin_dt):
 def reportes(request):
     datos = _datos_reporte(request.GET.get("mes", ""))
     datos["seccion"] = "reportes"
-    # Con ?imprimir=1 se muestra una versión simple, lista para imprimir o guardar como PDF
     datos["imprimir"] = request.GET.get("imprimir") == "1"
     datos["base_template"] = (
         "inventario/base_imprimir.html" if datos["imprimir"] else "inventario/base.html"
     )
     return render(request, "inventario/reportes.html", datos)
+
 
 def _num_csv(x):
     """Número con coma decimal y 2 decimales, para Excel/LibreOffice en español."""
@@ -464,8 +487,7 @@ def reportes_csv(request):
 
     resp = HttpResponse(content_type="text/csv; charset=utf-8")
     resp["Content-Disposition"] = f'attachment; filename="informe-{d["mes_valor"]}.csv"'
-    resp.write("\ufeff")  # para que Excel respete los acentos
-    # QUOTE_ALL: la coma decimal nunca se confunde con un separador de columnas
+    resp.write("\ufeff")
     w = csv.writer(resp, delimiter=";", quoting=csv.QUOTE_ALL)
 
     w.writerow(["Informe mensual CAUQUEVA", d["mes_nombre"]])
@@ -480,39 +502,54 @@ def reportes_csv(request):
     w.writerow(["Ventas del mes ($)", n(d["ventas_mes"])])
     w.writerow([])
     w.writerow(["MATERIAS PRIMAS"])
-    w.writerow(["Materia prima", "Unidad", "Stock inicial", "Ingresos", "Consumos", "Stock final", "Estado"])
+    w.writerow([
+        "Materia prima", "Unidad", "Stock inicial", "Ingresos",
+        "Consumos", "Stock final", "Estado"
+    ])
+
     for f in d["filas"]:
-        w.writerow([f["materia"], f["unidad"], n(f["inicial"]), n(f["ingresos"]),
-                    n(f["consumos"]), n(f["final"]), "Crítica" if f["critica"] else "Normal"])
+        w.writerow([
+            f["materia"], f["unidad"], n(f["inicial"]), n(f["ingresos"]),
+            n(f["consumos"]), n(f["final"]),
+            "Crítica" if f["critica"] else "Normal"
+        ])
+
     w.writerow([])
     w.writerow(["COMPRAS POR PROVEEDOR"])
     w.writerow(["Proveedor", "Materia prima", "Unidad", "Cantidad", "Ingresos", "Total ($)"])
+
     for c in d["compras"]:
-        w.writerow([c["proveedor__nombre"] or "Sin proveedor", c["materia_prima__nombre"],
-                    c["materia_prima__unidad_medida"], n(c["total"]), c["veces"], n(c["precio_total"])])
-    
+        w.writerow([
+            c["proveedor__nombre"] or "Sin proveedor",
+            c["materia_prima__nombre"],
+            c["materia_prima__unidad_medida"],
+            n(c["total"]),
+            c["veces"],
+            n(c["precio_total"])
+        ])
+
     w.writerow([])
     w.writerow(["COMPARATIVO MENSUAL: PAGADO EN MATERIA PRIMA VS VENTAS POR PRODUCCIÓN ($)"])
     w.writerow(["Mes", "Pagado en materia prima", "Ventas por producción", "Diferencia"])
+
     for c in d["comparativo"]:
         w.writerow([c["mes"], n(c["compras"]), n(c["ventas"]), n(c["diferencia"])])
 
     w.writerow([])
     w.writerow(["HISTORIAL DE MOVIMIENTOS DEL MES"])
-    w.writerow(["Fecha y hora", "Operación", "Materia prima", "Cantidad (Kg)",
-                "Precio por Kg ($)", "Total ($)", "Proveedor", "Observaciones"])
-    
+    w.writerow([
+        "Fecha y hora", "Operación", "Materia prima", "Cantidad (Kg)",
+        "Precio por Kg ($)", "Total ($)", "Proveedor", "Observaciones"
+    ])
+
     for mov in d["historial_mes"]:
-        # 1. Obtenemos el nombre del proveedor de forma segura si existe
         if mov.proveedor:
             proveedor_str = mov.proveedor.nombre
-            # Si tu modelo Proveedor tiene el campo 'es_externo', lo agrega
             if getattr(mov.proveedor, 'es_externo', False):
                 proveedor_str += " (externo)"
         else:
             proveedor_str = "—"
 
-        # 2. Obtenemos precio unitario y total previniendo campos nulos o inexistentes
         precio_u = getattr(mov, 'precio_unitario', None)
         total_mov = getattr(mov, 'total', None)
 
@@ -526,11 +563,11 @@ def reportes_csv(request):
             proveedor_str,
             mov.observaciones or "",
         ])
-    
+
     return resp
 
 
-# Le agregamos el candado para que solo el gerente pueda ver la lista general
+# Solo el gerente puede ver la lista general del inventario
 @login_required(login_url='login')
 @user_passes_test(es_gerente, login_url='/consumos/')
 def listar_inventario(request):
@@ -540,7 +577,6 @@ def listar_inventario(request):
         estado = ""
 
     todas_las_materias = MateriaPrima.objects.all()
-#    precio=MateriaPrima.precio_referencia
     total = todas_las_materias.count()
     normales = todas_las_materias.filter(
         stock_actual__gt=F("stock_minimo")
@@ -570,7 +606,6 @@ def listar_inventario(request):
             "normales": normales,
             "criticas": criticas,
             "q": q,
- #           "precio": precio,
             "estado": estado,
         },
     )
@@ -578,16 +613,13 @@ def listar_inventario(request):
 
 @login_required(login_url='login')
 def alertas_stock(request):
-    # Traemos todas las materias primas activas
     materias_primas = MateriaPrima.objects.all()
     lista_alertas = []
 
     for mp in materias_primas:
-        # Filtramos solo las que están en estado crítico
         if mp.stock_actual <= mp.stock_minimo:
-            # Calculamos la diferencia exacta para mostrar el déficit
             deficit = mp.stock_minimo - mp.stock_actual
-            
+
             lista_alertas.append({
                 'nombre': mp.nombre,
                 'variedad': mp.variedad if mp.variedad else '',
@@ -600,15 +632,19 @@ def alertas_stock(request):
     return render(request, 'inventario/alertas.html', {
         'alertas': lista_alertas
     })
-    
-#operaciones con consumo de materias primas
+
+
+# Operaciones con consumo de materias primas
 @login_required(login_url='login')
 def consumos(request):
     producto_id = request.GET.get("producto", "")
     desde = request.GET.get("desde", "")
     hasta = request.GET.get("hasta", "")
 
-    producciones = Produccion.objects.select_related("producto").prefetch_related("consumos__materia_prima")
+    producciones = Produccion.objects.select_related("producto").prefetch_related(
+        "consumos__materia_prima"
+    )
+
     if producto_id.isdigit():
         producciones = producciones.filter(producto_id=producto_id)
     if _fecha(desde):
@@ -616,11 +652,15 @@ def consumos(request):
     if _fecha(hasta):
         producciones = producciones.filter(fecha__date__lte=_fecha(hasta))
 
-    suma_total = Sum(F("cantidad") * F("precio_unitario"),
-                     output_field=DecimalField(max_digits=14, decimal_places=2))
+    suma_total = Sum(
+        F("cantidad") * F("precio_unitario"),
+        output_field=DecimalField(max_digits=14, decimal_places=2)
+    )
 
     ahora = timezone.localtime()
-    del_mes = Produccion.objects.filter(fecha__year=ahora.year, fecha__month=ahora.month)
+    del_mes = Produccion.objects.filter(
+        fecha__year=ahora.year, fecha__month=ahora.month
+    )
 
     pagina = Paginator(producciones, 20).get_page(request.GET.get("page"))
     params = request.GET.copy()
@@ -644,38 +684,27 @@ def consumos(request):
 def registrar_consumo(request):
     if request.method == "POST":
         formulario = ProduccionForm(request.POST)
+
         if formulario.is_valid():
             d = formulario.cleaned_data
+
             try:
                 produccion, materias = Produccion.registrar(
-                    d["producto"], d["cantidad"], d["fecha"], d["observaciones"]
+                    d["producto"],
+                    d["cantidad"],
+                    d["fecha"],
+                    d["observaciones"],
                 )
             except ValidationError as error:
                 formulario.add_error(None, error)
             else:
                 messages.success(
                     request,
-                    f"Se registró la producción de {produccion.cantidad} × {produccion.producto}. "
-                    f"Ventas: ${produccion.total:,.2f}.",
+                    f"Se registró la producción de {produccion.cantidad} × "
+                    f"{produccion.producto}. Ventas: ${produccion.total:,.2f}.",
                 )
-                fallo_alerta = False
-                for materia in materias:
-                    materia.refresh_from_db(fields=["stock_actual", "stock_minimo"])
-                    if materia.stock_actual <= materia.stock_minimo:
-                        try:
-                            enviar_alerta_stock(materia)
-                        except Exception:
-                            logger.exception(
-                                "No se pudo enviar la alerta de stock crítico para la materia prima %s.",
-                                materia.pk,
-                            )
-                            fallo_alerta = True
-                if fallo_alerta:
-                    messages.warning(
-                        request,
-                        "La producción se registró, pero no se pudieron enviar las alertas de stock.",
-                    )
                 return redirect("consumos")
+
     else:
         formulario = ProduccionForm()
 
@@ -691,12 +720,22 @@ def registrar_consumo(request):
                 for i in p.ingredientes.all()
             ],
         }
-        for p in Producto.objects.filter(activo=True).prefetch_related("ingredientes__materia_prima")
+        for p in Producto.objects.filter(activo=True).prefetch_related(
+            "ingredientes__materia_prima"
+        )
     }
-    return render(request, "inventario/registrarconsumo.html", {"formulario": formulario, "productos": productos})
 
-#Operaciones con proveedor
+    return render(
+        request,
+        "inventario/registrarconsumo.html",
+        {
+            "formulario": formulario,
+            "productos": productos,
+        },
+    )
 
+
+# Operaciones con proveedor
 @login_required(login_url='login')
 @user_passes_test(es_gerente, login_url='/')
 def proveedores(request):
@@ -726,6 +765,7 @@ def proveedores(request):
         "total": Proveedor.objects.count(),
     })
 
+
 @login_required(login_url='login')
 @user_passes_test(es_gerente, login_url='/')
 def crear_proveedor(request):
@@ -737,9 +777,11 @@ def crear_proveedor(request):
             return redirect("proveedores")
     else:
         formulario = ProveedorForm()
+
     return render(request, "inventario/formularioproveedor.html", {
         "formulario": formulario, "titulo": "Nuevo proveedor",
     })
+
 
 @login_required(login_url='login')
 @user_passes_test(es_gerente, login_url='/')
@@ -753,9 +795,12 @@ def editar_proveedor(request, pk):
             return redirect("proveedores")
     else:
         formulario = ProveedorForm(instance=proveedor)
+
     return render(request, "inventario/formularioproveedor.html", {
         "formulario": formulario, "titulo": f"Editar proveedor: {proveedor}",
     })
+
+
 @login_required(login_url='login')
 @user_passes_test(es_gerente, login_url='/')
 @require_POST
@@ -768,32 +813,31 @@ def eliminar_proveedor(request, pk):
     return redirect("proveedores")
 
 
-# --- FUNCIONES DEL HISTORIAL (Exportar y Editar) ---
+# Funciones del historial: exportar y editar
 
-# Vista para Exportar el Historial Completo a CSV
 @login_required(login_url='login')
 def exportar_historial(request):
-    # 1. Obtenemos el QuerySet con las relaciones optimizadas
-    movimientos = MovimientoStock.objects.select_related("materia_prima", "proveedor").order_by("-fecha")
+    movimientos = MovimientoStock.objects.select_related(
+        "materia_prima", "proveedor"
+    ).order_by("-fecha")
 
-    # 2. Aplicamos los mismos filtros que tenga el usuario en la interfaz
+    # Aplicamos los mismos filtros que tenga el usuario en la interfaz
     materia_id = request.GET.get("materia")
-    tipo = (request.GET.get("tipo") or "").upper()  # la pantalla usa "ingreso"/"consumo"
+    tipo = (request.GET.get("tipo") or "").upper()
 
     if materia_id and materia_id.isdigit():
         movimientos = movimientos.filter(materia_prima_id=materia_id)
     if tipo in ("INGRESO", "CONSUMO"):
         movimientos = movimientos.filter(tipo=tipo)
+
     movimientos, _, _ = _filtrar_por_fechas(request, movimientos)
 
-    # 3. Preparamos el HttpResponse con la codificación UTF-8 para Excel
     response = HttpResponse(content_type="text/csv; charset=utf-8")
     response["Content-Disposition"] = 'attachment; filename="historial_movimientos.csv"'
-    response.write("\ufeff")  # Marca BOM para que Excel respete acentos y caracteres
+    response.write("\ufeff")
 
     writer = csv.writer(response, delimiter=";", quoting=csv.QUOTE_ALL)
 
-    # 4. Escribimos la primera fila con las COLUMNAS / CABECERAS
     writer.writerow([
         "Fecha y Hora",
         "Tipo de Movimiento",
@@ -806,10 +850,8 @@ def exportar_historial(request):
         "Observaciones"
     ])
 
-    # Helper para formatear decimales con coma en español
     f_num = _num_csv
 
-    # 5. Escribimos los registros fila por fila
     for mov in movimientos:
         fecha_str = timezone.localtime(mov.fecha).strftime("%d/%m/%Y %H:%M")
         proveedor_str = mov.proveedor.nombre if mov.proveedor else "—"
@@ -830,16 +872,16 @@ def exportar_historial(request):
     return response
 
 
-# Vista para Modificar Movimiento (Solo Gerente)
+# Vista para modificar movimiento (solo gerente)
 @login_required(login_url='login')
 @user_passes_test(es_gerente, login_url='/')
 def editar_movimiento(request, id):
     movimiento = get_object_or_404(MovimientoStock, id=id)
+
     if request.method == "POST":
         formulario = MovimientoStockForm(request.POST, instance=movimiento)
         if formulario.is_valid():
             try:
-                # El precio se guarda junto con el movimiento y el modelo reconcilia el delta del stock.
                 formulario.save()
             except ValidationError as error:
                 formulario.add_error(None, error)
@@ -848,7 +890,7 @@ def editar_movimiento(request, id):
                 return redirect('historial')
     else:
         formulario = MovimientoStockForm(instance=movimiento)
-        
+
     return render(request, "inventario/registrarproducto.html", {
         "formulario": formulario,
         "titulo_formulario": f"Editar Movimiento #{movimiento.id}"

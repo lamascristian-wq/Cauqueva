@@ -1,6 +1,7 @@
 
 from decimal import Decimal
-
+from unittest.mock import patch
+from django.test import override_settings
 from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.test import Client, TestCase
@@ -309,3 +310,115 @@ class ProveedorFormTests(TestCase):
         self.assertRedirects(response, reverse("inventariostock"), fetch_redirect_response=False)
         materia = MateriaPrima.objects.get(nombre="Arveja")
         self.assertEqual(materia.precio_referencia, Decimal("2.50"))
+
+@override_settings(
+    RESEND_API_KEY="re_test_123",
+    RESEND_FROM_EMAIL="CAUQUEVA <alertas@ejemplo.com>",
+    RESEND_TO_EMAIL="gerente@ejemplo.com",
+)
+class NotificacionesStockTests(TestCase):
+    def setUp(self):
+        self.materia = MateriaPrima.objects.create(
+            nombre="Papa",
+            variedad="Andina",
+            stock_actual=Decimal("0.00"),
+            stock_minimo=Decimal("10.00"),
+        )
+
+    def crear_movimiento(self, tipo, cantidad):
+        return MovimientoStock.objects.create(
+            materia_prima=self.materia,
+            tipo=tipo,
+            cantidad=Decimal(str(cantidad)),
+        )
+
+    @patch("inventario.notificaciones.resend.Emails.send")
+    def test_envia_alerta_al_llegar_al_stock_critico(self, enviar):
+        self.crear_movimiento("INGRESO", "12")
+
+        with self.captureOnCommitCallbacks(execute=True):
+            self.crear_movimiento("CONSUMO", "3")
+
+        self.materia.refresh_from_db()
+
+        self.assertEqual(self.materia.stock_actual, Decimal("9.00"))
+        self.assertTrue(self.materia.alerta_stock_enviada)
+        enviar.assert_called_once()
+
+        datos_correo = enviar.call_args.args[0]
+
+        self.assertEqual(
+            datos_correo["to"],
+            ["gerente@ejemplo.com"],
+        )
+        self.assertEqual(
+            datos_correo["subject"],
+            "Alerta crítica de stock - CAUQUEVA",
+        )
+        self.assertIn("Papa", datos_correo["text"])
+        self.assertIn("9", datos_correo["text"])
+        self.assertIn("10", datos_correo["text"])
+        self.assertIn("Kilogramos", datos_correo["text"])
+
+    @patch("inventario.notificaciones.resend.Emails.send")
+    def test_no_repite_alerta_mientras_el_stock_sigue_critico(
+        self,
+        enviar,
+    ):
+        self.crear_movimiento("INGRESO", "12")
+
+        with self.captureOnCommitCallbacks(execute=True):
+            self.crear_movimiento("CONSUMO", "3")
+
+        with self.captureOnCommitCallbacks(execute=True):
+            self.crear_movimiento("CONSUMO", "1")
+
+        self.materia.refresh_from_db()
+
+        self.assertEqual(self.materia.stock_actual, Decimal("8.00"))
+        self.assertTrue(self.materia.alerta_stock_enviada)
+        enviar.assert_called_once()
+
+    @patch("inventario.notificaciones.resend.Emails.send")
+    def test_permite_nueva_alerta_despues_de_recuperar_stock(
+        self,
+        enviar,
+    ):
+        self.crear_movimiento("INGRESO", "12")
+
+        with self.captureOnCommitCallbacks(execute=True):
+            self.crear_movimiento("CONSUMO", "3")
+
+        with self.captureOnCommitCallbacks(execute=True):
+            self.crear_movimiento("INGRESO", "5")
+
+        self.materia.refresh_from_db()
+        self.assertEqual(self.materia.stock_actual, Decimal("14.00"))
+        self.assertFalse(self.materia.alerta_stock_enviada)
+
+        with self.captureOnCommitCallbacks(execute=True):
+            self.crear_movimiento("CONSUMO", "5")
+
+        self.materia.refresh_from_db()
+
+        self.assertEqual(self.materia.stock_actual, Decimal("9.00"))
+        self.assertTrue(self.materia.alerta_stock_enviada)
+        self.assertEqual(enviar.call_count, 2)
+
+    @patch("inventario.notificaciones.resend.Emails.send")
+    def test_fallo_de_resend_no_interrumpe_el_movimiento(
+        self,
+        enviar,
+    ):
+        enviar.side_effect = RuntimeError("Error simulado de Resend")
+
+        self.crear_movimiento("INGRESO", "12")
+
+        with self.captureOnCommitCallbacks(execute=True):
+            self.crear_movimiento("CONSUMO", "3")
+
+        self.materia.refresh_from_db()
+
+        self.assertEqual(self.materia.stock_actual, Decimal("9.00"))
+        self.assertFalse(self.materia.alerta_stock_enviada)
+        enviar.assert_called_once()

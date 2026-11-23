@@ -144,7 +144,7 @@
                         <td class="p-4 font-semibold text-red-700">
                             {% if mov.costo_total is not None %}${{ mov.costo_total|floatformat:"2g" }}{% else %}-{% endif %}
                         </td>
-                        <td class="p-4">{{ mov.proveedor_nombre|default:"-" }}</td>
+                        <td class="p-4">{{ mov.proveedor|default:"-" }}</td>
 
                     {% elif tipo == 'consumo' %}
                         <td class="p-4">

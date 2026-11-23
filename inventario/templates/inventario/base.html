@@ -65,20 +65,6 @@
                 <span class="sidebar-text whitespace-nowrap">Panel Principal</span>
             </a>
 
-            <a href="{% url 'consumos' %}"
-               class="flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors
-                      {% if request.resolver_match.url_name in 'consumos registrar_consumo' %}text-green-800 bg-green-100{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-700{% endif %}">
-                <span class="material-icons mr-3 shrink-0 {% if request.resolver_match.url_name in 'consumos registrar_consumo' %}text-green-700{% else %}text-gray-400{% endif %}">shopping_cart</span>
-                <span class="sidebar-text whitespace-nowrap">Consumo y Salidas</span>
-            </a>
-
-            <a href="{% url 'reportes' %}"
-               class="flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors
-                      {% if request.resolver_match.url_name == 'reportes' %}text-green-800 bg-green-100{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-700{% endif %}">
-                <span class="material-icons mr-3 shrink-0 {% if request.resolver_match.url_name == 'reportes' %}text-green-700{% else %}text-gray-400{% endif %}">description</span>
-                <span class="sidebar-text whitespace-nowrap">Reportes</span>
-            </a>
-
             <a href="{% url 'inventariostock' %}"
                class="flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors
                       {% if request.resolver_match.url_name == 'inventariostock' %}text-green-800 bg-green-100{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-700{% endif %}">
@@ -86,11 +72,11 @@
                 <span class="sidebar-text whitespace-nowrap">Materias Primas</span>
             </a>
 
-            <a href="{% url 'proveedores' %}"
+            <a href="{% url 'consumos' %}"
                class="flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors
-                      {% if request.resolver_match.url_name in 'proveedores crear_proveedor editar_proveedor' %}text-green-800 bg-green-100{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-700{% endif %}">
-                <span class="material-icons mr-3 shrink-0 {% if request.resolver_match.url_name in 'proveedores crear_proveedor editar_proveedor' %}text-green-700{% else %}text-gray-400{% endif %}">local_shipping</span>
-                <span class="sidebar-text whitespace-nowrap">Proveedores</span>
+                      {% if request.resolver_match.url_name in 'consumos registrar_consumo' %}text-green-800 bg-green-100{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-700{% endif %}">
+                <span class="material-icons mr-3 shrink-0 {% if request.resolver_match.url_name in 'consumos registrar_consumo' %}text-green-700{% else %}text-gray-400{% endif %}">shopping_cart</span>
+                <span class="sidebar-text whitespace-nowrap">Consumo y Salidas</span>
             </a>
 
             <a href="{% url 'registrar_movimiento' %}"
@@ -100,11 +86,26 @@
                 <span class="sidebar-text whitespace-nowrap">Registro de Ingresos</span>
             </a>
 
+
+            <a href="{% url 'proveedores' %}"
+               class="flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors
+                      {% if request.resolver_match.url_name in 'proveedores crear_proveedor editar_proveedor' %}text-green-800 bg-green-100{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-700{% endif %}">
+                <span class="material-icons mr-3 shrink-0 {% if request.resolver_match.url_name in 'proveedores crear_proveedor editar_proveedor' %}text-green-700{% else %}text-gray-400{% endif %}">local_shipping</span>
+                <span class="sidebar-text whitespace-nowrap">Proveedores</span>
+            </a>
+
             <a href="{% url 'historial' %}"
                class="flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors
                       {% if request.resolver_match.url_name == 'historial' %}text-green-800 bg-green-100{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-700{% endif %}">
                 <span class="material-icons mr-3 shrink-0 {% if request.resolver_match.url_name == 'historial' %}text-green-700{% else %}text-gray-400{% endif %}">history</span>
                 <span class="sidebar-text whitespace-nowrap">Historial de Movimientos</span>
+            </a>
+
+            <a href="{% url 'reportes' %}"
+               class="flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors
+                      {% if request.resolver_match.url_name == 'reportes' %}text-green-800 bg-green-100{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-700{% endif %}">
+                <span class="material-icons mr-3 shrink-0 {% if request.resolver_match.url_name == 'reportes' %}text-green-700{% else %}text-gray-400{% endif %}">description</span>
+                <span class="sidebar-text whitespace-nowrap">Reportes</span>
             </a>
 
             {% else %}

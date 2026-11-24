@@ -238,7 +238,7 @@
                 <div class="max-h-72 overflow-y-auto" style="background-color: #ffffff !important;">
                     {% if total_alertas > 0 %}
                         {% for alerta in alertas_recientes %}
-                        <a href="#" style="background-color: #ffffff !important;" class="block px-4 py-3 border-b border-verde/5 hover:bg-terracota-claro/50 transition-colors">
+                        <a href="alertas" style="background-color: #ffffff !important;" class="block px-4 py-3 border-b border-verde/5 hover:bg-terracota-claro/50 transition-colors">
                             <p class="text-sm font-bold text-[#1f2d27]">{{ alerta.nombre }}</p>
                             <p class="text-xs text-terracota mt-1">Stock: {{ alerta.stock_actual }} {{ alerta.get_unidad_medida_display }} (Mín: {{ alerta.stock_minimo }})</p>
                         </a>

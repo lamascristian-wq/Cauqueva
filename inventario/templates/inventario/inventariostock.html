@@ -6,68 +6,68 @@
     <!-- Encabezado -->
     <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-            <h2 class="text-2xl font-bold text-gray-800">Materias Primas</h2>
-            <p class="text-sm text-gray-500 mt-1">Stock actual de cada materia prima y su estado respecto al mínimo.</p>
+            <h2 class="text-2xl font-bold font-serif text-verde">Materias Primas</h2>
+            <p class="text-sm text-gray-600 mt-1">Stock actual de cada materia prima y su estado respecto al mínimo.</p>
         </div>
         <a href="{% url 'registrar_materia_prima' %}"
-           class="inline-flex items-center bg-green-700 hover:bg-green-800 text-white text-sm font-medium py-2 px-4 rounded-lg shadow-sm transition-colors">
+           class="inline-flex items-center bg-verde hover:bg-verde-oscuro text-white text-sm font-medium py-2 px-4 rounded-lg shadow-sm transition-colors">
             <span class="material-icons text-base mr-1.5">add</span> Nueva materia prima
         </a>
     </div>
 
     <!-- Resumen -->
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center">
-            <span class="material-icons text-green-700 bg-green-100 rounded-lg p-2 mr-3">inventory_2</span>
+        <div class="bg-white rounded-xl border border-verde/10 border-b-4 border-b-verde shadow-sm p-4 flex items-center">
+            <span class="material-icons text-verde bg-verde-claro rounded-full p-2.5 mr-3">inventory_2</span>
             <div>
                 <p class="text-xs text-gray-500">Total registradas</p>
-                <p class="text-xl font-semibold">{{ total }}</p>
+                <p class="text-xl font-bold">{{ total }}</p>
             </div>
         </div>
-        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center">
-            <span class="material-icons text-green-700 bg-green-100 rounded-lg p-2 mr-3">check_circle</span>
+        <div class="bg-white rounded-xl border border-verde/10 border-b-4 border-b-verde shadow-sm p-4 flex items-center">
+            <span class="material-icons text-verde bg-verde-claro rounded-full p-2.5 mr-3">check_circle</span>
             <div>
                 <p class="text-xs text-gray-500">Con stock normal</p>
-                <p class="text-xl font-semibold">{{ normales }}</p>
+                <p class="text-xl font-bold">{{ normales }}</p>
             </div>
         </div>
-        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center">
-            <span class="material-icons text-red-600 bg-red-100 rounded-lg p-2 mr-3">warning</span>
+        <div class="bg-white rounded-xl border border-verde/10 border-b-4 border-b-terracota shadow-sm p-4 flex items-center">
+            <span class="material-icons text-terracota bg-terracota-claro rounded-full p-2.5 mr-3">warning</span>
             <div>
                 <p class="text-xs text-gray-500">En estado crítico</p>
-                <p class="text-xl font-semibold">{{ criticas }}</p>
+                <p class="text-xl font-bold">{{ criticas }}</p>
             </div>
         </div>
     </div>
 
     <!-- Buscador y filtro -->
-    <form method="get" class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 mb-4 flex flex-wrap items-center gap-3">
+    <form method="get" class="bg-white rounded-xl border border-verde/10 shadow-sm p-4 mb-4 flex flex-wrap items-center gap-3">
         <div class="relative flex-1 min-w-[220px]">
-            <span class="material-icons absolute left-3 top-2 text-gray-400 text-xl">search</span>
+            <span class="material-icons absolute left-3 top-2 text-verde/50 text-xl">search</span>
             <input type="text" name="q" value="{{ q }}" placeholder="Buscar por nombre o variedad..."
-                   class="w-full pl-10 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600">
+                   class="w-full pl-10 pr-3 py-2 text-sm border border-verde/25 rounded-lg focus:outline-none focus:ring-2 focus:ring-verde/50 focus:border-verde">
         </div>
         <select name="estado" onchange="this.form.submit()"
-                class="py-2 px-3 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-green-600">
+                class="py-2 px-3 text-sm border border-verde/25 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-verde/50 focus:border-verde">
             <option value="">Todos los estados</option>
             <option value="criticas" {% if estado == 'criticas' %}selected{% endif %}>Solo críticas</option>
             <option value="normales" {% if estado == 'normales' %}selected{% endif %}>Solo normales</option>
         </select>
         <button type="submit"
-                class="bg-green-700 hover:bg-green-800 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors">
+                class="bg-verde hover:bg-verde-oscuro text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors">
             Filtrar
         </button>
         {% if q or estado %}
-            <a href="{% url 'inventariostock' %}" class="bg-green-700 hover:bg-green-800 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors">
+            <a href="{% url 'inventariostock' %}" class="bg-white border border-verde/30 text-verde hover:bg-verde/10 text-sm font-medium py-2 px-4 rounded-lg transition-colors">
                 Restablecer</a>
         {% endif %}
     </form>
 
     <!-- Tabla -->
-    <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+    <div class="bg-white rounded-xl border border-verde/10 shadow-sm overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full text-sm text-left">
-                <thead class="bg-gray-50 text-xs uppercase text-gray-500">
+                <thead class="bg-verde-claro text-xs uppercase text-verde">
                     <tr>
                         <th class="px-5 py-3 font-semibold">Materia prima</th>
                         <th class="px-5 py-3 font-semibold">Variedad</th>
@@ -77,18 +77,18 @@
                         <th class="px-5 py-3 font-semibold">Estado</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100">
+                <tbody class="divide-y divide-verde/10">
                     {% for m in materias %}
-                    <tr class="hover:bg-gray-50">
+                    <tr class="hover:bg-crema">
                         <td class="px-5 py-3">
-                            <p class="font-medium text-gray-800">{{ m.nombre }}</p>
+                            <p class="font-medium text-[#1f2d27]">{{ m.nombre }}</p>
                             {% if m.descripcion %}
                                 <p class="text-xs text-gray-500">{{ m.descripcion|truncatechars:60 }}</p>
                             {% endif %}
                         </td>
                         <td class="px-5 py-3 text-gray-600">{{ m.variedad|default:"—" }}</td>
-                        
-                        <td class="px-5 py-3 text-right font-semibold {% if m.stock_actual <= m.stock_minimo %}text-red-600{% else %}text-gray-800{% endif %}">
+
+                        <td class="px-5 py-3 text-right font-semibold {% if m.stock_actual <= m.stock_minimo %}text-terracota{% else %}text-[#1f2d27]{% endif %}">
                             {{ m.stock_actual|floatformat:"-2g" }} {{ m.unidad_medida }}
                         </td>
                         <td class="px-5 py-3 text-right text-gray-600">
@@ -97,11 +97,11 @@
                         <td class="px-5 py-3 text-gray-600"> ${{ m.precio_referencia|floatformat:2 }}</td>
                         <td class="px-5 py-3">
                             {% if m.stock_actual <= m.stock_minimo %}
-                                <span class="inline-flex items-center rounded-full bg-red-100 px-3 py-0.5 text-xs font-medium text-red-700">
+                                <span class="inline-flex items-center rounded-full bg-terracota-claro px-3 py-0.5 text-xs font-medium text-terracota">
                                     <span class="material-icons text-sm mr-1">warning</span> Crítica
                                 </span>
                             {% else %}
-                                <span class="inline-flex items-center rounded-full bg-green-100 px-3 py-0.5 text-xs font-medium text-green-800">
+                                <span class="inline-flex items-center rounded-full bg-verde-claro px-3 py-0.5 text-xs font-medium text-verde-oscuro">
                                     <span class="material-icons text-sm mr-1">check_circle</span> Normal
                                 </span>
                             {% endif %}
@@ -110,7 +110,7 @@
                     {% empty %}
                     <tr>
                         <td colspan="6" class="px-5 py-12 text-center text-gray-500">
-                            <span class="material-icons text-4xl text-gray-300">inventory_2</span>
+                            <span class="material-icons text-4xl text-salvia">inventory_2</span>
                             <p class="mt-2">
                                 {% if q or estado %}No hay materias primas que coincidan con el filtro.
                                 {% else %}Todavía no hay materias primas registradas.{% endif %}
@@ -123,6 +123,6 @@
         </div>
     </div>
 
-    <p class="text-xs text-gray-400 mt-3">Mostrando {{ materias|length }} de {{ total }} materias primas.</p>
+    <p class="text-xs text-gray-500 mt-3">Mostrando {{ materias|length }} de {{ total }} materias primas.</p>
 </div>
 {% endblock %}

@@ -239,14 +239,10 @@ def historial_general(request):
     elif tipo == "consumo":
         movimientos = movimientos.filter(tipo="CONSUMO")
 
-    # Para imprimir / PDF se muestran todos los movimientos, sin paginar.
-    imprimir = request.GET.get("imprimir") == "1"
-    por_pagina = max(movimientos.count(), 1) if imprimir else 25
-    pagina = Paginator(movimientos, por_pagina).get_page(request.GET.get("page"))
+    pagina = Paginator(movimientos, 25).get_page(request.GET.get("page"))
 
     params = request.GET.copy()
-    for k in ("page", "imprimir"):
-        params.pop(k, None)
+    params.pop("page", None)
     fechas = {k: v for k, v in (("desde", desde), ("hasta", hasta)) if v}
 
     return render(request, "inventario/historialgeneral.html", {
@@ -259,9 +255,6 @@ def historial_general(request):
         "cant_todos": cant_ingresos + cant_consumos,
         "querystring": params.urlencode(),
         "qs_fechas": urlencode(fechas),
-        "imprimir": imprimir,
-        "base_template": "inventario/base_imprimir.html" if imprimir else "inventario/base.html",
-        "generado": timezone.localtime(),
         "total": pagina.paginator.count,
     })
 
@@ -466,9 +459,7 @@ def reportes(request):
     datos = _datos_reporte(request.GET.get("mes", ""))
     datos["seccion"] = "reportes"
     datos["imprimir"] = request.GET.get("imprimir") == "1"
-    datos["base_template"] = (
-        "inventario/base_imprimir.html" if datos["imprimir"] else "inventario/base.html"
-    )
+    datos["base_template"] = "inventario/base.html"
     return render(request, "inventario/reportes.html", datos)
 
 
@@ -751,7 +742,7 @@ def proveedores(request):
     )
 
     if q:
-        lista = lista.filter(Q(nombre__icontains=q) | Q(telefono__icontains=q))
+        lista = lista.filter(Q(nombre__icontains=q) | Q(telefono__icontains=q) | Q(email__icontains=q))
     lista = list(lista.order_by("nombre"))
 
     for p in lista:

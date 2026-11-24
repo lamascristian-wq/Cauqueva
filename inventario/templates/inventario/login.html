@@ -5,16 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Iniciar sesión - CAUQUEVA</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        verde: { DEFAULT: "#0B5D3B", oscuro: "#08472D", claro: "#E3EEE7" },
+                        ocre: { DEFAULT: "#D98E2B", oscuro: "#A5640F", claro: "#FBEFD9" },
+                        terracota: { DEFAULT: "#B5523C", claro: "#F6E3DD" },
+                        crema: "#F8F7F1",
+                        salvia: "#A7BFA3",
+                    },
+                },
+            },
+        };
+    </script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 </head>
-<body class="bg-gray-50 min-h-screen flex items-center justify-center font-sans text-gray-800">
-    <div class="bg-white w-full max-w-sm rounded-2xl shadow-md border border-gray-200 p-8">
+<body class="bg-crema min-h-screen flex items-center justify-center font-sans text-[#1f2d27]">
+    <div class="bg-white w-full max-w-sm rounded-2xl shadow-sm border border-verde/10 p-8">
 
         <div class="flex items-center mb-6">
-            <span class="material-icons text-green-700 text-3xl mr-2">eco</span>
+            <span class="material-icons text-verde text-3xl mr-2">eco</span>
             <div class="leading-tight">
-                <h1 class="text-lg font-bold text-gray-800">CAUQUEVA</h1>
-                <span class="text-xs text-gray-500">Sistema de Gestión</span>
+                <h1 class="text-lg font-bold font-serif text-verde tracking-wide">CAUQUEVA</h1>
+                <span class="text-xs text-[#1f2d27]/60">Sistema de Gestión</span>
             </div>
         </div>
 
@@ -23,25 +38,25 @@
             <input type="hidden" name="next" value="{{ next }}">
 
             {% if form.errors %}
-            <p class="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">
+            <p class="text-sm text-terracota bg-terracota-claro border border-terracota/20 rounded-lg px-3 py-2">
                 Usuario o contraseña incorrectos.
             </p>
             {% endif %}
 
             <div>
-                <label for="id_username" class="block text-sm text-gray-700 mb-1">Usuario</label>
+                <label for="id_username" class="block text-sm font-medium text-[#1f2d27] mb-1">Usuario</label>
                 <input type="text" name="username" id="id_username" required autofocus
-                       class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-700">
+                       class="w-full border border-verde/20 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-verde bg-white text-[#1f2d27]">
             </div>
 
             <div>
-                <label for="id_password" class="block text-sm text-gray-700 mb-1">Contraseña</label>
+                <label for="id_password" class="block text-sm font-medium text-[#1f2d27] mb-1">Contraseña</label>
                 <input type="password" name="password" id="id_password" required
-                       class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-700">
+                       class="w-full border border-verde/20 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-verde bg-white text-[#1f2d27]">
             </div>
 
             <button type="submit"
-                    class="w-full bg-green-700 hover:bg-green-800 text-white font-medium rounded-lg py-2.5 transition-colors">
+                    class="w-full bg-verde hover:bg-verde-oscuro text-white font-medium rounded-lg py-2.5 transition-colors shadow-sm cursor-pointer">
                 Ingresar
             </button>
         </form>

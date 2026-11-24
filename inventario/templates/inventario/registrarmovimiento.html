@@ -1,31 +1,33 @@
-
 {% extends 'inventario/base.html' %}
 
 {% block content %}
 <div class="max-w-2xl mx-auto">
 
     <!-- Encabezado -->
-    <div class="mb-6 flex items-center justify-between">
+    <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-            <h2 class="text-2xl font-bold text-gray-800">Registrar ingreso de stock</h2>
-            <p class="text-sm text-gray-500 mt-1">
+            <h2 class="text-2xl font-bold font-serif text-verde">Registrar ingreso de stock</h2>
+            <p class="text-sm text-[#1f2d27]/70 mt-1">
                 Registrá la cantidad de materia prima recibida de un proveedor.
             </p>
         </div>
 
         <a href="{% url 'inventariostock' %}"
-           class="text-sm font-medium text-green-700 hover:text-green-900 bg-green-50 px-3 py-2 rounded-lg">
-            <span class="material-icons text-sm mr-1">arrow_back</span>Volver al inventario
+           class="text-sm font-medium text-verde hover:text-verde-oscuro bg-verde-claro px-3.5 py-2 rounded-lg transition-colors inline-flex items-center">
+            <span class="material-icons text-sm mr-1.5">arrow_back</span>Volver al inventario
         </a>
     </div>
 
-    <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+    <div class="bg-white p-6 sm:p-8 rounded-xl shadow-sm border border-verde/10">
 
         {% if formulario.non_field_errors %}
-        <div class="mb-5 p-4 rounded-lg bg-red-50 text-red-700 text-sm">
-            {% for error in formulario.non_field_errors %}
-                <p>{{ error }}</p>
-            {% endfor %}
+        <div class="mb-5 p-4 rounded-lg bg-terracota-claro text-terracota border border-terracota/20 text-sm flex items-start">
+            <span class="material-icons text-base mr-2 shrink-0">error</span>
+            <div>
+                {% for error in formulario.non_field_errors %}
+                    <p>{{ error }}</p>
+                {% endfor %}
+            </div>
         </div>
         {% endif %}
 
@@ -35,34 +37,34 @@
             {% for field in formulario %}
             <div>
                 <label for="{{ field.id_for_label }}"
-                       class="block text-sm font-medium text-gray-700 mb-1">
+                       class="block text-sm font-medium text-[#1f2d27] mb-1">
                     {{ field.label }}
                     {% if field.field.required %}
-                        <span class="text-red-500">*</span>
+                        <span class="text-terracota">*</span>
                     {% endif %}
                 </label>
 
                 {{ field }}
 
                 {% for error in field.errors %}
-                    <p class="text-xs text-red-600 mt-1">{{ error }}</p>
+                    <p class="text-xs text-terracota mt-1">{{ error }}</p>
                 {% endfor %}
 
                 {% if field.help_text %}
-                    <p class="text-xs text-gray-500 mt-1">{{ field.help_text }}</p>
+                    <p class="text-xs text-[#1f2d27]/60 mt-1">{{ field.help_text }}</p>
                 {% endif %}
             </div>
             {% endfor %}
 
-            <div class="pt-5 border-t border-gray-100 flex justify-end gap-3">
+            <div class="pt-5 border-t border-verde/10 flex items-center justify-end gap-3">
 
                 <a href="{% url 'inventariostock' %}"
-                    class="text-sm font-medium text-gray-600 hover:text-gray-900 border border-gray-300 px-4 py-2 rounded-lg">
+                    class="text-sm font-medium text-[#1f2d27]/80 hover:text-[#1f2d27] border border-verde/20 hover:bg-verde/5 px-4 py-2 rounded-lg transition-colors">
                     Cancelar
                 </a>
 
                 <button type="submit"
-                        class="bg-green-700 hover:bg-green-800 text-white font-medium py-2 px-5 rounded-lg shadow-sm text-sm">
+                        class="bg-verde hover:bg-verde-oscuro text-white font-medium py-2 px-5 rounded-lg shadow-sm text-sm transition-colors cursor-pointer">
                     Registrar ingreso
                 </button>
 

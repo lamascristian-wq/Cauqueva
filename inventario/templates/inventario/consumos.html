@@ -5,21 +5,21 @@
 
     <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-            <h2 class="text-2xl font-bold text-gray-800">Consumo y Produccion</h2>
-            <p class="text-sm text-gray-500 mt-1">Producciones registradas: cada una descuenta materia prima y cuenta como venta.</p>
+            <h2 class="text-2xl font-bold font-serif text-verde">Consumo y Produccion</h2>
+            <p class="text-sm text-gray-600 mt-1">Producciones registradas: cada una descuenta materia prima y cuenta como venta.</p>
         </div>
         <a href="{% url 'registrar_consumo' %}"
-           class="inline-flex items-center bg-green-700 hover:bg-green-800 text-white text-sm font-medium py-2 px-4 rounded-lg shadow-sm transition-colors">
+           class="inline-flex items-center bg-verde hover:bg-verde-oscuro text-white text-sm font-medium py-2 px-4 rounded-lg shadow-sm transition-colors">
             <span class="material-icons text-base mr-1.5">add</span> Registrar producción
         </a>
     </div>
 
 
     <!-- Filtros -->
-    <form method="get" class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 mb-4 flex flex-wrap items-end gap-3">
+    <form method="get" class="bg-white rounded-xl border border-verde/10 shadow-sm p-4 mb-4 flex flex-wrap items-end gap-3">
         <div class="min-w-[200px] flex-1">
-            <label class="block text-xs font-medium text-gray-500 mb-1">Producto</label>
-            <select name="producto" class="w-full py-2 px-3 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-green-600">
+            <label class="block text-xs font-medium text-gray-600 mb-1">Producto</label>
+            <select name="producto" class="w-full py-2 px-3 text-sm border border-verde/25 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-verde/50 focus:border-verde">
                 <option value="">Todos</option>
                 {% for p in productos %}
                     <option value="{{ p.id }}" {% if producto_id == p.id|stringformat:"s" %}selected{% endif %}>{{ p }}</option>
@@ -27,25 +27,25 @@
             </select>
         </div>
         <div>
-            <label class="block text-xs font-medium text-gray-500 mb-1">Desde</label>
-            <input type="date" name="desde" value="{{ desde }}" class="py-2 px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600">
+            <label class="block text-xs font-medium text-gray-600 mb-1">Desde</label>
+            <input type="date" name="desde" value="{{ desde }}" class="py-2 px-3 text-sm border border-verde/25 rounded-lg focus:outline-none focus:ring-2 focus:ring-verde/50 focus:border-verde">
         </div>
         <div>
-            <label class="block text-xs font-medium text-gray-500 mb-1">Hasta</label>
-            <input type="date" name="hasta" value="{{ hasta }}" class="py-2 px-3 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600">
+            <label class="block text-xs font-medium text-gray-600 mb-1">Hasta</label>
+            <input type="date" name="hasta" value="{{ hasta }}" class="py-2 px-3 text-sm border border-verde/25 rounded-lg focus:outline-none focus:ring-2 focus:ring-verde/50 focus:border-verde">
         </div>
-        <button type="submit" class="bg-green-700 hover:bg-green-800 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors">Filtrar</button>
+        <button type="submit" class="bg-verde hover:bg-verde-oscuro text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors">Filtrar</button>
         {% if producto_id or desde or hasta %}
-            <a href="{% url 'consumos' %}" class="bg-green-700 hover:bg-green-800 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors">
+            <a href="{% url 'consumos' %}" class="bg-white border border-verde/30 text-verde hover:bg-verde/10 text-sm font-medium py-2 px-4 rounded-lg transition-colors">
                 Limpiar</a>
         {% endif %}
     </form>
 
     <!-- Tabla -->
-    <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+    <div class="bg-white rounded-xl border border-verde/10 shadow-sm overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full text-sm text-left">
-                <thead class="bg-gray-50 text-xs uppercase text-gray-500">
+                <thead class="bg-verde-claro text-xs uppercase text-verde">
                     <tr>
                         <th class="px-5 py-3 font-semibold">Fecha</th>
                         <th class="px-5 py-3 font-semibold">Producto</th>
@@ -55,14 +55,14 @@
                         <th class="px-5 py-3 font-semibold">Materia prima consumida</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100">
+                <tbody class="divide-y divide-verde/10">
                     {% for p in pagina %}
-                    <tr class="hover:bg-gray-50 align-top">
+                    <tr class="hover:bg-crema align-top">
                         <td class="px-5 py-3 text-gray-600 whitespace-nowrap">{{ p.fecha|date:"d/m/Y H:i" }}</td>
-                        <td class="px-5 py-3 font-medium text-gray-800">{{ p.producto }}</td>
-                        <td class="px-5 py-3 text-right text-gray-800">{{ p.cantidad }}</td>
+                        <td class="px-5 py-3 font-medium text-[#1f2d27]">{{ p.producto }}</td>
+                        <td class="px-5 py-3 text-right text-[#1f2d27]">{{ p.cantidad }}</td>
                         <td class="px-5 py-3 text-right text-gray-600">${{ p.precio_unitario|floatformat:"2g" }}</td>
-                        <td class="px-5 py-3 text-right font-semibold text-green-800">${{ p.total|floatformat:"2g" }}</td>
+                        <td class="px-5 py-3 text-right font-semibold text-verde">${{ p.total|floatformat:"2g" }}</td>
                         <td class="px-5 py-3 text-gray-600">
                             {% for c in p.consumos.all %}
                                 <div>{{ c.materia_prima }}: {{ c.cantidad|floatformat:"-2g" }} Kg</div>
@@ -72,7 +72,7 @@
                     {% empty %}
                     <tr>
                         <td colspan="6" class="px-5 py-12 text-center text-gray-500">
-                            <span class="material-icons text-4xl text-gray-300">shopping_cart</span>
+                            <span class="material-icons text-4xl text-salvia">shopping_cart</span>
                             <p class="mt-2">
                                 {% if producto_id or desde or hasta %}No hay producciones que coincidan con el filtro.
                                 {% else %}Todavía no hay producciones registradas.{% endif %}
@@ -85,16 +85,16 @@
         </div>
 
         {% if pagina.paginator.num_pages > 1 %}
-        <div class="flex items-center justify-between border-t border-gray-100 px-5 py-3 text-sm text-gray-600">
+        <div class="flex items-center justify-between border-t border-verde/10 px-5 py-3 text-sm text-gray-600">
             <span>Página {{ pagina.number }} de {{ pagina.paginator.num_pages }}</span>
             <div class="space-x-2">
                 {% if pagina.has_previous %}
                     <a href="?{% if querystring %}{{ querystring }}&{% endif %}page={{ pagina.previous_page_number }}"
-                       class="px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50">Anterior</a>
+                       class="px-3 py-1.5 rounded-lg border border-verde/30 text-verde hover:bg-verde/10">Anterior</a>
                 {% endif %}
                 {% if pagina.has_next %}
                     <a href="?{% if querystring %}{{ querystring }}&{% endif %}page={{ pagina.next_page_number }}"
-                       class="px-3 py-1.5 rounded-lg border border-gray-300 hover:bg-gray-50">Siguiente</a>
+                       class="px-3 py-1.5 rounded-lg border border-verde/30 text-verde hover:bg-verde/10">Siguiente</a>
                 {% endif %}
             </div>
         </div>

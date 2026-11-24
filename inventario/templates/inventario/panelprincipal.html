@@ -1,5 +1,5 @@
 {% extends "inventario/base.html" %}
-
+{% load static %}
 {% block content %}
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <script src="https://cdn.tailwindcss.com"></script>
@@ -9,8 +9,12 @@
     theme: {
       extend: {
         colors: {
-          verde: { DEFAULT: "#2f6b4f", claro: "#dcebe2" },
-          rojo: { DEFAULT: "#d64545", claro: "#fbe3e3" },
+          // Misma paleta institucional que en base.html
+          verde: { DEFAULT: "#0B5D3B", oscuro: "#08472D", claro: "#E3EEE7" },
+          ocre: { DEFAULT: "#D98E2B", oscuro: "#A5640F", claro: "#FBEFD9" },
+          terracota: { DEFAULT: "#B5523C", claro: "#F6E3DD" },
+          crema: "#F8F7F1",
+          salvia: "#A7BFA3",
         },
       },
     },
@@ -23,86 +27,120 @@
 
 <div id="panel" class="text-[#1f2d27]">
 
-  <!-- Encabezado Responsivo -->
-  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-    <div>
-      <h1 class="text-2xl font-bold text-gray-800">Dashboard</h1>
-      <p class="text-sm text-gray-500 mt-1">
-        Mostrando {% if materia_seleccionada %}<strong>{{ materia_seleccionada }}</strong>{% else %}todas las materias primas{% endif %}
-      </p>
+<!-- BANNER DE BIENVENIDA DE BORDE A BORDE (SIN LÍNEA INFERIOR) -->
+<div class="relative overflow-hidden -mt-4 -mx-4 sm:-mt-6 sm:-mx-6 md:-mt-8 md:-mx-8 mb-6 bg-cover bg-center min-h-[200px] sm:min-h-[240px] flex items-stretch shadow-sm"
+     style="background-image: url('{% static 'img/norte-img.webp' %}');">
+    
+    <!-- Sombra/Degradado oscuro progresivo para legibilidad del texto -->
+    <div class="w-full bg-gradient-to-r from-black/80 via-black/45 to-transparent px-6 sm:px-10 md:px-12 pt-8 pb-16 flex flex-col justify-center z-10">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 max-w-7xl">
+            <div>
+                <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold font-serif text-white tracking-wide drop-shadow-md">
+                    Bienvenido/a
+                </h1>
+                <p class="text-sm sm:text-base text-white/95 mt-1 font-sans drop-shadow-sm">
+                    Sistema de Control de Stock y Reportes
+                </p>
+            </div>
+        </div>
     </div>
 
-    <form method="get" class="w-full md:w-auto">
-      <select name="materia" onchange="this.form.submit()"
-              class="w-full md:w-[260px] cursor-pointer rounded-xl border border-gray-300 bg-white px-4 py-2.5 text-sm shadow-sm">
-        <option value="">Todas las materias primas</option>
-        {% for m in materias %}
-          <option value="{{ m.id }}" {% if materia_id == m.id|stringformat:"s" %}selected{% endif %}>{{ m }}</option>
-        {% endfor %}
-      </select>
-    </form>
+    <!-- Olas orgánicas inferiores (-bottom-px para solapar 1px y eliminar el micro-borde) -->
+    <div class="absolute inset-x-0 -bottom-px pointer-events-none z-20 overflow-hidden leading-none">
+        <svg class="w-full h-10 sm:h-14 md:h-16 block text-[#F8F7F1]" viewBox="0 0 1200 120" preserveAspectRatio="none">
+            <!-- Capa Ocre -->
+            <path d="M0,0 C300,90 600,15 900,75 C1050,105 1150,35 1200,55 L1200,120 L0,120 Z" fill="#D98E2B" opacity="0.95"></path>
+            <!-- Capa Terracota -->
+            <path d="M0,25 C260,100 560,35 860,85 C1010,110 1130,55 1200,75 L1200,120 L0,120 Z" fill="#B5523C" opacity="0.9"></path>
+            <!-- Capa Crema (#F8F7F1) -->
+            <path d="M0,50 C360,115 660,50 960,100 C1110,120 1170,80 1200,90 L1200,121 L0,121 Z" fill="#F8F7F1"></path>
+        </svg>
+    </div>
+</div>
+
+  <!-- Encabezado Responsivo (banner institucional) -->
+  <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-verde-oscuro via-verde to-[#14774d] px-6 py-6 mb-6 shadow-sm">
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <h1 class="text-2xl font-bold font-serif text-white">Dashboard</h1>
+        <p class="text-sm text-white/80 mt-1">
+          Mostrando {% if materia_seleccionada %}<strong>{{ materia_seleccionada }}</strong>{% else %}todas las materias primas{% endif %}
+        </p>
+      </div>
+
+      <form method="get" class="w-full md:w-auto">
+        <select name="materia" onchange="this.form.submit()"
+                class="w-full md:w-[260px] cursor-pointer rounded-xl border border-white/30 bg-white px-4 py-2.5 text-sm text-[#1f2d27] shadow-sm">
+          <option value="">Todas las materias primas</option>
+          {% for m in materias %}
+            <option value="{{ m.id }}" {% if materia_id == m.id|stringformat:"s" %}selected{% endif %}>{{ m }}</option>
+          {% endfor %}
+        </select>
+      </form>
+    </div>
+    <div class="absolute inset-x-0 bottom-0 h-1.5 bg-gradient-to-r from-ocre via-terracota to-ocre"></div>
   </div>
 
   <!-- Grilla de Tarjetas -->
   <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
 
-    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center">
-        <span class="material-icons text-green-700 bg-green-100 rounded-lg p-2 mr-3">trending_up</span>
+    <div class="bg-white rounded-xl border border-verde/10 border-b-4 border-b-verde shadow-sm p-4 flex items-center">
+        <span class="material-icons text-verde bg-verde-claro rounded-full p-2.5 mr-3">trending_up</span>
         <div>
             <p class="text-xs text-gray-500">{% if materia_seleccionada %}Stock actual{% else %}Stock total acumulado{% endif %}</p>
-            <p class="text-xl font-semibold">{{ stock_total|floatformat:"-2g" }} Kg</p>
+            <p class="text-xl font-bold">{{ stock_total|floatformat:"-2g" }} Kg</p>
         </div>
     </div>
 
-    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center">
-        <span class="material-icons text-green-700 bg-green-100 rounded-lg p-2 mr-3">inventory_2</span>
+    <div class="bg-white rounded-xl border border-verde/10 border-b-4 border-b-ocre shadow-sm p-4 flex items-center">
+        <span class="material-icons text-ocre-oscuro bg-ocre-claro rounded-full p-2.5 mr-3">inventory_2</span>
         <div>
             <p class="text-xs text-gray-500">Consumo del mes</p>
-            <p class="text-xl font-semibold">{{ consumo_mes|floatformat:"-2g" }} Kg</p>
+            <p class="text-xl font-bold">{{ consumo_mes|floatformat:"-2g" }} Kg</p>
         </div>
     </div>
 
     <!-- Tarjeta de Alertas de Stock (Clickeable) -->
-    <a href="#seccion-alertas" class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center transition-all hover:shadow-md hover:border-red-200 cursor-pointer no-underline text-inherit">
+    <a href="#seccion-alertas" class="bg-white rounded-xl border border-verde/10 border-b-4 {% if cant_alertas %}border-b-terracota{% else %}border-b-verde{% endif %} shadow-sm p-4 flex items-center transition-all hover:shadow-md cursor-pointer no-underline text-inherit">
         {% if cant_alertas %}
-            <span class="material-icons text-red-600 bg-red-100 rounded-lg p-2 mr-3">warning</span>
+            <span class="material-icons text-terracota bg-terracota-claro rounded-full p-2.5 mr-3">warning</span>
         {% else %}
-            <span class="material-icons text-green-700 bg-green-100 rounded-lg p-2 mr-3">check_circle</span>
+            <span class="material-icons text-verde bg-verde-claro rounded-full p-2.5 mr-3">check_circle</span>
         {% endif %}
         <div>
             <p class="text-xs text-gray-500">Alertas de stock</p>
-            <p class="text-xl font-semibold">{{ cant_alertas }} crítica{{ cant_alertas|pluralize }}</p>
+            <p class="text-xl font-bold">{{ cant_alertas }} crítica{{ cant_alertas|pluralize }}</p>
         </div>
     </a>
 
-    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center">
-        <span class="material-icons text-green-700 bg-green-100 rounded-lg p-2 mr-3">event</span>
+    <div class="bg-white rounded-xl border border-verde/10 border-b-4 border-b-verde shadow-sm p-4 flex items-center">
+        <span class="material-icons text-verde bg-verde-claro rounded-full p-2.5 mr-3">event</span>
         <div>
             <p class="text-xs text-gray-500">{% if materia_seleccionada %}Producciones del mes con esta materia prima{% else %}Producciones este mes{% endif %}</p>
-            <p class="text-xl font-semibold">{{ producciones_mes }}</p>
+            <p class="text-xl font-bold">{{ producciones_mes }}</p>
         </div>
     </div>
 
-    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center">
-        <span class="material-icons text-green-700 bg-green-100 rounded-lg p-2 mr-3">payments</span>
+    <div class="bg-white rounded-xl border border-verde/10 border-b-4 border-b-verde shadow-sm p-4 flex items-center">
+        <span class="material-icons text-verde bg-verde-claro rounded-full p-2.5 mr-3">payments</span>
         <div>
             <p class="text-xs text-gray-500">{% if materia_seleccionada %}Ventas del mes (productos con esta materia prima){% else %}Ventas del mes{% endif %}</p>
-            <p class="text-xl font-semibold">${{ ventas_mes|floatformat:"2g" }}</p>
+            <p class="text-xl font-bold">${{ ventas_mes|floatformat:"2g" }}</p>
         </div>
     </div>
 
-    <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center">
-        <span class="material-icons text-green-700 bg-green-100 rounded-lg p-2 mr-3">shopping_cart</span>
+    <div class="bg-white rounded-xl border border-verde/10 border-b-4 border-b-verde shadow-sm p-4 flex items-center">
+        <span class="material-icons text-verde bg-verde-claro rounded-full p-2.5 mr-3">shopping_cart</span>
         <div>
             <p class="text-xs text-gray-500">{% if materia_seleccionada %}Ventas totales (productos con esta materia prima){% else %}Ventas totales{% endif %}</p>
-            <p class="text-xl font-semibold">${{ ventas_total|floatformat:"2g" }}</p>
+            <p class="text-xl font-bold">${{ ventas_total|floatformat:"2g" }}</p>
         </div>
     </div>
   </section>
 
   <!-- Gráfico -->
-  <section class="mb-6 rounded-2xl bg-white px-6 pt-5 pb-4 shadow-sm">
-    <h2 class="m-0 mb-4 text-lg font-semibold">Evolución de movimientos</h2>
+  <section class="mb-6 rounded-2xl bg-white border border-verde/10 px-6 pt-5 pb-4 shadow-sm">
+    <h2 class="m-0 mb-4 text-lg font-semibold text-verde">Evolución de movimientos</h2>
 
     <div class="mb-3 flex flex-wrap items-center gap-6 text-sm text-gray-500">
       <span class="font-semibold text-[#1f2d27]">Mes <i class="bi bi-arrow-down-up"></i></span>
@@ -110,7 +148,7 @@
         <span class="h-2.5 w-2.5 rounded-full bg-verde"></span> Ingresos
       </button>
       <button type="button" data-serie="1" class="chip inline-flex items-center gap-2 border-0 bg-transparent p-0 text-sm text-gray-500 cursor-pointer">
-        <span class="h-2.5 w-2.5 rounded-full bg-[#8fc4a8]"></span> Consumos
+        <span class="h-2.5 w-2.5 rounded-full bg-ocre"></span> Consumos
       </button>
     </div>
 
@@ -127,9 +165,9 @@
   </section>
 
   <!-- Listado de alertas paginado -->
-  <section id="seccion-alertas" class="rounded-2xl bg-white px-6 py-5 shadow-sm scroll-mt-6">
+  <section id="seccion-alertas" class="rounded-2xl bg-white border border-verde/10 px-6 py-5 shadow-sm scroll-mt-6">
     <div class="flex items-center justify-between mb-3">
-      <h2 class="m-0 text-lg font-semibold">Listado de alertas</h2>
+      <h2 class="m-0 text-lg font-semibold text-verde">Listado de alertas</h2>
       {% if alertas %}
       <span id="info-paginacion" class="text-xs text-gray-500 font-medium"></span>
       {% endif %}
@@ -139,21 +177,21 @@
     <div class="overflow-x-auto">
       <table id="tabla-alertas" class="w-full border-collapse text-sm">
         <thead>
-          <tr class="text-left text-gray-500">
-            <th class="border-b border-gray-100 p-2.5 font-medium">Materia prima</th>
-            <th class="border-b border-gray-100 p-2.5 font-medium">Stock actual</th>
-            <th class="border-b border-gray-100 p-2.5 font-medium">Stock mínimo</th>
-            <th class="border-b border-gray-100 p-2.5 font-medium">Estado</th>
+          <tr class="text-left text-verde">
+            <th class="border-b border-verde/20 p-2.5 font-semibold">Materia prima</th>
+            <th class="border-b border-verde/20 p-2.5 font-semibold">Stock actual</th>
+            <th class="border-b border-verde/20 p-2.5 font-semibold">Stock mínimo</th>
+            <th class="border-b border-verde/20 p-2.5 font-semibold">Estado</th>
           </tr>
         </thead>
         <tbody>
           {% for a in alertas %}
-          <tr class="fila-alerta">
-            <td class="border-b border-gray-100 p-2.5">{{ a }}</td>
-            <td class="border-b border-gray-100 p-2.5">{{ a.stock_actual|floatformat:"-2g" }} {{ a.unidad_medida }}</td>
-            <td class="border-b border-gray-100 p-2.5">{{ a.stock_minimo|floatformat:"-2g" }} {{ a.unidad_medida }}</td>
-            <td class="border-b border-gray-100 p-2.5">
-              <span class="rounded-full bg-rojo-claro px-3 py-0.5 text-xs text-rojo">Crítica</span>
+          <tr class="fila-alerta hover:bg-crema/70">
+            <td class="border-b border-verde/10 p-2.5">{{ a }}</td>
+            <td class="border-b border-verde/10 p-2.5">{{ a.stock_actual|floatformat:"-2g" }} {{ a.unidad_medida }}</td>
+            <td class="border-b border-verde/10 p-2.5">{{ a.stock_minimo|floatformat:"-2g" }} {{ a.unidad_medida }}</td>
+            <td class="border-b border-verde/10 p-2.5">
+              <span class="rounded-full bg-terracota-claro px-3 py-0.5 text-xs font-medium text-terracota">Crítica</span>
             </td>
           </tr>
           {% endfor %}
@@ -162,13 +200,13 @@
     </div>
 
     <!-- Controles de Paginación -->
-    <div id="contenedor-paginacion" class="mt-4 flex items-center justify-between border-t border-gray-100 pt-3 hidden">
+    <div id="contenedor-paginacion" class="mt-4 flex items-center justify-between border-t border-verde/10 pt-3 hidden">
       <span id="texto-rango" class="text-xs text-gray-500 font-medium"></span>
       <div class="flex items-center gap-1.5">
-        <button id="btn-prev-alertas" type="button" class="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors">
+        <button id="btn-prev-alertas" type="button" class="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-verde/20 bg-white text-verde hover:bg-verde/10 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors">
           <i class="bi bi-chevron-left text-xs"></i>
         </button>
-        <button id="btn-next-alertas" type="button" class="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-gray-200 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors">
+        <button id="btn-next-alertas" type="button" class="inline-flex items-center justify-center h-8 w-8 rounded-lg border border-verde/20 bg-white text-verde hover:bg-verde/10 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors">
           <i class="bi bi-chevron-right text-xs"></i>
         </button>
       </div>
@@ -197,12 +235,12 @@
       datasets: [
         {
           type: "bar", label: "Ingresos", data: datos.ingresos,
-          backgroundColor: "#2f6b4f", borderRadius: 4, barThickness: 14, order: 2,
+          backgroundColor: "#0B5D3B", borderRadius: 4, barThickness: 14, order: 2,
         },
         {
           type: "line", label: "Consumos", data: datos.consumos,
-          borderColor: "#8fc4a8", backgroundColor: "rgba(143, 196, 168, .2)",
-          fill: true, tension: 0.3, pointRadius: 4, pointBackgroundColor: "#8fc4a8", order: 1,
+          borderColor: "#D98E2B", backgroundColor: "rgba(217, 142, 43, .15)",
+          fill: true, tension: 0.3, pointRadius: 4, pointBackgroundColor: "#D98E2B", order: 1,
         },
       ],
     },
@@ -211,7 +249,7 @@
       maintainAspectRatio: false,
       plugins: { legend: { position: "bottom" } },
       scales: {
-        y: { beginAtZero: true, title: { display: true, text: datos.unidad } },
+        y: { beginAtZero: true, title: { display: true, text: datos.unidad }, grid: { color: "rgba(11, 93, 59, .08)" } },
         x: { grid: { display: false } },
       },
     },

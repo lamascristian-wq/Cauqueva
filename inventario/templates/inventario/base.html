@@ -1,4 +1,3 @@
-
 {% load static %}
 <!DOCTYPE html>
 <html lang="es">
@@ -7,6 +6,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CAUQUEVA - Sistema de Gestión</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        // Paleta institucional CAUQUEVA (misma definición en panelprincipal.html)
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        verde: { DEFAULT: "#0B5D3B", oscuro: "#08472D", claro: "#E3EEE7" },
+                        ocre: { DEFAULT: "#D98E2B", oscuro: "#A5640F", claro: "#FBEFD9" },
+                        terracota: { DEFAULT: "#B5523C", claro: "#F6E3DD" },
+                        crema: "#F8F7F1",
+                        salvia: "#A7BFA3",
+                    },
+                },
+            },
+        };
+    </script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <style>
         /* Estilos para el estado colapsado del menú lateral en escritorio */
@@ -32,22 +47,59 @@
             }
         }
     </style>
+    <style>
+  @media print {
+    /* 1. Ocultar barra lateral, barra superior, overlays y elementos con clase .no-print */
+    aside, header, #sidebarOverlay, .no-print {
+      display: none !important;
+    }
+
+    /* 2. Resetear los contenedores con h-screen y overflow-hidden */
+    html, body, body > div, main {
+      background: #ffffff !important;
+      color: #1f2d27 !important;
+      height: auto !important;
+      min-height: auto !important;
+      width: 100% !important;
+      overflow: visible !important;
+      position: static !important;
+      display: block !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      box-shadow: none !important;
+    }
+
+    /* 3. Forzar que los textos blancos pasen a texto oscuro si no se imprimen fondoss */
+    .text-white, .text-white\/90, .text-white\/80 {
+      color: #1f2d27 !important;
+      text-shadow: none !important;
+    }
+
+    /* 4. Evitar cortes feos en medio de tablas o tarjetas */
+    .tarjeta, section, tr, table {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+  }
+</style>
 </head>
-<body class="bg-gray-50 flex h-screen overflow-hidden font-sans text-gray-800">
+<body class="bg-crema flex h-screen overflow-hidden font-sans text-[#1f2d27]">
 
     <!-- Fondo oscuro traslúcido para móviles -->
     <div id="sidebarOverlay" class="fixed inset-0 bg-gray-900/50 z-30 hidden lg:hidden transition-opacity"></div>
 
     <!-- BARRA LATERAL -->
     <aside id="sidebar"
-           class="fixed inset-y-0 left-0 z-40 w-64 bg-white border-r border-gray-200 flex flex-col transition-all duration-300 overflow-hidden shrink-0 -translate-x-full lg:translate-x-0 lg:static">
+           class="fixed inset-y-0 left-0 z-40 w-64 bg-verde text-white flex flex-col transition-all duration-300 overflow-hidden shrink-0 -translate-x-full lg:translate-x-0 lg:static">
 
         <!-- Logo -->
-        <div class="h-16 flex items-center px-6 border-b border-gray-200 logo-container transition-all duration-300">
-            <img src="{% static 'img/logocauqueva.webp' %}" alt="Logo Cauqueva" class="h-10 w-auto object-contain shrink-0">
-            <div class="leading-tight ml-2 sidebar-text whitespace-nowrap">
-                <h1 class="text-lg font-bold text-gray-800">CAUQUEVA</h1>
-                <span class="text-xs text-gray-500">Sistema de Gestión</span>
+        <div class="h-16 flex items-center px-6 border-b border-white/10 logo-container transition-all duration-300">
+            <span class="rounded-xl bg-crema p-1 shrink-0 flex items-center justify-center">
+                <img src="{% static 'img/logocauqueva.webp' %}" alt="Logo Cauqueva" class="h-10 w-auto object-contain shrink-0">
+            </span>
+            <div class="leading-tight ml-3 sidebar-text whitespace-nowrap">
+                <h1 class="text-lg font-bold font-serif tracking-wide text-white">CAUQUEVA</h1>
+                <span class="text-xs text-white/70">Cooperativa LTDA.</span>
             </div>
         </div>
 
@@ -60,51 +112,51 @@
 
             <a href="{% url 'panelprincipal' %}"
                class="flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors
-                      {% if request.resolver_match.url_name == 'panelprincipal' %}text-green-800 bg-green-100{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-700{% endif %}">
-                <span class="material-icons mr-3 shrink-0 {% if request.resolver_match.url_name == 'panelprincipal' %}text-green-700{% else %}text-gray-400{% endif %}">dashboard</span>
+                      {% if request.resolver_match.url_name == 'panelprincipal' %}text-verde bg-crema shadow-sm{% else %}text-white/80 hover:bg-white/10 hover:text-white{% endif %}">
+                <span class="material-icons mr-3 shrink-0 {% if request.resolver_match.url_name == 'panelprincipal' %}text-verde{% else %}text-white/60{% endif %}">dashboard</span>
                 <span class="sidebar-text whitespace-nowrap">Panel Principal</span>
             </a>
 
             <a href="{% url 'inventariostock' %}"
                class="flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors
-                      {% if request.resolver_match.url_name == 'inventariostock' %}text-green-800 bg-green-100{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-700{% endif %}">
-                <span class="material-icons mr-3 shrink-0 {% if request.resolver_match.url_name == 'inventariostock' %}text-green-700{% else %}text-gray-400{% endif %}">inventory_2</span>
+                      {% if request.resolver_match.url_name == 'inventariostock' %}text-verde bg-crema shadow-sm{% else %}text-white/80 hover:bg-white/10 hover:text-white{% endif %}">
+                <span class="material-icons mr-3 shrink-0 {% if request.resolver_match.url_name == 'inventariostock' %}text-verde{% else %}text-white/60{% endif %}">inventory_2</span>
                 <span class="sidebar-text whitespace-nowrap">Materias Primas</span>
             </a>
 
             <a href="{% url 'consumos' %}"
                class="flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors
-                      {% if request.resolver_match.url_name in 'consumos registrar_consumo' %}text-green-800 bg-green-100{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-700{% endif %}">
-                <span class="material-icons mr-3 shrink-0 {% if request.resolver_match.url_name in 'consumos registrar_consumo' %}text-green-700{% else %}text-gray-400{% endif %}">shopping_cart</span>
+                      {% if request.resolver_match.url_name in 'consumos registrar_consumo' %}text-verde bg-crema shadow-sm{% else %}text-white/80 hover:bg-white/10 hover:text-white{% endif %}">
+                <span class="material-icons mr-3 shrink-0 {% if request.resolver_match.url_name in 'consumos registrar_consumo' %}text-verde{% else %}text-white/60{% endif %}">shopping_cart</span>
                 <span class="sidebar-text whitespace-nowrap">Consumo y Salidas</span>
             </a>
 
             <a href="{% url 'registrar_movimiento' %}"
                class="flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors
-                      {% if request.resolver_match.url_name == 'registrar_movimiento' %}text-green-800 bg-green-100{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-700{% endif %}">
-                <span class="material-icons mr-3 shrink-0 {% if request.resolver_match.url_name == 'registrar_movimiento' %}text-green-700{% else %}text-gray-400{% endif %}">receipt_long</span>
+                      {% if request.resolver_match.url_name == 'registrar_movimiento' %}text-verde bg-crema shadow-sm{% else %}text-white/80 hover:bg-white/10 hover:text-white{% endif %}">
+                <span class="material-icons mr-3 shrink-0 {% if request.resolver_match.url_name == 'registrar_movimiento' %}text-verde{% else %}text-white/60{% endif %}">receipt_long</span>
                 <span class="sidebar-text whitespace-nowrap">Registro de Ingresos</span>
             </a>
 
 
             <a href="{% url 'proveedores' %}"
                class="flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors
-                      {% if request.resolver_match.url_name in 'proveedores crear_proveedor editar_proveedor' %}text-green-800 bg-green-100{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-700{% endif %}">
-                <span class="material-icons mr-3 shrink-0 {% if request.resolver_match.url_name in 'proveedores crear_proveedor editar_proveedor' %}text-green-700{% else %}text-gray-400{% endif %}">local_shipping</span>
+                      {% if request.resolver_match.url_name in 'proveedores crear_proveedor editar_proveedor' %}text-verde bg-crema shadow-sm{% else %}text-white/80 hover:bg-white/10 hover:text-white{% endif %}">
+                <span class="material-icons mr-3 shrink-0 {% if request.resolver_match.url_name in 'proveedores crear_proveedor editar_proveedor' %}text-verde{% else %}text-white/60{% endif %}">local_shipping</span>
                 <span class="sidebar-text whitespace-nowrap">Proveedores</span>
             </a>
 
             <a href="{% url 'historial' %}"
                class="flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors
-                      {% if request.resolver_match.url_name == 'historial' %}text-green-800 bg-green-100{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-700{% endif %}">
-                <span class="material-icons mr-3 shrink-0 {% if request.resolver_match.url_name == 'historial' %}text-green-700{% else %}text-gray-400{% endif %}">history</span>
+                      {% if request.resolver_match.url_name == 'historial' %}text-verde bg-crema shadow-sm{% else %}text-white/80 hover:bg-white/10 hover:text-white{% endif %}">
+                <span class="material-icons mr-3 shrink-0 {% if request.resolver_match.url_name == 'historial' %}text-verde{% else %}text-white/60{% endif %}">history</span>
                 <span class="sidebar-text whitespace-nowrap">Historial de Movimientos</span>
             </a>
 
             <a href="{% url 'reportes' %}"
                class="flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors
-                      {% if request.resolver_match.url_name == 'reportes' %}text-green-800 bg-green-100{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-700{% endif %}">
-                <span class="material-icons mr-3 shrink-0 {% if request.resolver_match.url_name == 'reportes' %}text-green-700{% else %}text-gray-400{% endif %}">description</span>
+                      {% if request.resolver_match.url_name == 'reportes' %}text-verde bg-crema shadow-sm{% else %}text-white/80 hover:bg-white/10 hover:text-white{% endif %}">
+                <span class="material-icons mr-3 shrink-0 {% if request.resolver_match.url_name == 'reportes' %}text-verde{% else %}text-white/60{% endif %}">description</span>
                 <span class="sidebar-text whitespace-nowrap">Reportes</span>
             </a>
 
@@ -114,22 +166,22 @@
 
             <a href="{% url 'registrar_movimiento' %}"
                class="flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors
-                      {% if request.resolver_match.url_name == 'registrar_movimiento' %}text-green-800 bg-green-100{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-700{% endif %}">
-                <span class="material-icons mr-3 shrink-0 {% if request.resolver_match.url_name == 'registrar_movimiento' %}text-green-700{% else %}text-gray-400{% endif %}">receipt_long</span>
+                      {% if request.resolver_match.url_name == 'registrar_movimiento' %}text-verde bg-crema shadow-sm{% else %}text-white/80 hover:bg-white/10 hover:text-white{% endif %}">
+                <span class="material-icons mr-3 shrink-0 {% if request.resolver_match.url_name == 'registrar_movimiento' %}text-verde{% else %}text-white/60{% endif %}">receipt_long</span>
                 <span class="sidebar-text whitespace-nowrap">Registro de Ingresos</span>
             </a>
 
             <a href="{% url 'consumos' %}"
                class="flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors
-                      {% if request.resolver_match.url_name in 'consumos registrar_consumo' %}text-green-800 bg-green-100{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-700{% endif %}">
-                <span class="material-icons mr-3 shrink-0 {% if request.resolver_match.url_name in 'consumos registrar_consumo' %}text-green-700{% else %}text-gray-400{% endif %}">shopping_cart</span>
+                      {% if request.resolver_match.url_name in 'consumos registrar_consumo' %}text-verde bg-crema shadow-sm{% else %}text-white/80 hover:bg-white/10 hover:text-white{% endif %}">
+                <span class="material-icons mr-3 shrink-0 {% if request.resolver_match.url_name in 'consumos registrar_consumo' %}text-verde{% else %}text-white/60{% endif %}">shopping_cart</span>
                 <span class="sidebar-text whitespace-nowrap">Consumo y Salidas</span>
             </a>
 
             <a href="{% url 'historial' %}"
                class="flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors
-                      {% if request.resolver_match.url_name == 'historial' %}text-green-800 bg-green-100{% else %}text-gray-600 hover:bg-gray-50 hover:text-green-700{% endif %}">
-                <span class="material-icons mr-3 shrink-0 {% if request.resolver_match.url_name == 'historial' %}text-green-700{% else %}text-gray-400{% endif %}">history</span>
+                      {% if request.resolver_match.url_name == 'historial' %}text-verde bg-crema shadow-sm{% else %}text-white/80 hover:bg-white/10 hover:text-white{% endif %}">
+                <span class="material-icons mr-3 shrink-0 {% if request.resolver_match.url_name == 'historial' %}text-verde{% else %}text-white/60{% endif %}">history</span>
                 <span class="sidebar-text whitespace-nowrap">Historial de Movimientos</span>
             </a>
 
@@ -141,96 +193,102 @@
     <div class="flex-1 flex flex-col h-screen overflow-hidden min-w-0">
 
         <!-- BARRA SUPERIOR -->
-        <header class="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-6 z-10 shrink-0">
+<header class="relative z-50 h-16 bg-white border-b border-verde/10 flex items-center justify-between px-4 sm:px-6 shrink-0">
 
-            <!-- Menú Hamburguesa y Título -->
-            <div class="flex items-center">
-                <button id="btnToggleSidebar" class="text-gray-500 hover:text-gray-700 focus:outline-none mr-3 p-1 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer">
-                    <span class="material-icons block">menu</span>
-                </button>
-                <span class="text-gray-700 font-semibold text-sm sm:text-base truncate">CAUQUEVA</span>
-            </div>
+    <!-- Menú Hamburguesa y Título -->
+    <div class="flex items-center">
+        <button id="btnToggleSidebar" class="text-verde/70 hover:text-verde focus:outline-none mr-3 p-1 rounded-lg hover:bg-verde/10 transition-colors cursor-pointer">
+            <span class="material-icons block">menu</span>
+        </button>
+        <span class="sm:hidden text-verde font-semibold text-sm truncate">CAUQUEVA</span>
+        <span class="hidden sm:inline text-verde/80 font-serif italic text-base truncate">Juntos producimos, valoramos nuestra tierra</span>
+    </div>
 
-            <!-- Notificaciones y Perfil -->
-            <div class="flex items-center space-x-3 sm:space-x-5">
+    <!-- Notificaciones y Perfil -->
+    <div class="flex items-center space-x-3 sm:space-x-5">
 
-                <!-- Campanita de notificaciones -->
-                <div class="relative">
-                    <button id="btnCampanita" class="text-gray-400 hover:text-gray-600 focus:outline-none relative p-1 mt-1 transition-colors">
-                        <span class="material-icons">notifications</span>
-                        {% if total_alertas > 0 %}
-                        <span class="absolute top-0 right-0 flex h-3 w-3">
-                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                            <span class="relative inline-flex rounded-full h-3 w-3 bg-red-500 border-2 border-white"></span>
-                        </span>
-                        {% endif %}
-                    </button>
+        <!-- Campanita de notificaciones -->
+        <div class="relative">
+            <button id="btnCampanita" class="text-verde/60 hover:text-verde focus:outline-none relative p-1 mt-1 transition-colors cursor-pointer">
+                <span class="material-icons">notifications</span>
+                {% if total_alertas > 0 %}
+                <span class="absolute top-0 right-0 flex h-3 w-3">
+                    <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-terracota opacity-60"></span>
+                    <span class="relative inline-flex rounded-full h-3 w-3 bg-terracota border-2 border-white"></span>
+                </span>
+                {% endif %}
+            </button>
 
-                    <!-- Desplegable Alertas -->
-                    <div id="menuNotificaciones" class="hidden absolute right-0 mt-2 w-72 sm:w-80 bg-white rounded-xl shadow-lg border border-gray-100 z-50 overflow-hidden transform origin-top-right transition-all">
-                        <div class="bg-red-50 px-4 py-3 border-b border-red-100 flex justify-between items-center">
-                            <h3 class="text-sm font-bold text-red-800">Alertas de Stock</h3>
-                            <span class="bg-red-200 text-red-800 text-xs font-bold px-2.5 py-0.5 rounded-full">{{ total_alertas }}</span>
-                        </div>
-
-                        <div class="max-h-72 overflow-y-auto">
-                            {% if total_alertas > 0 %}
-                                {% for alerta in alertas_recientes %}
-                                <a href="#" class="block px-4 py-3 border-b border-gray-50 hover:bg-red-50/50 transition-colors">
-                                    <p class="text-sm font-bold text-gray-800">{{ alerta.nombre }}</p>
-                                    <p class="text-xs text-red-600 mt-1">Stock: {{ alerta.stock_actual }} {{ alerta.get_unidad_medida_display }} (Mín: {{ alerta.stock_minimo }})</p>
-                                </a>
-                                {% endfor %}
-
-                                {% if total_alertas > 5 %}
-                                <a href="{% url 'alertas' %}" class="block px-4 py-2.5 text-center text-xs font-medium text-gray-500 hover:text-green-700 bg-gray-50 transition-colors">
-                                    Ver todas las alertas
-                                </a>
-                                {% endif %}
-                            {% else %}
-                                <div class="px-4 py-8 text-center">
-                                    <span class="material-icons text-green-400 text-4xl mb-2">check_circle</span>
-                                    <p class="text-sm font-medium text-gray-800">Stock controlado</p>
-                                    <p class="text-xs text-gray-500 mt-1">No hay alertas críticas en este momento.</p>
-                                </div>
-                            {% endif %}
-                        </div>
-                    </div>
+            <!-- Desplegable Alertas (Fondo blanco opaco garantizado) -->
+            <div id="menuNotificaciones" 
+                 style="background-color: #ffffff !important;" 
+                 class="hidden absolute right-0 mt-2 w-72 sm:w-80 rounded-xl shadow-2xl border border-verde/20 z-50 overflow-hidden transform origin-top-right transition-all">
+                <div class="bg-terracota-claro px-4 py-3 border-b border-terracota/20 flex justify-between items-center">
+                    <h3 class="text-sm font-bold text-terracota">Alertas de Stock</h3>
+                    <span class="bg-terracota text-white text-xs font-bold px-2.5 py-0.5 rounded-full">{{ total_alertas }}</span>
                 </div>
 
-                <!-- Perfil de usuario -->
-                <div class="relative" id="user-menu">
-                    <button id="user-menu-btn" type="button" class="flex items-center focus:outline-none">
-                        <span class="material-icons text-green-800 text-3xl">account_circle</span>
-                    </button>
+                <div class="max-h-72 overflow-y-auto" style="background-color: #ffffff !important;">
+                    {% if total_alertas > 0 %}
+                        {% for alerta in alertas_recientes %}
+                        <a href="#" style="background-color: #ffffff !important;" class="block px-4 py-3 border-b border-verde/5 hover:bg-terracota-claro/50 transition-colors">
+                            <p class="text-sm font-bold text-[#1f2d27]">{{ alerta.nombre }}</p>
+                            <p class="text-xs text-terracota mt-1">Stock: {{ alerta.stock_actual }} {{ alerta.get_unidad_medida_display }} (Mín: {{ alerta.stock_minimo }})</p>
+                        </a>
+                        {% endfor %}
 
-                    <div id="user-menu-panel" class="hidden absolute right-0 mt-2 w-56 sm:w-60 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
-                        <div class="px-4 py-3 border-b border-gray-100">
-                            <p class="text-sm font-semibold text-gray-800 truncate">
-                                {{ user.get_full_name|default:user.username }}
-                            </p>
-                            <p class="text-xs text-gray-500 truncate">@{{ user.username }}</p>
-                        </div>
-
-                        {% if user.is_staff %}
-                        <a href="{% url 'admin:index' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-green-50">
-                            Administración
+                        {% if total_alertas > 5 %}
+                        <a href="{% url 'alertas' %}" class="block px-4 py-2.5 text-center text-xs font-medium text-gray-500 hover:text-verde bg-crema transition-colors">
+                            Ver todas las alertas
                         </a>
                         {% endif %}
-
-                        <form method="post" action="{% url 'logout' %}">
-                            {% csrf_token %}
-                            <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 cursor-pointer">
-                                Cerrar sesión
-                            </button>
-                        </form>
-                    </div>
+                    {% else %}
+                        <div class="px-4 py-8 text-center" style="background-color: #ffffff !important;">
+                            <span class="material-icons text-verde text-4xl mb-2">check_circle</span>
+                            <p class="text-sm font-medium text-[#1f2d27]">Stock controlado</p>
+                            <p class="text-xs text-gray-500 mt-1">No hay alertas críticas en este momento.</p>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
-        </header>
+        </div>
+
+        <!-- Perfil de usuario -->
+        <div class="relative" id="user-menu">
+            <button id="user-menu-btn" type="button" class="flex items-center focus:outline-none cursor-pointer">
+                <span class="material-icons text-verde text-3xl">account_circle</span>
+            </button>
+
+            <!-- Desplegable Perfil (Fondo blanco opaco garantizado) -->
+            <div id="user-menu-panel" 
+                 style="background-color: #ffffff !important;" 
+                 class="hidden absolute right-0 mt-2 w-56 sm:w-60 rounded-xl shadow-2xl border border-verde/20 py-2 z-50">
+                <div class="px-4 py-3 border-b border-verde/10" style="background-color: #ffffff !important;">
+                    <p class="text-sm font-semibold text-[#1f2d27] truncate">
+                        {{ user.get_full_name|default:user.username }}
+                    </p>
+                    <p class="text-xs text-gray-500 truncate">@{{ user.username }}</p>
+                </div>
+
+                {% if user.is_staff %}
+                <a href="{% url 'admin:index' %}" class="block px-4 py-2 text-sm text-gray-700 hover:bg-verde/10 transition-colors">
+                    Administración
+                </a>
+                {% endif %}
+
+                <form method="post" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="w-full text-left px-4 py-2 text-sm text-terracota hover:bg-terracota-claro transition-colors cursor-pointer">
+                        Cerrar sesión
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</header>
 
         <!-- CONTENIDO PRINCIPAL -->
-        <main class="flex-1 overflow-x-hidden overflow-y-auto scroll-smooth bg-gray-50 p-4 sm:p-6 md:p-8">
+        <main class="flex-1 overflow-x-hidden overflow-y-auto scroll-smooth bg-crema p-4 sm:p-6 md:p-8">
             {% block content %}
             {% endblock %}
         </main>
@@ -300,44 +358,60 @@
         });
     </script>
 
-    <!-- SCRIPTS DE MENÚS DESPLEGABLES -->
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
+    <!-- SCRIPT DE MENÚS DESPLEGABLES CON EXCLUSIÓN MUTUA -->
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const userBtn = document.getElementById("user-menu-btn");
+        const userPanel = document.getElementById("user-menu-panel");
+        const btnCampanita = document.getElementById('btnCampanita');
+        const menuNotificaciones = document.getElementById('menuNotificaciones');
 
-            // Menú Usuario
-            const userBtn = document.getElementById("user-menu-btn");
-            const userPanel = document.getElementById("user-menu-panel");
+        // Función para cerrar todas las ventanas flotantes
+        function cerrarTodosLosMenus() {
+            if (userPanel) userPanel.classList.add('hidden');
+            if (menuNotificaciones) menuNotificaciones.classList.add('hidden');
+        }
 
-            if (userBtn && userPanel) {
-                userBtn.addEventListener("click", (e) => {
-                    e.stopPropagation();
-                    userPanel.classList.toggle("hidden");
-                });
+        // Toggle Campanita de Alertas
+        if (btnCampanita && menuNotificaciones) {
+            btnCampanita.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const estabaCerrado = menuNotificaciones.classList.contains('hidden');
+                
+                // Cierra la otra ventana antes de actuar
+                cerrarTodosLosMenus();
+                
+                if (estabaCerrado) {
+                    menuNotificaciones.classList.remove('hidden');
+                }
+            });
+        }
 
-                document.addEventListener("click", (e) => {
-                    if (!document.getElementById("user-menu").contains(e.target)) {
-                        userPanel.classList.add("hidden");
-                    }
-                });
-            }
+        // Toggle Perfil de Usuario
+        if (userBtn && userPanel) {
+            userBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const estabaCerrado = userPanel.classList.contains('hidden');
+                
+                // Cierra la otra ventana antes de actuar
+                cerrarTodosLosMenus();
+                
+                if (estabaCerrado) {
+                    userPanel.classList.remove('hidden');
+                }
+            });
+        }
 
-            // Menú Campanita
-            const btnCampanita = document.getElementById('btnCampanita');
-            const menuNotificaciones = document.getElementById('menuNotificaciones');
-
-            if (btnCampanita && menuNotificaciones) {
-                btnCampanita.addEventListener('click', function(event) {
-                    event.stopPropagation();
-                    menuNotificaciones.classList.toggle('hidden');
-                });
-
-                document.addEventListener('click', function(event) {
-                    if (!btnCampanita.contains(event.target) && !menuNotificaciones.contains(event.target)) {
-                        menuNotificaciones.classList.add('hidden');
-                    }
-                });
+        // Clic fuera de cualquier menú -> cierra ambos
+        document.addEventListener('click', function(e) {
+            const clicEnUser = document.getElementById("user-menu")?.contains(e.target);
+            const clicEnNotif = btnCampanita?.contains(e.target) || menuNotificaciones?.contains(e.target);
+            
+            if (!clicEnUser && !clicEnNotif) {
+                cerrarTodosLosMenus();
             }
         });
-    </script>
+    });
+</script>
 </body>
 </html>

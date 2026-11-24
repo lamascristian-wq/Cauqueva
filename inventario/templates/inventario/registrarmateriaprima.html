@@ -1,30 +1,43 @@
-
 {% extends 'inventario/base.html' %}
 
 {% block content %}
+<style>
+    /* Los campos del formulario los renderiza Django con las clases definidas en forms.py;
+       este bloque solo les cambia los colores a la paleta CAUQUEVA sin tocar el formulario. */
+    .form-cauqueva :is(input, select, textarea) {
+        border-color: rgb(11 93 59 / 0.25);
+    }
+    .form-cauqueva :is(input, select, textarea):focus {
+        outline: none;
+        border-color: #0B5D3B;
+        --tw-ring-color: rgb(11 93 59 / 0.5);
+        box-shadow: 0 0 0 2px rgb(11 93 59 / 0.5);
+    }
+</style>
+
 <div class="max-w-2xl mx-auto">
 
     <!-- Encabezado -->
     <div class="mb-6 flex items-center justify-between">
         <div>
-            <h2 class="text-2xl font-bold text-gray-800">Nueva materia prima</h2>
-            <p class="text-sm text-gray-500 mt-1">
+            <h2 class="text-2xl font-bold font-serif text-verde">Nueva materia prima</h2>
+            <p class="text-sm text-gray-600 mt-1">
                 Registrá una materia prima nueva para poder cargarle ingresos y consumos.
             </p>
         </div>
 
         <a href="{% url 'inventariostock' %}"
-           class="text-sm font-medium text-green-700 hover:text-green-900 bg-green-50 hover:bg-green-100 px-3 py-2 rounded-lg transition-colors flex items-center">
+           class="text-sm font-medium text-verde hover:text-verde-oscuro bg-verde-claro hover:bg-verde/20 px-3 py-2 rounded-lg transition-colors flex items-center">
             <span class="material-icons text-sm mr-1">arrow_back</span>
             Volver al listado
         </a>
     </div>
 
-    <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+    <div class="form-cauqueva bg-white p-8 rounded-xl shadow-sm border border-verde/10">
 
         <!-- Errores generales -->
         {% if formulario.non_field_errors %}
-        <div class="mb-6 p-4 rounded-lg text-sm bg-red-50 text-red-700 border border-red-200 flex items-start">
+        <div class="mb-6 p-4 rounded-lg text-sm bg-terracota-claro text-terracota border border-terracota/30 flex items-start">
             <span class="material-icons text-base mr-2">error</span>
             <div>
                 {% for e in formulario.non_field_errors %}
@@ -36,7 +49,7 @@
 
         <!-- Resumen de errores -->
         {% if formulario.errors %}
-        <div class="mb-6 p-4 rounded-lg text-sm bg-red-50 text-red-700 border border-red-200">
+        <div class="mb-6 p-4 rounded-lg text-sm bg-terracota-claro text-terracota border border-terracota/30">
             <p class="font-semibold mb-2">Revisá los siguientes datos:</p>
             {{ formulario.errors }}
         </div>
@@ -47,7 +60,7 @@
 
             <!-- Datos generales -->
             <div>
-                <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">
+                <h3 class="text-xs font-semibold uppercase tracking-wide text-verde mb-3">
                     Datos generales
                 </h3>
 
@@ -56,43 +69,43 @@
                     <!-- Nombre -->
                     <div>
                         <label for="{{ formulario.nombre.id_for_label }}"
-                               class="block text-sm font-medium text-gray-700 mb-1">
+                               class="block text-sm font-medium text-[#1f2d27] mb-1">
                             {{ formulario.nombre.label }}
-                            <span class="text-red-500">*</span>
+                            <span class="text-terracota">*</span>
                         </label>
 
                         {{ formulario.nombre }}
 
                         {% for e in formulario.nombre.errors %}
-                            <p class="text-xs text-red-600 mt-1">{{ e }}</p>
+                            <p class="text-xs text-terracota mt-1">{{ e }}</p>
                         {% endfor %}
                     </div>
 
                     <!-- Variedad -->
                     <div>
                         <label for="{{ formulario.variedad.id_for_label }}"
-                               class="block text-sm font-medium text-gray-700 mb-1">
+                               class="block text-sm font-medium text-[#1f2d27] mb-1">
                             {{ formulario.variedad.label }}
                         </label>
 
                         {{ formulario.variedad }}
 
                         {% for e in formulario.variedad.errors %}
-                            <p class="text-xs text-red-600 mt-1">{{ e }}</p>
+                            <p class="text-xs text-terracota mt-1">{{ e }}</p>
                         {% endfor %}
                     </div>
 
                     <!-- Descripción -->
                     <div class="sm:col-span-2">
                         <label for="{{ formulario.descripcion.id_for_label }}"
-                               class="block text-sm font-medium text-gray-700 mb-1">
+                               class="block text-sm font-medium text-[#1f2d27] mb-1">
                             {{ formulario.descripcion.label }}
                         </label>
 
                         {{ formulario.descripcion }}
 
                         {% for e in formulario.descripcion.errors %}
-                            <p class="text-xs text-red-600 mt-1">{{ e }}</p>
+                            <p class="text-xs text-terracota mt-1">{{ e }}</p>
                         {% endfor %}
                     </div>
 
@@ -100,9 +113,9 @@
             </div>
 
             <!-- Valores iniciales -->
-            <div class="pt-6 border-t border-gray-100">
+            <div class="pt-6 border-t border-verde/10">
 
-                <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">
+                <h3 class="text-xs font-semibold uppercase tracking-wide text-verde mb-3">
                     Valores iniciales
                 </h3>
 
@@ -111,43 +124,43 @@
                     <!-- Cantidad inicial -->
                     <div>
                         <label for="{{ formulario.cantidad_inicial.id_for_label }}"
-                               class="block text-sm font-medium text-gray-700 mb-1">
+                               class="block text-sm font-medium text-[#1f2d27] mb-1">
                             {{ formulario.cantidad_inicial.label }}
                         </label>
 
                         {{ formulario.cantidad_inicial }}
 
                         {% for e in formulario.cantidad_inicial.errors %}
-                            <p class="text-xs text-red-600 mt-1">{{ e }}</p>
+                            <p class="text-xs text-terracota mt-1">{{ e }}</p>
                         {% endfor %}
                     </div>
 
                     <!-- Precio por Kg -->
                     <div>
                         <label for="{{ formulario.precio_unitario.id_for_label }}"
-                               class="block text-sm font-medium text-gray-700 mb-1">
+                               class="block text-sm font-medium text-[#1f2d27] mb-1">
                             {{ formulario.precio_unitario.label }}
                         </label>
 
                         {{ formulario.precio_unitario }}
 
                         {% for e in formulario.precio_unitario.errors %}
-                            <p class="text-xs text-red-600 mt-1">{{ e }}</p>
+                            <p class="text-xs text-terracota mt-1">{{ e }}</p>
                         {% endfor %}
                     </div>
 
                     <!-- Precio de referencia -->
                     <div>
                         <label for="{{ formulario.precio_referencia.id_for_label }}"
-                               class="block text-sm font-medium text-gray-700 mb-1">
+                               class="block text-sm font-medium text-[#1f2d27] mb-1">
                             {{ formulario.precio_referencia.label }}
-                            <span class="text-red-500">*</span>
+                            <span class="text-terracota">*</span>
                         </label>
 
                         {{ formulario.precio_referencia }}
 
                         {% for e in formulario.precio_referencia.errors %}
-                            <p class="text-xs text-red-600 mt-1">{{ e }}</p>
+                            <p class="text-xs text-terracota mt-1">{{ e }}</p>
                         {% endfor %}
                     </div>
 
@@ -162,23 +175,23 @@
             </div>
 
             <!-- Alertas de stock -->
-            <div class="pt-6 border-t border-gray-100">
+            <div class="pt-6 border-t border-verde/10">
 
-                <h3 class="text-xs font-semibold uppercase tracking-wide text-gray-400 mb-3">
+                <h3 class="text-xs font-semibold uppercase tracking-wide text-verde mb-3">
                     Alertas de stock
                 </h3>
 
                 <div class="sm:w-1/2">
                     <label for="{{ formulario.stock_minimo.id_for_label }}"
-                           class="block text-sm font-medium text-gray-700 mb-1">
+                           class="block text-sm font-medium text-[#1f2d27] mb-1">
                         {{ formulario.stock_minimo.label }}
-                        <span class="text-red-500">*</span>
+                        <span class="text-terracota">*</span>
                     </label>
 
                     {{ formulario.stock_minimo }}
 
                     {% for e in formulario.stock_minimo.errors %}
-                        <p class="text-xs text-red-600 mt-1">{{ e }}</p>
+                        <p class="text-xs text-terracota mt-1">{{ e }}</p>
                     {% endfor %}
 
                     <p class="text-xs text-gray-500 mt-1">
@@ -189,15 +202,15 @@
             </div>
 
             <!-- Acciones -->
-            <div class="pt-6 border-t border-gray-100 flex items-center justify-end space-x-3">
+            <div class="pt-6 border-t border-verde/10 flex items-center justify-end space-x-3">
 
                 <a href="{% url 'inventariostock' %}"
-                   class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium py-2 px-4 rounded-lg transition-colors text-sm">
+                   class="bg-white border border-verde/30 text-verde hover:bg-verde/10 font-medium py-2 px-4 rounded-lg transition-colors text-sm">
                     Cancelar
                 </a>
 
                 <button type="submit"
-                        class="bg-green-700 hover:bg-green-800 text-white font-medium py-2 px-6 rounded-lg transition-colors shadow-sm text-sm flex items-center">
+                        class="bg-verde hover:bg-verde-oscuro text-white font-medium py-2 px-6 rounded-lg transition-colors shadow-sm text-sm flex items-center">
                     <span class="material-icons text-sm mr-1.5">save</span>
                     Guardar materia prima
                 </button>

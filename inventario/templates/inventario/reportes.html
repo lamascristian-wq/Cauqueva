@@ -15,39 +15,39 @@
     <!-- Encabezado y controles -->
     <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-            <h2 class="text-2xl font-bold text-gray-800">Informe mensual</h2>
-            <p class="text-sm text-gray-500 mt-1">CAUQUEVA · <span class="capitalize">{{ mes_nombre }}</span></p>
-            <p class="hidden print:block text-xs text-gray-400">Generado el {{ generado|date:"d/m/Y H:i" }}</p>
+            <h2 class="text-2xl font-bold font-serif text-verde">Informe mensual</h2>
+            <p class="text-sm text-gray-600 mt-1">CAUQUEVA · <span class="capitalize">{{ mes_nombre }}</span></p>
+            <p class="hidden print:block text-xs text-gray-500">Generado el {{ generado|date:"d/m/Y H:i" }}</p>
         </div>
 
         <div class="no-print flex flex-wrap items-center gap-2">
             <a href="?mes={{ mes_anterior }}" title="Mes anterior"
-               class="p-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 flex items-center">
+               class="p-2 rounded-lg border border-verde/30 text-verde bg-white hover:bg-verde/10 flex items-center">
                 <span class="material-icons text-base">chevron_left</span>
             </a>
             <form method="get" class="flex items-center">
                 <input type="month" name="mes" value="{{ mes_valor }}" onchange="this.form.submit()"
-                       class="py-2 px-3 text-sm border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-green-600">
+                       class="py-2 px-3 text-sm border border-verde/25 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-verde/50 focus:border-verde">
             </form>
             {% if hay_siguiente %}
             <a href="?mes={{ mes_siguiente }}" title="Mes siguiente"
-               class="p-2 rounded-lg border border-gray-300 bg-white hover:bg-gray-50 flex items-center">
+               class="p-2 rounded-lg border border-verde/30 text-verde bg-white hover:bg-verde/10 flex items-center">
                 <span class="material-icons text-base">chevron_right</span>
             </a>
             {% endif %}
 
             <a href="{% url 'reportes_csv' %}?mes={{ mes_valor }}"
-               class="inline-flex items-center text-sm font-medium text-green-700 bg-green-50 hover:bg-green-100 px-3 py-2 rounded-lg transition-colors">
+               class="inline-flex items-center text-sm font-medium text-verde bg-verde-claro hover:bg-verde/20 px-3 py-2 rounded-lg transition-colors">
                 <span class="material-icons text-base mr-1">table_view</span> Descargar CSV
             </a>
             {% if imprimir %}
             <button type="button" onclick="window.print()"
-                    class="inline-flex items-center bg-green-700 hover:bg-green-800 text-white text-sm font-medium py-2 px-4 rounded-lg shadow-sm transition-colors">
+                    class="inline-flex items-center bg-verde hover:bg-verde-oscuro text-white text-sm font-medium py-2 px-4 rounded-lg shadow-sm transition-colors">
                 <span class="material-icons text-base mr-1.5">print</span> Imprimir / PDF
             </button>
             {% else %}
             <a href="?mes={{ mes_valor }}&imprimir=1"
-               class="inline-flex items-center bg-green-700 hover:bg-green-800 text-white text-sm font-medium py-2 px-4 rounded-lg shadow-sm transition-colors">
+               class="inline-flex items-center bg-verde hover:bg-verde-oscuro text-white text-sm font-medium py-2 px-4 rounded-lg shadow-sm transition-colors">
                 <span class="material-icons text-base mr-1.5">print</span> Imprimir / PDF
             </a>
             {% endif %}
@@ -57,73 +57,73 @@
         <!-- Resumen -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
 
-        <div class="tarjeta bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center">
-            <span class="material-icons text-green-700 bg-green-100 rounded-lg p-2 mr-3">trending_up</span>
+        <div class="tarjeta bg-white rounded-xl border border-verde/10 border-b-4 border-b-verde shadow-sm p-4 flex items-center">
+            <span class="material-icons text-verde bg-verde-claro rounded-full p-2.5 mr-3">trending_up</span>
             <div>
                 <p class="text-xs text-gray-500">Stock total acumulado</p>
-                <p class="text-xl font-semibold">{{ stock_total|floatformat:"-2g" }} Kg</p>
+                <p class="text-xl font-bold">{{ stock_total|floatformat:"-2g" }} Kg</p>
             </div>
         </div>
 
-        <div class="tarjeta bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center">
-            <span class="material-icons text-green-700 bg-green-100 rounded-lg p-2 mr-3">calculate</span>
+        <div class="tarjeta bg-white rounded-xl border border-verde/10 border-b-4 border-b-verde shadow-sm p-4 flex items-center">
+            <span class="material-icons text-verde bg-verde-claro rounded-full p-2.5 mr-3">calculate</span>
             <div>
                 <p class="text-xs text-gray-500">Stock acumulado menos lo producido</p>
-                <p class="text-xl font-semibold">{{ stock_menos_produccion|floatformat:"-2g" }} Kg</p>
+                <p class="text-xl font-bold">{{ stock_menos_produccion|floatformat:"-2g" }} Kg</p>
             </div>
         </div>
 
-        <div class="tarjeta bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center">
-            <span class="material-icons text-green-700 bg-green-100 rounded-lg p-2 mr-3">inventory_2</span>
+        <div class="tarjeta bg-white rounded-xl border border-verde/10 border-b-4 border-b-ocre shadow-sm p-4 flex items-center">
+            <span class="material-icons text-ocre-oscuro bg-ocre-claro rounded-full p-2.5 mr-3">inventory_2</span>
             <div>
                 <p class="text-xs text-gray-500">Consumos y producción</p>
-                <p class="text-xl font-semibold">{{ con_kg|floatformat:"-2g" }} Kg</p>
+                <p class="text-xl font-bold">{{ con_kg|floatformat:"-2g" }} Kg</p>
             </div>
         </div>
 
-        <div class="tarjeta bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center">
+        <div class="tarjeta bg-white rounded-xl border border-verde/10 border-b-4 {% if criticas_cierre %}border-b-terracota{% else %}border-b-verde{% endif %} shadow-sm p-4 flex items-center">
             {% if criticas_cierre %}
-                <span class="material-icons text-red-600 bg-red-100 rounded-lg p-2 mr-3">warning</span>
+                <span class="material-icons text-terracota bg-terracota-claro rounded-full p-2.5 mr-3">warning</span>
             {% else %}
-                <span class="material-icons text-green-700 bg-green-100 rounded-lg p-2 mr-3">check_circle</span>
+                <span class="material-icons text-verde bg-verde-claro rounded-full p-2.5 mr-3">check_circle</span>
             {% endif %}
             <div>
                 <p class="text-xs text-gray-500">Movimientos / críticas al cierre</p>
-                <p class="text-xl font-semibold">
+                <p class="text-xl font-bold">
                     {{ movimientos }} <span class="text-gray-400">/</span>
-                    <span class="{% if criticas_cierre %}text-red-600{% endif %}">{{ criticas_cierre }}</span>
+                    <span class="{% if criticas_cierre %}text-terracota{% endif %}">{{ criticas_cierre }}</span>
                 </p>
             </div>
         </div>
 
-        <div class="tarjeta bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center">
-            <span class="material-icons text-green-700 bg-green-100 rounded-lg p-2 mr-3">event</span>
+        <div class="tarjeta bg-white rounded-xl border border-verde/10 border-b-4 border-b-verde shadow-sm p-4 flex items-center">
+            <span class="material-icons text-verde bg-verde-claro rounded-full p-2.5 mr-3">event</span>
             <div>
                 <p class="text-xs text-gray-500">Producciones este mes</p>
-                <p class="text-xl font-semibold">{{ producciones_mes }}</p>
+                <p class="text-xl font-bold">{{ producciones_mes }}</p>
             </div>
         </div>
 
-        <div class="tarjeta bg-white rounded-xl border border-gray-100 shadow-sm p-4 flex items-center">
-            <span class="material-icons text-green-700 bg-green-100 rounded-lg p-2 mr-3">payments</span>
+        <div class="tarjeta bg-white rounded-xl border border-verde/10 border-b-4 border-b-verde shadow-sm p-4 flex items-center">
+            <span class="material-icons text-verde bg-verde-claro rounded-full p-2.5 mr-3">payments</span>
             <div>
                 <p class="text-xs text-gray-500">Ventas del mes</p>
-                <p class="text-xl font-semibold">${{ ventas_mes|floatformat:"2g" }}</p>
+                <p class="text-xl font-bold">${{ ventas_mes|floatformat:"2g" }}</p>
             </div>
         </div>
     </div>
 
     <!-- Materias primas -->
-    <section class="tarjeta bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden mb-6">
-        <div class="px-5 py-4 border-b border-gray-100">
-            <h3 class="font-semibold text-gray-800">Movimiento por materia prima</h3>
+    <section class="tarjeta bg-white rounded-xl border border-verde/10 shadow-sm overflow-hidden mb-6">
+        <div class="px-5 py-4 border-b border-verde/10">
+            <h3 class="font-semibold text-verde">Movimiento por materia prima</h3>
         </div>
         <div class="overflow-x-auto">
             <table class="w-full text-sm text-left">
-                <thead class="bg-gray-50 text-xs uppercase text-gray-500">
+                <thead class="bg-verde-claro text-xs uppercase text-verde">
                     <tr>
                         <th class="px-5 py-3 font-semibold">Materia prima</th>
-                        
+
                         <th class="px-5 py-3 font-semibold text-right">Ingresos</th>
                         <th class="px-5 py-3 font-semibold text-right">Consumos</th>
                         <th class="px-5 py-3 font-semibold text-right">Stock actual</th>
@@ -131,22 +131,22 @@
                         <th class="px-5 py-3 font-semibold">Estado</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100">
+                <tbody class="divide-y divide-verde/10">
                     {% for f in filas %}
                     <tr>
-                        <td class="px-5 py-3 font-medium text-gray-800">{{ f.materia }}</td>
-                        
-                        <td class="px-5 py-3 text-right text-green-700">+{{ f.ingresos|floatformat:"-2" }}</td>
-                        <td class="px-5 py-3 text-right text-gray-700">−{{ f.consumos|floatformat:"-2" }}</td>
-                        <td class="px-5 py-3 text-right font-semibold {% if f.critica %}text-red-600{% else %}text-gray-800{% endif %}">
+                        <td class="px-5 py-3 font-medium text-[#1f2d27]">{{ f.materia }}</td>
+
+                        <td class="px-5 py-3 text-right text-verde">+{{ f.ingresos|floatformat:"-2" }}</td>
+                        <td class="px-5 py-3 text-right text-ocre-oscuro">−{{ f.consumos|floatformat:"-2" }}</td>
+                        <td class="px-5 py-3 text-right font-semibold {% if f.critica %}text-terracota{% else %}text-[#1f2d27]{% endif %}">
                             {{ f.final|floatformat:"-2" }} {{ f.unidad }}
                         </td>
                         <td class="px-5 py-3 text-right text-gray-600">${{ f.precio_referencia|floatformat:"-2" }}</td>
                         <td class="px-5 py-3">
                             {% if f.critica %}
-                                <span class="rounded-full bg-red-100 px-3 py-0.5 text-xs font-medium text-red-700">Crítica</span>
+                                <span class="rounded-full bg-terracota-claro px-3 py-0.5 text-xs font-medium text-terracota">Crítica</span>
                             {% else %}
-                                <span class="rounded-full bg-green-100 px-3 py-0.5 text-xs font-medium text-green-800">Normal</span>
+                                <span class="rounded-full bg-verde-claro px-3 py-0.5 text-xs font-medium text-verde-oscuro">Normal</span>
                             {% endif %}
                         </td>
                     </tr>
@@ -159,13 +159,13 @@
     </section>
 
     <!-- Compras por proveedor -->
-    <section class="tarjeta bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-        <div class="px-5 py-4 border-b border-gray-100">
-            <h3 class="font-semibold text-gray-800">Compras por proveedor</h3>
+    <section class="tarjeta bg-white rounded-xl border border-verde/10 shadow-sm overflow-hidden">
+        <div class="px-5 py-4 border-b border-verde/10">
+            <h3 class="font-semibold text-verde">Compras por proveedor</h3>
         </div>
         <div class="overflow-x-auto">
             <table class="w-full text-sm text-left">
-                <thead class="bg-gray-50 text-xs uppercase text-gray-500">
+                <thead class="bg-verde-claro text-xs uppercase text-verde">
                     <tr>
                         <th class="px-5 py-3 font-semibold">Proveedor</th>
                         <th class="px-5 py-3 font-semibold">Materia prima</th>
@@ -174,16 +174,16 @@
                         <th class="px-5 py-3 font-semibold text-right">Total</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100">
+                <tbody class="divide-y divide-verde/10">
                     {% for c in compras %}
                     <tr>
-                        <td class="px-5 py-3 font-medium text-gray-800">{{ c.proveedor__nombre|default:"Sin proveedor" }}</td>
+                        <td class="px-5 py-3 font-medium text-[#1f2d27]">{{ c.proveedor__nombre|default:"Sin proveedor" }}</td>
                         <td class="px-5 py-3 text-gray-600">
                             {{ c.materia_prima__nombre }}{% if c.materia_prima__variedad %} - {{ c.materia_prima__variedad }}{% endif %}
                         </td>
-                        <td class="px-5 py-3 text-right font-semibold text-gray-800">{{ c.total|floatformat:"-2" }} {{ c.materia_prima__unidad_medida }}</td>
+                        <td class="px-5 py-3 text-right font-semibold text-[#1f2d27]">{{ c.total|floatformat:"-2" }} {{ c.materia_prima__unidad_medida }}</td>
                         <td class="px-5 py-3 text-right text-gray-600">{{ c.veces }}</td>
-                        <td class="px-5 py-3 text-right font-semibold text-gray-800">${{ c.precio_total|floatformat:"2g" }}</td>
+                        <td class="px-5 py-3 text-right font-semibold text-[#1f2d27]">${{ c.precio_total|floatformat:"2g" }}</td>
                     </tr>
                     {% empty %}
                     <tr><td colspan="4" class="px-5 py-10 text-center text-gray-500">No hay compras registradas en este mes.</td></tr>
@@ -193,51 +193,15 @@
         </div>
     </section>
     <!-- Comparativo: pagado en materia prima vs ventas por producción -->
-    <section class="tarjeta bg-white rounded-xl border border-gray-100 shadow-sm p-5 mt-6">
-        <h3 class="font-semibold text-gray-800">Pagado en materia prima vs ventas por producción</h3>
+    <section class="tarjeta bg-white rounded-xl border border-verde/10 shadow-sm p-5 mt-6">
+        <h3 class="font-semibold text-verde">Pagado en materia prima vs ventas por producción</h3>
         <p class="text-xs text-gray-500 mb-4">Últimos 12 meses hasta <span class="capitalize">{{ mes_nombre }}</span>. Las ventas son lo producido (cantidad × precio del producto).</p>
         <div class="relative h-[320px]">
             <canvas id="graficoComparativo"></canvas>
         </div>
-        <p class="text-xs text-gray-400 mt-3">Los ingresos cargados sin precio no se suman a lo pagado en materia prima.</p>
+        <p class="text-xs text-gray-500 mt-3">Los ingresos cargados sin precio no se suman a lo pagado en materia prima.</p>
     </section>
 
-    <!-- Historial del mes: solo se ve al imprimir (el CSV lo incluye siempre) -->
-    <section class="hidden print:block bg-white rounded-xl border border-gray-100 mt-6">
-        <div class="px-5 py-4 border-b border-gray-100">
-            <h3 class="font-semibold text-gray-800">Historial de movimientos de <span class="capitalize">{{ mes_nombre }}</span></h3>
-        </div>
-        <table class="w-full text-xs text-left">
-            <thead class="bg-gray-50 uppercase text-gray-500">
-                <tr>
-                    <th class="px-3 py-2 font-semibold">Fecha y hora</th>
-                    <th class="px-3 py-2 font-semibold">Operación</th>
-                    <th class="px-3 py-2 font-semibold">Materia prima</th>
-                    <th class="px-3 py-2 font-semibold text-right">Cantidad</th>
-                    <th class="px-3 py-2 font-semibold text-right">Precio por Kg</th>
-                    <th class="px-3 py-2 font-semibold text-right">Total</th>
-                    <th class="px-3 py-2 font-semibold">Proveedor</th>
-                    <th class="px-3 py-2 font-semibold">Observaciones</th>
-                </tr>
-            </thead>
-            <tbody class="divide-y divide-gray-100">
-                {% for mov in historial_mes %}
-                <tr>
-                    <td class="px-3 py-2 whitespace-nowrap">{{ mov.fecha|date:"d/m/Y H:i" }}</td>
-                    <td class="px-3 py-2">{% if mov.tipo == 'INGRESO' %}Ingreso{% else %}Consumo{% endif %}</td>
-                    <td class="px-3 py-2">{{ mov.materia_prima }}</td>
-                    <td class="px-3 py-2 text-right">{% if mov.tipo == 'INGRESO' %}+{% else %}-{% endif %}{{ mov.cantidad|floatformat:"-2g" }} Kg</td>
-                    <td class="px-3 py-2 text-right">{% if mov.precio_unitario is not None %}${{ mov.precio_unitario|floatformat:"2g" }}{% else %}-{% endif %}</td>
-                    <td class="px-3 py-2 text-right">{% if mov.total is not None %}${{ mov.total|floatformat:"2g" }}{% else %}-{% endif %}</td>
-                    <td class="px-3 py-2">{{ mov.proveedor_nombre|default:"-" }}{% if mov.proveedor_es_externo %} (externo){% endif %}</td>
-                    <td class="px-3 py-2">{{ mov.observaciones|default:"-" }}</td>
-                </tr>
-                {% empty %}
-                <tr><td colspan="8" class="px-3 py-6 text-center text-gray-500">No hay movimientos en este mes.</td></tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </section>
 
     {{ grafico_comparativo|json_script:"datos-comparativo" }}
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
@@ -250,8 +214,8 @@
         data: {
           labels: comp.labels,
           datasets: [
-            {label: "Pagado en materia prima", data: comp.compras, backgroundColor: "#f59e0b", borderRadius: 4},
-            {label: "Ventas por producción", data: comp.ventas, backgroundColor: "#2f6b4f", borderRadius: 4},
+            {label: "Pagado en materia prima", data: comp.compras, backgroundColor: "#D98E2B", borderRadius: 4},
+            {label: "Ventas por producción", data: comp.ventas, backgroundColor: "#0B5D3B", borderRadius: 4},
           ],
         },
         options: {

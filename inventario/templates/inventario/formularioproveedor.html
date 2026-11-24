@@ -1,40 +1,56 @@
-
 {% extends 'inventario/base.html' %}
 
 {% block content %}
+<style>
+    /* Los campos del formulario los renderiza Django con las clases definidas en forms.py;
+       este bloque solo les cambia los colores a la paleta CAUQUEVA sin tocar el formulario. */
+    .form-cauqueva :is(input, select, textarea) {
+        border-color: rgb(11 93 59 / 0.25);
+    }
+    .form-cauqueva :is(input, select, textarea):focus {
+        outline: none;
+        border-color: #0B5D3B;
+        --tw-ring-color: rgb(11 93 59 / 0.5);
+        box-shadow: 0 0 0 2px rgb(11 93 59 / 0.5);
+    }
+    .form-cauqueva input[type="checkbox"] {
+        accent-color: #0B5D3B;
+    }
+</style>
+
 <div class="max-w-xl mx-auto">
 
     <div class="mb-6 flex items-center justify-between">
-        <h2 class="text-2xl font-bold text-gray-800">{{ titulo }}</h2>
+        <h2 class="text-2xl font-bold font-serif text-verde">{{ titulo }}</h2>
 
         <a href="{% url 'proveedores' %}"
-           class="text-sm font-medium text-green-700 hover:text-green-900 bg-green-50 hover:bg-green-100 px-3 py-2 rounded-lg transition-colors flex items-center">
+           class="text-sm font-medium text-verde hover:text-verde-oscuro bg-verde-claro hover:bg-verde/20 px-3 py-2 rounded-lg transition-colors flex items-center">
             <span class="material-icons text-sm mr-1">arrow_back</span> Volver
         </a>
     </div>
 
-    <div class="bg-white p-8 rounded-xl shadow-sm border border-gray-100">
+    <div class="form-cauqueva bg-white p-8 rounded-xl shadow-sm border border-verde/10">
         <form method="POST" class="space-y-5">
             {% csrf_token %}
 
             <!-- Nombre del proveedor -->
             <div>
                 <label for="{{ formulario.nombre.id_for_label }}"
-                       class="block text-sm font-medium text-gray-700 mb-1">
-                    {{ formulario.nombre.label }} <span class="text-red-500">*</span>
+                       class="block text-sm font-medium text-[#1f2d27] mb-1">
+                    {{ formulario.nombre.label }} <span class="text-terracota">*</span>
                 </label>
 
                 {{ formulario.nombre }}
 
                 {% for e in formulario.nombre.errors %}
-                    <p class="text-xs text-red-600 mt-1">{{ e }}</p>
+                    <p class="text-xs text-terracota mt-1">{{ e }}</p>
                 {% endfor %}
             </div>
 
             <!-- Teléfono -->
             <div>
                 <label for="{{ formulario.telefono.id_for_label }}"
-                       class="block text-sm font-medium text-gray-700 mb-1">
+                       class="block text-sm font-medium text-[#1f2d27] mb-1">
                     {{ formulario.telefono.label }}
                 </label>
 
@@ -47,14 +63,14 @@
                 {% endif %}
 
                 {% for e in formulario.telefono.errors %}
-                    <p class="text-xs text-red-600 mt-1">{{ e }}</p>
+                    <p class="text-xs text-terracota mt-1">{{ e }}</p>
                 {% endfor %}
             </div>
 
             <!-- Correo electrónico -->
             <div>
                 <label for="{{ formulario.email.id_for_label }}"
-                       class="block text-sm font-medium text-gray-700 mb-1">
+                       class="block text-sm font-medium text-[#1f2d27] mb-1">
                     {{ formulario.email.label }}
                 </label>
 
@@ -67,25 +83,25 @@
                 {% endif %}
 
                 {% for e in formulario.email.errors %}
-                    <p class="text-xs text-red-600 mt-1">{{ e }}</p>
+                    <p class="text-xs text-terracota mt-1">{{ e }}</p>
                 {% endfor %}
             </div>
 
             <!-- Materias primas -->
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
+                <label class="block text-sm font-medium text-[#1f2d27] mb-1">
                     {{ formulario.materias_primas.label }}
                 </label>
 
-                <div class="max-h-56 overflow-y-auto rounded-lg border border-gray-200 p-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <div class="max-h-56 overflow-y-auto rounded-lg border border-verde/20 bg-crema/50 p-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {% for checkbox in formulario.materias_primas %}
-                        <label class="flex items-center gap-2 text-sm text-gray-700 cursor-pointer">
+                        <label class="flex items-center gap-2 text-sm text-[#1f2d27] cursor-pointer">
                             {{ checkbox.tag }} {{ checkbox.choice_label }}
                         </label>
                     {% empty %}
                         <p class="text-sm text-gray-500 sm:col-span-2">
                             Todavía no hay materias primas.
-                            <a href="{% url 'registrar_materia_prima' %}" class="text-green-700 underline">
+                            <a href="{% url 'registrar_materia_prima' %}" class="text-verde underline">
                                 Registrá una
                             </a> primero.
                         </p>
@@ -97,25 +113,23 @@
                 </p>
 
                 {% for e in formulario.materias_primas.errors %}
-                    <p class="text-xs text-red-600 mt-1">{{ e }}</p>
+                    <p class="text-xs text-terracota mt-1">{{ e }}</p>
                 {% endfor %}
             </div>
 
             <!-- Botones -->
             <!-- Botones -->
-                <div class="pt-6 border-t border-gray-100 flex items-center justify-end space-x-3">
+                <div class="pt-6 border-t border-verde/10 flex items-center justify-end space-x-3">
                     <a href="{% url 'proveedores' %}"
-                    class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-medium py-2 px-4 rounded-lg transition-colors text-sm">
+                    class="bg-white border border-verde/30 text-verde hover:bg-verde/10 font-medium py-2 px-4 rounded-lg transition-colors text-sm">
                         Cancelar
                     </a>
 
                     <button type="submit"
-                            class="bg-green-700 hover:bg-green-800 text-white font-medium py-2 px-6 rounded-lg transition-colors shadow-sm text-sm flex items-center">
+                            class="bg-verde hover:bg-verde-oscuro text-white font-medium py-2 px-6 rounded-lg transition-colors shadow-sm text-sm flex items-center">
                         <span class="material-icons text-sm mr-1.5">save</span> Guardar
                     </button>
                 </div>
-
-            </div>
 
         </form>
     </div>

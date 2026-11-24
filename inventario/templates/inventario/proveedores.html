@@ -5,31 +5,31 @@
 
     <div class="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
-            <h2 class="text-2xl font-bold text-gray-800">Proveedores</h2>
-            <p class="text-sm text-gray-500 mt-1">Quiénes abastecen a la cooperativa y qué entregaron.</p>
+            <h2 class="text-2xl font-bold font-serif text-verde">Proveedores</h2>
+            <p class="text-sm text-gray-600 mt-1">Quiénes abastecen a la cooperativa y qué entregaron.</p>
         </div>
         <a href="{% url 'crear_proveedor' %}"
-           class="inline-flex items-center bg-green-700 hover:bg-green-800 text-white text-sm font-medium py-2 px-4 rounded-lg shadow-sm transition-colors">
+           class="inline-flex items-center bg-verde hover:bg-verde-oscuro text-white text-sm font-medium py-2 px-4 rounded-lg shadow-sm transition-colors">
             <span class="material-icons text-base mr-1.5">add</span> Nuevo proveedor
         </a>
     </div>
 
-    <form method="get" class="bg-white rounded-xl border border-gray-100 shadow-sm p-4 mb-4 flex flex-wrap items-center gap-3">
+    <form method="get" class="bg-white rounded-xl border border-verde/10 shadow-sm p-4 mb-4 flex flex-wrap items-center gap-3">
         <div class="relative flex-1 min-w-[220px]">
-            <span class="material-icons absolute left-3 top-2 text-gray-400 text-xl">search</span>
+            <span class="material-icons absolute left-3 top-2 text-verde/50 text-xl">search</span>
             <input type="text" name="q" value="{{ q }}" placeholder="Buscar por nombre o teléfono..."
-                   class="w-full pl-10 pr-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-600 focus:border-green-600">
+                   class="w-full pl-10 pr-3 py-2 text-sm border border-verde/25 rounded-lg focus:outline-none focus:ring-2 focus:ring-verde/50 focus:border-verde">
         </div>
-        <button type="submit" class="bg-green-700 hover:bg-green-800 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors">Buscar</button>
+        <button type="submit" class="bg-verde hover:bg-verde-oscuro text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors">Buscar</button>
         {% if q %}
-            <a href="{% url 'proveedores' %}" class="bg-green-700 hover:bg-green-800 text-white text-sm font-medium py-2 px-4 rounded-lg transition-colors">Limpiar</a>
+            <a href="{% url 'proveedores' %}" class="bg-white border border-verde/30 text-verde hover:bg-verde/10 text-sm font-medium py-2 px-4 rounded-lg transition-colors">Limpiar</a>
         {% endif %}
     </form>
 
-    <div class="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+    <div class="bg-white rounded-xl border border-verde/10 shadow-sm overflow-hidden">
         <div class="overflow-x-auto">
             <table class="w-full text-sm text-left">
-                <thead class="bg-gray-50 text-xs uppercase text-gray-500">
+                <thead class="bg-verde-claro text-xs uppercase text-verde">
                     <tr>
                         <th class="px-5 py-3 font-semibold">Proveedor</th>
                         <th class="px-5 py-3 font-semibold">Teléfono</th>
@@ -40,14 +40,14 @@
                         <th class="px-5 py-3 font-semibold text-right">Acciones</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-gray-100">
+                <tbody class="divide-y divide-verde/10">
                     {% for p in proveedores %}
-                    <tr class="hover:bg-gray-50">
-                        <td class="px-5 py-3 font-medium text-gray-800">{{ p.nombre }}</td>
+                    <tr class="hover:bg-crema">
+                        <td class="px-5 py-3 font-medium text-[#1f2d27]">{{ p.nombre }}</td>
 
                         <td class="px-5 py-3 text-gray-600">
                             {% if p.telefono %}
-                                <a href="tel:{{ p.telefono }}" class="hover:text-green-700">{{ p.telefono }}</a>
+                                <a href="tel:{{ p.telefono }}" class="hover:text-verde">{{ p.telefono }}</a>
                             {% else %}
                                 —
                             {% endif %}
@@ -55,7 +55,7 @@
 
                         <td class="px-5 py-3 text-gray-600">
                             {% if p.email %}
-                                <a href="mailto:{{ p.email }}" class="hover:text-green-700">{{ p.email }}</a>
+                                <a href="mailto:{{ p.email }}" class="hover:text-verde">{{ p.email }}</a>
                             {% else %}
                                 <span class="text-gray-400">Sin correo</span>
                             {% endif %}
@@ -63,13 +63,13 @@
 
                         <td class="px-5 py-3">
                             {% for nombre in p.materias %}
-                                <span class="inline-block rounded-full bg-green-100 px-2.5 py-0.5 text-xs text-green-800 mr-1 mb-1">{{ nombre }}</span>
+                                <span class="inline-block rounded-full bg-verde-claro px-2.5 py-0.5 text-xs text-verde-oscuro mr-1 mb-1">{{ nombre }}</span>
                             {% empty %}
                                 <span class="text-gray-400">—</span>
                             {% endfor %}
                         </td>
 
-                        <td class="px-5 py-3 text-right font-semibold text-gray-800">{{ p.num_ingresos }}</td>
+                        <td class="px-5 py-3 text-right font-semibold text-[#1f2d27]">{{ p.num_ingresos }}</td>
 
                         <td class="px-5 py-3 text-gray-600 whitespace-nowrap">
                             {% if p.ultimo_ingreso %}
@@ -80,13 +80,13 @@
                         </td>
 
                         <td class="px-5 py-3 text-right">
-                            <a href="{% url 'editar_proveedor' p.pk %}" class="inline-flex items-center text-green-700 hover:text-green-900 text-sm font-medium">
+                            <a href="{% url 'editar_proveedor' p.pk %}" class="inline-flex items-center text-verde hover:text-verde-oscuro text-sm font-medium">
                                 <span class="material-icons text-base mr-1">edit</span> Editar
                             </a>
                             <form method="post" action="{% url 'eliminar_proveedor' p.pk %}" class="inline ml-3"
                                   onsubmit="return confirm('¿Eliminar al proveedor {{ p.nombre|escapejs }}?{% if p.num_ingresos %} Sus {{ p.num_ingresos }} ingresos se conservarán en el historial sin proveedor asignado.{% endif %}');">
                                 {% csrf_token %}
-                                <button type="submit" class="inline-flex items-center text-red-600 hover:text-red-800 text-sm font-medium">
+                                <button type="submit" class="inline-flex items-center text-terracota hover:text-[#8E3F2D] text-sm font-medium">
                                     <span class="material-icons text-base mr-1">delete</span> Eliminar
                                 </button>
                             </form>
@@ -95,7 +95,7 @@
                     {% empty %}
                     <tr>
                         <td colspan="7" class="px-5 py-8 text-center text-gray-500">
-                            <span class="material-icons text-4xl text-gray-300">local_shipping</span>
+                            <span class="material-icons text-4xl text-salvia">local_shipping</span>
                             <p class="mt-2">
                                 {% if q %}
                                     No hay proveedores que coincidan con la búsqueda.
@@ -111,6 +111,6 @@
         </div>
     </div>
 
-    <p class="text-xs text-gray-400 mt-3">Mostrando {{ proveedores|length }} de {{ total }} proveedores.</p>
+    <p class="text-xs text-gray-500 mt-3">Mostrando {{ proveedores|length }} de {{ total }} proveedores.</p>
 </div>
 {% endblock %}

@@ -53,21 +53,25 @@ PROVEEDORES = [
     {
         "nombre": "Finca Los Álamos",
         "telefono": "388 4561203",
+        "email":"alamos@gmail.com",
         "materias": ["papa_andina", "maiz_amarillo"],
     },
     {
         "nombre": "Cooperativa Agrícola de Tilcara",
         "telefono": "388 4887716",
+        "email":"tilcara@gmail.com",
         "materias": ["maiz_capia", "maiz_morado"],
     },
     {
         "nombre": "Comunidad Originaria de Purmamarca",
         "telefono": "388 4392058",
+        "email":"purmamarca@gmail.com",
         "materias": ["quinoa", "maiz_morado"],
     },
     {
         "nombre": "Productores Unidos de Humahuaca",
         "telefono": "388 4670914",
+        "email":"huamahuaca@gmail.com",
         "materias": ["papa_andina", "quinoa", "maiz_capia"],
     },
 ]
@@ -204,12 +208,31 @@ class Command(BaseCommand):
         # 2. Proveedores
         proveedores = {}
         for datos in PROVEEDORES:
+            email_val = datos.get("email", "")
+            telefono_val = datos.get("telefono", "")
+
             proveedor, creado = Proveedor.objects.get_or_create(
-                nombre=datos["nombre"], defaults={"telefono": datos["telefono"]}
+                nombre=datos["nombre"],
+                defaults={
+                    "telefono": telefono_val,
+                    "email": email_val,  # <-- Se agrega el email en los defaults
+                },
             )
+
+            # Si el proveedor ya existía en la BDD pero no tenía email, lo actualiza
+            if not creado:
+                actualizar = False
+                if email_val and not proveedor.email:
+                    proveedor.email = email_val
+                    actualizar = True
+                if telefono_val and not proveedor.telefono:
+                    proveedor.telefono = telefono_val
+                    actualizar = True
+                if actualizar:
+                    proveedor.save()
+
             proveedores[proveedor.nombre] = proveedor
             nuevos["proveedores"] += creado
-
         # 3. Materias primas (y su stock inicial como un ingreso, para que el historial cuadre)
         materias = {}
         for clave, d in MATERIAS_PRIMAS.items():

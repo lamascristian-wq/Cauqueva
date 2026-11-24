@@ -149,21 +149,6 @@
                         {% endfor %}
                     </div>
 
-                    <!-- Precio de referencia -->
-                    <div>
-                        <label for="{{ formulario.precio_referencia.id_for_label }}"
-                               class="block text-sm font-medium text-[#1f2d27] mb-1">
-                            {{ formulario.precio_referencia.label }}
-                            <span class="text-terracota">*</span>
-                        </label>
-
-                        {{ formulario.precio_referencia }}
-
-                        {% for e in formulario.precio_referencia.errors %}
-                            <p class="text-xs text-terracota mt-1">{{ e }}</p>
-                        {% endfor %}
-                    </div>
-
                 </div>
 
                 <p class="text-xs text-gray-500 mt-3">

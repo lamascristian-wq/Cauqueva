@@ -620,7 +620,7 @@ def alertas_stock(request):
                 'unidad': mp.get_unidad_medida_display()
             })
 
-    return render(request, 'inventario/alertas.html', {
+    return render(request, 'inventariostock/alertas.html', {
         'alertas': lista_alertas
     })
 

@@ -560,7 +560,7 @@ def reportes_csv(request):
 
 # Solo el gerente puede ver la lista general del inventario
 @login_required(login_url='login')
-@user_passes_test(es_gerente, login_url='/consumos/')
+#@user_passes_test(es_gerente, login_url='/consumos/')
 def listar_inventario(request):
     q = request.GET.get("q", "").strip()
     estado = request.GET.get("estado", "").strip()
@@ -728,7 +728,7 @@ def registrar_consumo(request):
 
 # Operaciones con proveedor
 @login_required(login_url='login')
-@user_passes_test(es_gerente, login_url='/')
+#@user_passes_test(es_gerente, login_url='/')
 def proveedores(request):
     q = request.GET.get("q", "").strip()
     ingresos = MovimientoStock.objects.filter(tipo="INGRESO").select_related("materia_prima")
@@ -758,7 +758,7 @@ def proveedores(request):
 
 
 @login_required(login_url='login')
-@user_passes_test(es_gerente, login_url='/')
+#@user_passes_test(es_gerente, login_url='/')
 def crear_proveedor(request):
     if request.method == "POST":
         formulario = ProveedorForm(request.POST)
@@ -775,7 +775,7 @@ def crear_proveedor(request):
 
 
 @login_required(login_url='login')
-@user_passes_test(es_gerente, login_url='/')
+#@user_passes_test(es_gerente, login_url='/')
 def editar_proveedor(request, pk):
     proveedor = get_object_or_404(Proveedor, pk=pk)
     if request.method == "POST":
@@ -793,7 +793,7 @@ def editar_proveedor(request, pk):
 
 
 @login_required(login_url='login')
-@user_passes_test(es_gerente, login_url='/')
+#@user_passes_test(es_gerente, login_url='/')
 @require_POST
 def eliminar_proveedor(request, pk):
     proveedor = get_object_or_404(Proveedor, pk=pk)

@@ -164,6 +164,13 @@
 
             <!-- MENÚ OPERARIO -->
 
+            <a href="{% url 'inventariostock' %}"
+               class="flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors
+                      {% if request.resolver_match.url_name == 'inventariostock' %}text-verde bg-crema shadow-sm{% else %}text-white/80 hover:bg-white/10 hover:text-white{% endif %}">
+                <span class="material-icons mr-3 shrink-0 {% if request.resolver_match.url_name == 'inventariostock' %}text-verde{% else %}text-white/60{% endif %}">inventory_2</span>
+                <span class="sidebar-text whitespace-nowrap">Materias Primas</span>
+            </a>
+
             <a href="{% url 'registrar_movimiento' %}"
                class="flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors
                       {% if request.resolver_match.url_name == 'registrar_movimiento' %}text-verde bg-crema shadow-sm{% else %}text-white/80 hover:bg-white/10 hover:text-white{% endif %}">
@@ -178,11 +185,11 @@
                 <span class="sidebar-text whitespace-nowrap">Consumo y Salidas</span>
             </a>
 
-            <a href="{% url 'historial' %}"
+            <a href="{% url 'proveedores' %}"
                class="flex items-center px-3 py-2.5 rounded-lg font-medium transition-colors
-                      {% if request.resolver_match.url_name == 'historial' %}text-verde bg-crema shadow-sm{% else %}text-white/80 hover:bg-white/10 hover:text-white{% endif %}">
-                <span class="material-icons mr-3 shrink-0 {% if request.resolver_match.url_name == 'historial' %}text-verde{% else %}text-white/60{% endif %}">history</span>
-                <span class="sidebar-text whitespace-nowrap">Historial de Movimientos</span>
+                      {% if request.resolver_match.url_name in 'proveedores crear_proveedor editar_proveedor' %}text-verde bg-crema shadow-sm{% else %}text-white/80 hover:bg-white/10 hover:text-white{% endif %}">
+                <span class="material-icons mr-3 shrink-0 {% if request.resolver_match.url_name in 'proveedores crear_proveedor editar_proveedor' %}text-verde{% else %}text-white/60{% endif %}">local_shipping</span>
+                <span class="sidebar-text whitespace-nowrap">Proveedores</span>
             </a>
 
             {% endif %}

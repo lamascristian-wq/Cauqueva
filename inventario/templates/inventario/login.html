@@ -22,44 +22,98 @@
     </script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 </head>
-<body class="bg-crema min-h-screen flex items-center justify-center font-sans text-[#1f2d27]">
-    <div class="bg-white w-full max-w-sm rounded-2xl shadow-sm border border-verde/10 p-8">
+<body class="min-h-screen bg-slate-900 text-white font-sans flex items-center justify-center relative overflow-hidden bg-cover bg-center"
+      style="background-image: linear-gradient(to right, rgba(11, 25, 20, 0.85), rgba(15, 30, 25, 0.92));">
 
-        <div class="flex items-center mb-6">
-            <span class="material-icons text-verde text-3xl mr-2">eco</span>
-            <div class="leading-tight">
-                <h1 class="text-lg font-bold font-serif text-verde tracking-wide">CAUQUEVA</h1>
-                <span class="text-xs text-[#1f2d27]/60">Sistema de Gestión</span>
+    <!-- Capa de superposición para contraste visual -->
+    <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px] z-0"></div>
+
+    <div class="relative z-10 w-full max-w-6xl mx-auto px-6 py-12 flex flex-col md:flex-row items-center justify-between gap-12">
+        
+        <!-- Columna Izquierda: Identidad y Marca -->
+        <div class="w-full md:w-1/2 text-left space-y-6">
+            <div class="inline-flex items-center space-x-3 bg-white/10 backdrop-blur-md px-4 py-2 rounded-full border border-white/10">
+                <span class="material-icons text-salvia">eco</span>
+                <span class="text-sm font-semibold tracking-wider uppercase text-white/90">Cooperativa CAUQUEVA</span>
+            </div>
+
+            <div class="space-y-2">
+                <h1 class="text-4xl sm:text-5xl md:text-6xl font-bold font-serif tracking-tight text-white drop-shadow-md">
+                    SISTEMA DE GESTIÓN
+                </h1>
+                <p class="text-base sm:text-lg text-white/80 max-w-md font-light leading-relaxed">
+                    Plataforma integral para el control de inventarios, recepción, acopio y consumo de materias primas.
+                </p>
+            </div>
+
+            <div class="pt-4 flex items-center space-x-6 text-xs text-white/60">
+                <div class="flex items-center space-x-2">
+                    <span class="material-icons text-base text-salvia">check_circle</span>
+                    <span>Trazabilidad de Stock</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <span class="material-icons text-base text-salvia">check_circle</span>
+                    <span>Alertas en Tiempo Real</span>
+                </div>
             </div>
         </div>
 
-        <form method="post" class="space-y-4">
-            {% csrf_token %}
-            <input type="hidden" name="next" value="{{ next }}">
-
-            {% if form.errors %}
-            <p class="text-sm text-terracota bg-terracota-claro border border-terracota/20 rounded-lg px-3 py-2">
-                Usuario o contraseña incorrectos.
-            </p>
-            {% endif %}
-
-            <div>
-                <label for="id_username" class="block text-sm font-medium text-[#1f2d27] mb-1">Usuario</label>
-                <input type="text" name="username" id="id_username" required autofocus
-                       class="w-full border border-verde/20 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-verde bg-white text-[#1f2d27]">
+        <!-- Columna Derecha: Tarjeta de Login (Estilo oscuro flotante) -->
+        <div class="w-full md:w-[420px] bg-[#12231b]/90 backdrop-blur-xl border border-white/10 rounded-3xl p-8 sm:p-10 shadow-2xl">
+            
+            <div class="text-center mb-8">
+                <h2 class="text-2xl font-bold text-white tracking-wide">
+                    Iniciá sesión en tu cuenta
+                </h2>
+                <p class="text-xs text-white/60 mt-2">
+                    Ingresá tus credenciales para acceder al sistema
+                </p>
             </div>
 
-            <div>
-                <label for="id_password" class="block text-sm font-medium text-[#1f2d27] mb-1">Contraseña</label>
-                <input type="password" name="password" id="id_password" required
-                       class="w-full border border-verde/20 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-verde bg-white text-[#1f2d27]">
+            <form method="post" class="space-y-5">
+                {% csrf_token %}
+                <input type="hidden" name="next" value="{{ next }}">
+
+                {% if form.errors %}
+                <div class="text-xs text-terracota bg-terracota-claro/10 border border-terracota/40 rounded-xl px-4 py-3 flex items-center gap-2">
+                    <span class="material-icons text-sm text-terracota">error_outline</span>
+                    <span>Usuario o contraseña incorrectos.</span>
+                </div>
+                {% endif %}
+
+                <div>
+                    <label for="id_username" class="block text-xs font-semibold uppercase tracking-wider text-white/80 mb-2">
+                        Usuario
+                    </label>
+                    <input type="text" name="username" id="id_username" required autofocus
+                           placeholder="Ingresá tu usuario"
+                           class="w-full bg-white text-[#1f2d27] rounded-xl px-4 py-3 text-sm border border-transparent focus:outline-none focus:ring-2 focus:ring-salvia placeholder-gray-400 transition-all font-medium">
+                </div>
+
+                <div>
+                    <label for="id_password" class="block text-xs font-semibold uppercase tracking-wider text-white/80 mb-2">
+                        Contraseña
+                    </label>
+                    <input type="password" name="password" id="id_password" required
+                           placeholder="••••••••"
+                           class="w-full bg-white text-[#1f2d27] rounded-xl px-4 py-3 text-sm border border-transparent focus:outline-none focus:ring-2 focus:ring-salvia placeholder-gray-400 transition-all font-medium">
+                </div>
+
+                <button type="submit"
+                        class="w-full bg-verde hover:bg-verde-oscuro text-white text-sm font-semibold rounded-xl py-3.5 transition-all shadow-lg hover:shadow-verde/30 cursor-pointer mt-2">
+                    Ingresar
+                </button>
+            </form>
+
+            <!-- Pie de tarjeta institucional -->
+            <div class="mt-8 pt-6 border-t border-white/10 text-center">
+                <p class="text-xs text-white/40">
+                    Juntos producimos, valoramos nuestra tierra
+                </p>
             </div>
 
-            <button type="submit"
-                    class="w-full bg-verde hover:bg-verde-oscuro text-white font-medium rounded-lg py-2.5 transition-colors shadow-sm cursor-pointer">
-                Ingresar
-            </button>
-        </form>
+        </div>
+
     </div>
 </body>
 </html>

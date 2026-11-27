@@ -138,7 +138,7 @@
                         <td class="p-4 font-semibold text-terracota">
                             {% if mov.costo_total is not None %}${{ mov.costo_total|floatformat:"2g" }}{% else %}-{% endif %}
                         </td>
-                        <td class="p-4">{{ mov.proveedor|default:"-" }}</td>
+                        <td class="p-4">{{ mov.proveedor_display|default:"-" }}</td>
 
                     {% elif tipo == 'consumo' %}
                         <td class="p-4">
@@ -157,7 +157,7 @@
                     {% else %}
                         <td class="p-4">
                             {% if mov.tipo == 'INGRESO' %}
-                                {{ mov.proveedor_nombre|default:"-" }}
+                                {{ mov.proveedor_display|default:"-" }}
                                 {% if mov.precio_unitario is not None %}
                                     <span class="block text-xs text-gray-500">
                                         ${{ mov.precio_unitario|floatformat:"2g" }}/Kg · Total ${{ mov.costo_total|floatformat:"2g" }}

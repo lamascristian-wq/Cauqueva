@@ -205,6 +205,12 @@ class MovimientoStock(models.Model):
                 {"cantidad": "Stock insuficiente para registrar este consumo."}
             )
 
+    @property
+    def proveedor_display(self):    
+        if self.proveedor:
+            return self.proveedor.nombre
+        return self.proveedor_externo or ""
+
     def save(self, *args, **kwargs):
         using = kwargs.get("using") or router.db_for_write(
             type(self),

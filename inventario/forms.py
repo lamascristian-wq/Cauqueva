@@ -200,9 +200,9 @@ class MovimientoStockForm(forms.ModelForm):
         labels = {
             "materia_prima": "Materia prima",
             "proveedor": "Proveedor registrado",
-            "proveedor_externo": "O proveedor externo (Manual)",
+            "proveedor_externo": "O proveedor externo",
             "cantidad": "Cantidad que ingresa",
-            "precio_unitario": "Precio unitario",
+            "precio_unitario": "Precio por kg",
             "observaciones": "Observaciones",
         }
 
@@ -277,30 +277,21 @@ class MovimientoStockForm(forms.ModelForm):
         return precio
 
     def clean(self):
-        cleaned_data = super().clean()
+        cleaned = super().clean()
+        proveedor = cleaned.get("proveedor")
+        externo = (cleaned.get("proveedor_externo") or "").strip()
 
-        proveedor = cleaned_data.get("proveedor")
-        proveedor_externo = (
-            cleaned_data.get("proveedor_externo") or ""
-        ).strip()
+        if proveedor and externo:
+            raise forms.ValidationError(
+                "Elegí un proveedor registrado o escribí uno externo, no ambos."
+            )
+        if not proveedor and not externo:
+            raise forms.ValidationError(
+                "Indicá un proveedor registrado o uno externo."
+            )
 
-        # Los ingresos necesitan un proveedor registrado o externo.
-        # Los consumos de producción no necesitan proveedor.
-        if self.instance.tipo == "INGRESO":
-
-            if not proveedor and not proveedor_externo:
-                raise forms.ValidationError(
-                    "Debes seleccionar un proveedor registrado "
-                    "o escribir el nombre de uno externo."
-                )
-
-            if proveedor and proveedor_externo:
-                raise forms.ValidationError(
-                    "No puedes seleccionar un proveedor y escribir "
-                    "uno externo a la vez. Usa solo un campo."
-                )
-
-        return cleaned_data
+        cleaned["proveedor_externo"] = externo or None
+        return cleaned
 
 
 class ProduccionForm(forms.Form):

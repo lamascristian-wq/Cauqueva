@@ -115,7 +115,7 @@
                     </td>
                     {% endif %}
 
-                    <td class="p-4 font-medium text-[#1f2d27]">
+                    <td class="p-4 font-medium text-[#0F1E2F]">
                         {{ mov.materia_prima.nombre }}
                         {% if mov.materia_prima.variedad %}
                             <span class="text-gray-500 font-normal text-xs ml-1">({{ mov.materia_prima.variedad }})</span>
@@ -182,10 +182,10 @@
                     <td colspan="7" class="p-12 text-center text-gray-500">
                         <span class="material-icons text-salvia text-5xl mb-3 block">history</span>
                         {% if desde or hasta %}
-                        <p class="text-lg font-medium text-[#1f2d27]">No hay movimientos en ese rango de fechas</p>
+                        <p class="text-lg font-medium text-[#0F1E2F]">No hay movimientos en ese rango de fechas</p>
                         <p class="text-sm">Probá con otras fechas o limpiá el filtro.</p>
                         {% else %}
-                        <p class="text-lg font-medium text-[#1f2d27]">No hay movimientos para mostrar</p>
+                        <p class="text-lg font-medium text-[#0F1E2F]">No hay movimientos para mostrar</p>
                         <p class="text-sm">Cuando registres ingresos o consumos, aparecerán aquí.</p>
                         {% endif %}
                     </td>

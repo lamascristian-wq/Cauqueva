@@ -43,7 +43,7 @@
                 <tbody class="divide-y divide-verde/10">
                     {% for p in proveedores %}
                     <tr class="hover:bg-crema">
-                        <td class="px-5 py-3 font-medium text-[#1f2d27]">{{ p.nombre }}</td>
+                        <td class="px-5 py-3 font-medium text-[#0F1E2F]">{{ p.nombre }}</td>
 
                         <td class="px-5 py-3 text-gray-600">
                             {% if p.telefono %}
@@ -69,7 +69,7 @@
                             {% endfor %}
                         </td>
 
-                        <td class="px-5 py-3 text-right font-semibold text-[#1f2d27]">{{ p.num_ingresos }}</td>
+                        <td class="px-5 py-3 text-right font-semibold text-[#0F1E2F]">{{ p.num_ingresos }}</td>
 
                         <td class="px-5 py-3 text-gray-600 whitespace-nowrap">
                             {% if p.ultimo_ingreso %}
@@ -86,7 +86,7 @@
                             <form method="post" action="{% url 'eliminar_proveedor' p.pk %}" class="inline ml-3"
                                   onsubmit="return confirm('¿Eliminar al proveedor {{ p.nombre|escapejs }}?{% if p.num_ingresos %} Sus {{ p.num_ingresos }} ingresos se conservarán en el historial sin proveedor asignado.{% endif %}');">
                                 {% csrf_token %}
-                                <button type="submit" class="inline-flex items-center text-terracota hover:text-[#8E3F2D] text-sm font-medium">
+                                <button type="submit" class="inline-flex items-center text-terracota hover:text-[#7A110F] text-sm font-medium">
                                     <span class="material-icons text-base mr-1">delete</span> Eliminar
                                 </button>
                             </form>

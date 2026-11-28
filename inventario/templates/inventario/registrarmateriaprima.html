@@ -5,13 +5,13 @@
     /* Los campos del formulario los renderiza Django con las clases definidas en forms.py;
        este bloque solo les cambia los colores a la paleta CAUQUEVA sin tocar el formulario. */
     .form-cauqueva :is(input, select, textarea) {
-        border-color: rgb(11 93 59 / 0.25);
+        border-color: rgb(15 87 114 / 0.25);
     }
     .form-cauqueva :is(input, select, textarea):focus {
         outline: none;
-        border-color: #0B5D3B;
-        --tw-ring-color: rgb(11 93 59 / 0.5);
-        box-shadow: 0 0 0 2px rgb(11 93 59 / 0.5);
+        border-color: #0F5772;
+        --tw-ring-color: rgb(15 87 114 / 0.5);
+        box-shadow: 0 0 0 2px rgb(15 87 114 / 0.5);
     }
 </style>
 
@@ -69,7 +69,7 @@
                     <!-- Nombre -->
                     <div>
                         <label for="{{ formulario.nombre.id_for_label }}"
-                               class="block text-sm font-medium text-[#1f2d27] mb-1">
+                               class="block text-sm font-medium text-[#0F1E2F] mb-1">
                             {{ formulario.nombre.label }}
                             <span class="text-terracota">*</span>
                         </label>
@@ -84,7 +84,7 @@
                     <!-- Variedad -->
                     <div>
                         <label for="{{ formulario.variedad.id_for_label }}"
-                               class="block text-sm font-medium text-[#1f2d27] mb-1">
+                               class="block text-sm font-medium text-[#0F1E2F] mb-1">
                             {{ formulario.variedad.label }}
                         </label>
 
@@ -98,7 +98,7 @@
                     <!-- Descripción -->
                     <div class="sm:col-span-2">
                         <label for="{{ formulario.descripcion.id_for_label }}"
-                               class="block text-sm font-medium text-[#1f2d27] mb-1">
+                               class="block text-sm font-medium text-[#0F1E2F] mb-1">
                             {{ formulario.descripcion.label }}
                         </label>
 
@@ -124,7 +124,7 @@
                     <!-- Cantidad inicial -->
                     <div>
                         <label for="{{ formulario.cantidad_inicial.id_for_label }}"
-                               class="block text-sm font-medium text-[#1f2d27] mb-1">
+                               class="block text-sm font-medium text-[#0F1E2F] mb-1">
                             {{ formulario.cantidad_inicial.label }}
                         </label>
 
@@ -138,7 +138,7 @@
                     <!-- Precio por Kg -->
                     <div>
                         <label for="{{ formulario.precio_unitario.id_for_label }}"
-                               class="block text-sm font-medium text-[#1f2d27] mb-1">
+                               class="block text-sm font-medium text-[#0F1E2F] mb-1">
                             {{ formulario.precio_unitario.label }}
                         </label>
 
@@ -168,7 +168,7 @@
 
                 <div class="sm:w-1/2">
                     <label for="{{ formulario.stock_minimo.id_for_label }}"
-                           class="block text-sm font-medium text-[#1f2d27] mb-1">
+                           class="block text-sm font-medium text-[#0F1E2F] mb-1">
                         {{ formulario.stock_minimo.label }}
                         <span class="text-terracota">*</span>
                     </label>

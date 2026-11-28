@@ -59,8 +59,8 @@
                     {% for p in pagina %}
                     <tr class="hover:bg-crema align-top">
                         <td class="px-5 py-3 text-gray-600 whitespace-nowrap">{{ p.fecha|date:"d/m/Y H:i" }}</td>
-                        <td class="px-5 py-3 font-medium text-[#1f2d27]">{{ p.producto }}</td>
-                        <td class="px-5 py-3 text-right text-[#1f2d27]">{{ p.cantidad }}</td>
+                        <td class="px-5 py-3 font-medium text-[#0F1E2F]">{{ p.producto }}</td>
+                        <td class="px-5 py-3 text-right text-[#0F1E2F]">{{ p.cantidad }}</td>
                         <td class="px-5 py-3 text-right text-gray-600">${{ p.precio_unitario|floatformat:"2g" }}</td>
                         <td class="px-5 py-3 text-right font-semibold text-verde">${{ p.total|floatformat:"2g" }}</td>
                         <td class="px-5 py-3 text-gray-600">

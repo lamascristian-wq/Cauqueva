@@ -24,7 +24,7 @@
                 <p class="text-xl font-bold">{{ total }}</p>
             </div>
         </div>
-        <div class="bg-white rounded-xl border border-verde/10 border-b-4 border-b-verde shadow-sm p-4 flex items-center">
+        <div class="bg-white rounded-xl border border-verde/10 border-b-4 border-b-salvia shadow-sm p-4 flex items-center">
             <span class="material-icons text-verde bg-verde-claro rounded-full p-2.5 mr-3">check_circle</span>
             <div>
                 <p class="text-xs text-gray-500">Con stock normal</p>
@@ -81,14 +81,14 @@
                     {% for m in materias %}
                     <tr class="hover:bg-crema">
                         <td class="px-5 py-3">
-                            <p class="font-medium text-[#1f2d27]">{{ m.nombre }}</p>
+                            <p class="font-medium text-[#0F1E2F]">{{ m.nombre }}</p>
                             {% if m.descripcion %}
                                 <p class="text-xs text-gray-500">{{ m.descripcion|truncatechars:60 }}</p>
                             {% endif %}
                         </td>
                         <td class="px-5 py-3 text-gray-600">{{ m.variedad|default:"—" }}</td>
 
-                        <td class="px-5 py-3 text-right font-semibold {% if m.stock_actual <= m.stock_minimo %}text-terracota{% else %}text-[#1f2d27]{% endif %}">
+                        <td class="px-5 py-3 text-right font-semibold {% if m.stock_actual <= m.stock_minimo %}text-terracota{% else %}text-[#0F1E2F]{% endif %}">
                             {{ m.stock_actual|floatformat:"-2g" }} {{ m.unidad_medida }}
                         </td>
                         <td class="px-5 py-3 text-right text-gray-600">

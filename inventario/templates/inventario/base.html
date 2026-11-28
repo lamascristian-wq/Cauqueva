@@ -7,16 +7,23 @@
     <title>CAUQUEVA - Sistema de Gestión</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
-        // Paleta institucional CAUQUEVA (misma definición en panelprincipal.html)
+        // Paleta CAUQUEVA (Colormind): #0F1E2F navy, #0F5772 teal, #7CB895 menta, #F2BF44 maíz, #A31815 rojo
+        // Se mantienen los nombres de clase originales (verde, ocre, terracota, crema, salvia)
+        // para no tocar el resto de los templates; solo cambian sus valores.
+        //   verde     -> teal (principal), oscuro = navy
+        //   ocre      -> amarillo maíz (acento)
+        //   terracota -> rojo (alertas)
+        //   crema     -> fondo claro con un toque de menta
+        //   salvia    -> verde menta
         tailwind.config = {
             theme: {
                 extend: {
                     colors: {
-                        verde: { DEFAULT: "#0B5D3B", oscuro: "#08472D", claro: "#E3EEE7" },
-                        ocre: { DEFAULT: "#D98E2B", oscuro: "#A5640F", claro: "#FBEFD9" },
-                        terracota: { DEFAULT: "#B5523C", claro: "#F6E3DD" },
-                        crema: "#F8F7F1",
-                        salvia: "#A7BFA3",
+                        verde: { DEFAULT: "#0F5772", oscuro: "#0F1E2F", claro: "#DCEBF0" },
+                        ocre: { DEFAULT: "#F2BF44", oscuro: "#8A6A0B", claro: "#FCF1D3" },
+                        terracota: { DEFAULT: "#A31815", claro: "#F6E0DF" },
+                        crema: "#F3F8F5",
+                        salvia: "#7CB895",
                     },
                 },
             },
@@ -57,7 +64,7 @@
     /* 2. Resetear los contenedores con h-screen y overflow-hidden */
     html, body, body > div, main {
       background: #ffffff !important;
-      color: #1f2d27 !important;
+      color: #0F1E2F !important;
       height: auto !important;
       min-height: auto !important;
       width: 100% !important;
@@ -71,7 +78,7 @@
 
     /* 3. Forzar que los textos blancos pasen a texto oscuro si no se imprimen fondoss */
     .text-white, .text-white\/90, .text-white\/80 {
-      color: #1f2d27 !important;
+      color: #0F1E2F !important;
       text-shadow: none !important;
     }
 
@@ -83,14 +90,14 @@
   }
 </style>
 </head>
-<body class="bg-crema flex h-screen overflow-hidden font-sans text-[#1f2d27]">
+<body class="bg-crema flex h-screen overflow-hidden font-sans text-[#0F1E2F]">
 
     <!-- Fondo oscuro traslúcido para móviles -->
     <div id="sidebarOverlay" class="fixed inset-0 bg-gray-900/50 z-30 hidden lg:hidden transition-opacity"></div>
 
-    <!-- BARRA LATERAL -->
+    <!-- BARRA LATERAL (navy) -->
     <aside id="sidebar"
-           class="fixed inset-y-0 left-0 z-40 w-64 bg-verde text-white flex flex-col transition-all duration-300 overflow-hidden shrink-0 -translate-x-full lg:translate-x-0 lg:static">
+           class="fixed inset-y-0 left-0 z-40 w-64 bg-verde-oscuro text-white flex flex-col transition-all duration-300 overflow-hidden shrink-0 -translate-x-full lg:translate-x-0 lg:static">
 
         <!-- Logo -->
         <div class="h-16 flex items-center px-6 border-b border-white/10 logo-container transition-all duration-300">
@@ -99,7 +106,7 @@
             </span>
             <div class="leading-tight ml-3 sidebar-text whitespace-nowrap">
                 <h1 class="text-lg font-bold font-serif tracking-wide text-white">CAUQUEVA</h1>
-                <span class="text-xs text-white/70">Cooperativa LTDA.</span>
+                <span class="text-xs text-salvia">Cooperativa LTDA.</span>
             </div>
         </div>
 
@@ -239,7 +246,7 @@
                     {% if total_alertas > 0 %}
                         {% for alerta in alertas_recientes %}
                         <a href="{% url 'alertas' %}" style="background-color: #ffffff !important;" class="block px-4 py-3 border-b border-verde/5 hover:bg-terracota-claro/50 transition-colors">
-                            <p class="text-sm font-bold text-[#1f2d27]">{{ alerta.nombre }}</p>
+                            <p class="text-sm font-bold text-[#0F1E2F]">{{ alerta.nombre }}</p>
                             <p class="text-xs text-terracota mt-1">Stock: {{ alerta.stock_actual }} {{ alerta.get_unidad_medida_display }} (Mín: {{ alerta.stock_minimo }})</p>
                         </a>
                         {% endfor %}
@@ -251,8 +258,8 @@
                         {% endif %}
                     {% else %}
                         <div class="px-4 py-8 text-center" style="background-color: #ffffff !important;">
-                            <span class="material-icons text-verde text-4xl mb-2">check_circle</span>
-                            <p class="text-sm font-medium text-[#1f2d27]">Stock controlado</p>
+                            <span class="material-icons text-salvia text-4xl mb-2">check_circle</span>
+                            <p class="text-sm font-medium text-[#0F1E2F]">Stock controlado</p>
                             <p class="text-xs text-gray-500 mt-1">No hay alertas críticas en este momento.</p>
                         </div>
                     {% endif %}
@@ -271,7 +278,7 @@
                  style="background-color: #ffffff !important;" 
                  class="hidden absolute right-0 mt-2 w-56 sm:w-60 rounded-xl shadow-2xl border border-verde/20 py-2 z-50">
                 <div class="px-4 py-3 border-b border-verde/10" style="background-color: #ffffff !important;">
-                    <p class="text-sm font-semibold text-[#1f2d27] truncate">
+                    <p class="text-sm font-semibold text-[#0F1E2F] truncate">
                         {{ user.get_full_name|default:user.username }}
                     </p>
                     <p class="text-xs text-gray-500 truncate">@{{ user.username }}</p>

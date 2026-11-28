@@ -11,11 +11,11 @@
             theme: {
                 extend: {
                     colors: {
-                        verde: { DEFAULT: "#0B5D3B", oscuro: "#08472D", claro: "#E3EEE7" },
-                        ocre: { DEFAULT: "#D98E2B", oscuro: "#A5640F", claro: "#FBEFD9" },
-                        terracota: { DEFAULT: "#B5523C", claro: "#F6E3DD" },
-                        crema: "#F8F7F1",
-                        salvia: "#A7BFA3",
+                        verde: { DEFAULT: "#0F5772", oscuro: "#0F1E2F", claro: "#DCEBF0" },
+                        ocre: { DEFAULT: "#F2BF44", oscuro: "#8A6A0B", claro: "#FCF1D3" },
+                        terracota: { DEFAULT: "#A31815", claro: "#F6E0DF" },
+                        crema: "#F3F8F5",
+                        salvia: "#7CB895",
                     },
                 },
             },
@@ -24,7 +24,7 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
 </head>
 <body class="min-h-screen bg-slate-900 text-white font-sans flex items-center justify-center relative overflow-hidden bg-cover bg-center"
-      style="background-image: linear-gradient(to right, rgba(11, 25, 20, 0.75), rgba(15, 30, 25, 0.85)), url('{% static 'img/fondo.jpg' %}');">
+      style="background-image: linear-gradient(to right, rgba(15, 30, 47, 0.75), rgba(10, 20, 32, 0.85)), url('{% static 'img/fondo.jpg' %}');">
 
     <!-- Capa de superposición para contraste visual -->
     <div class="absolute inset-0 bg-black/40 backdrop-blur-[2px] z-0"></div>
@@ -60,7 +60,7 @@
         </div>
 
         <!-- Columna Derecha: Tarjeta de Login (Estilo oscuro flotante) -->
-        <div class="w-full md:w-[420px] bg-[#12231b]/90 backdrop-blur-xl border border-white/10 rounded-3xl p-8 sm:p-10 shadow-2xl">
+        <div class="w-full md:w-[420px] bg-[#0F1E2F]/90 backdrop-blur-xl border border-white/10 rounded-3xl p-8 sm:p-10 shadow-2xl">
             
             <div class="text-center mb-8">
                 <h2 class="text-2xl font-bold text-white tracking-wide">
@@ -76,8 +76,8 @@
                 <input type="hidden" name="next" value="{{ next }}">
 
                 {% if form.errors %}
-                <div class="text-xs text-terracota bg-terracota-claro/10 border border-terracota/40 rounded-xl px-4 py-3 flex items-center gap-2">
-                    <span class="material-icons text-sm text-terracota">error_outline</span>
+                <div class="text-xs text-[#F4A19E] bg-terracota-claro/10 border border-terracota/60 rounded-xl px-4 py-3 flex items-center gap-2">
+                    <span class="material-icons text-sm text-[#F4A19E]">error_outline</span>
                     <span>Usuario o contraseña incorrectos.</span>
                 </div>
                 {% endif %}
@@ -88,7 +88,7 @@
                     </label>
                     <input type="text" name="username" id="id_username" required autofocus
                            placeholder="Ingresá tu usuario"
-                           class="w-full bg-white text-[#1f2d27] rounded-xl px-4 py-3 text-sm border border-transparent focus:outline-none focus:ring-2 focus:ring-salvia placeholder-gray-400 transition-all font-medium">
+                           class="w-full bg-white text-[#0F1E2F] rounded-xl px-4 py-3 text-sm border border-transparent focus:outline-none focus:ring-2 focus:ring-salvia placeholder-gray-400 transition-all font-medium">
                 </div>
 
                 <div>
@@ -97,7 +97,7 @@
                     </label>
                     <input type="password" name="password" id="id_password" required
                            placeholder="••••••••"
-                           class="w-full bg-white text-[#1f2d27] rounded-xl px-4 py-3 text-sm border border-transparent focus:outline-none focus:ring-2 focus:ring-salvia placeholder-gray-400 transition-all font-medium">
+                           class="w-full bg-white text-[#0F1E2F] rounded-xl px-4 py-3 text-sm border border-transparent focus:outline-none focus:ring-2 focus:ring-salvia placeholder-gray-400 transition-all font-medium">
                 </div>
 
                 <button type="submit"

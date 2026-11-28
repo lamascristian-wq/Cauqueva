@@ -6,8 +6,8 @@
     <!-- Encabezado -->
     <div class="mb-6 flex flex-wrap items-center justify-between gap-4">
         <div>
-            <h1 class="text-2xl font-bold font-serif text-[#1f2d27]">Nuevo Ingreso</h1>
-            <p class="text-sm text-[#1f2d27]/70 mt-1">Registrá el ingreso de materia prima para actualizar el stock.</p>
+            <h1 class="text-2xl font-bold font-serif text-[#0F1E2F]">Nuevo Ingreso</h1>
+            <p class="text-sm text-[#0F1E2F]/70 mt-1">Registrá el ingreso de materia prima para actualizar el stock.</p>
         </div>
         {% if request.user.is_staff %}
         <a href="{% url 'inventariostock' %}"
@@ -31,7 +31,7 @@
             {% csrf_token %}
 
             <div>
-                <label class="block text-sm font-medium text-[#1f2d27] mb-2">
+                <label class="block text-sm font-medium text-[#0F1E2F] mb-2">
                     {{ formulario.materia_prima.label }} <span class="text-terracota">*</span>
                 </label>
                 <div class="flex overflow-x-auto gap-4 snap-x snap-mandatory pb-3"
@@ -50,15 +50,15 @@
                             {% if formulario.materia_prima.value|stringformat:"s" == materia.pk|stringformat:"s" %}checked{% endif %}
                             {% if formulario.materia_prima.field.required %}required{% endif %}>
                         <div class="h-full rounded-xl border-2 border-verde/20 bg-white p-4 transition-colors hover:border-verde/50 peer-checked:border-verde peer-checked:bg-verde-claro peer-focus-visible:ring-2 peer-focus-visible:ring-verde peer-focus-visible:ring-offset-2">
-                            <span class="block font-semibold text-[#1f2d27]">{{ materia }}</span>
-                            <span data-unidad class="mt-2 inline-block text-sm text-[#1f2d27]/80">
+                            <span class="block font-semibold text-[#0F1E2F]">{{ materia }}</span>
+                            <span data-unidad class="mt-2 inline-block text-sm text-[#0F1E2F]/80">
                                 {% if materia.unidad_medida == "KG" %}Kg{% elif materia.unidad_medida == "TN" %}Tn{% else %}Un{% endif %}
                             </span>
-                            <span class="block mt-1 text-xs text-[#1f2d27]/60">Stock actual: {{ materia.stock_actual|floatformat:"-2" }}</span>
+                            <span class="block mt-1 text-xs text-[#0F1E2F]/60">Stock actual: {{ materia.stock_actual|floatformat:"-2" }}</span>
                         </div>
                     </label>
                     {% empty %}
-                    <p class="text-sm text-[#1f2d27]/60">No hay materias primas disponibles.</p>
+                    <p class="text-sm text-[#0F1E2F]/60">No hay materias primas disponibles.</p>
                     {% endfor %}
                 </div>
                 {% for e in formulario.materia_prima.errors %}<p class="text-xs text-terracota mt-1">{{ e }}</p>{% endfor %}
@@ -66,14 +66,14 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label for="{{ formulario.proveedor.id_for_label }}" class="block text-sm font-medium text-[#1f2d27] mb-1">
+                    <label for="{{ formulario.proveedor.id_for_label }}" class="block text-sm font-medium text-[#0F1E2F] mb-1">
                         {{ formulario.proveedor.label }} <span class="text-terracota">*</span>
                     </label>
                     {{ formulario.proveedor }}
                     {% for e in formulario.proveedor.errors %}<p class="text-xs text-terracota mt-1">{{ e }}</p>{% endfor %}
                 </div>
                 <div>
-                    <label for="{{ formulario.cantidad.id_for_label }}" class="block text-sm font-medium text-[#1f2d27] mb-1">
+                    <label for="{{ formulario.cantidad.id_for_label }}" class="block text-sm font-medium text-[#0F1E2F] mb-1">
                         {{ formulario.cantidad.label }} <span class="text-terracota">*</span>
                         (<span id="unidad-display"></span>)
                     </label>
@@ -84,7 +84,7 @@
 
             <!-- El sistema propone el precio de referencia, pero el operario puede ajustarlo según la factura. -->
             <div>
-                <label for="{{ formulario.precio_unitario.id_for_label }}" class="block text-sm font-medium text-[#1f2d27] mb-1">
+                <label for="{{ formulario.precio_unitario.id_for_label }}" class="block text-sm font-medium text-[#0F1E2F] mb-1">
                     {{ formulario.precio_unitario.label }} <span class="text-terracota">*</span>
                 </label>
                 {{ formulario.precio_unitario }}
@@ -92,7 +92,7 @@
             </div>
 
             <div>
-                <label for="{{ formulario.observaciones.id_for_label }}" class="block text-sm font-medium text-[#1f2d27] mb-1">
+                <label for="{{ formulario.observaciones.id_for_label }}" class="block text-sm font-medium text-[#0F1E2F] mb-1">
                     {{ formulario.observaciones.label }}
                 </label>
                 {{ formulario.observaciones }}
@@ -101,7 +101,7 @@
 
             <div class="pt-6 border-t border-verde/10 flex items-center justify-end space-x-3">
                 <a href="{% if request.user.is_staff %}{% url 'inventariostock' %}{% else %}{% url 'consumos' %}{% endif %}"
-                   class="bg-white border border-verde/20 text-[#1f2d27]/80 hover:bg-verde/5 font-medium py-2 px-4 rounded-lg transition-colors text-sm">
+                   class="bg-white border border-verde/20 text-[#0F1E2F]/80 hover:bg-verde/5 font-medium py-2 px-4 rounded-lg transition-colors text-sm">
                     Cancelar
                 </a>
                 <button type="submit"

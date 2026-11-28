@@ -5,13 +5,13 @@
     /* Los campos del formulario los renderiza Django con las clases definidas en forms.py;
        este bloque solo les cambia los colores a la paleta CAUQUEVA sin tocar el formulario. */
     .form-cauqueva :is(input, select, textarea) {
-        border-color: rgb(11 93 59 / 0.25);
+        border-color: rgb(15 87 114 / 0.25);
     }
     .form-cauqueva :is(input, select, textarea):focus {
         outline: none;
-        border-color: #0B5D3B;
-        --tw-ring-color: rgb(11 93 59 / 0.5);
-        box-shadow: 0 0 0 2px rgb(11 93 59 / 0.5);
+        border-color: #0F5772;
+        --tw-ring-color: rgb(15 87 114 / 0.5);
+        box-shadow: 0 0 0 2px rgb(15 87 114 / 0.5);
     }
 </style>
 
@@ -41,7 +41,7 @@
             {% csrf_token %}
 
             <div>
-                <label for="{{ formulario.producto.id_for_label }}" class="block text-sm font-medium text-[#1f2d27] mb-1">
+                <label for="{{ formulario.producto.id_for_label }}" class="block text-sm font-medium text-[#0F1E2F] mb-1">
                     {{ formulario.producto.label }} <span class="text-terracota">*</span>
                 </label>
                 {{ formulario.producto }}
@@ -50,14 +50,14 @@
 
             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                    <label for="{{ formulario.cantidad.id_for_label }}" class="block text-sm font-medium text-[#1f2d27] mb-1">
+                    <label for="{{ formulario.cantidad.id_for_label }}" class="block text-sm font-medium text-[#0F1E2F] mb-1">
                         {{ formulario.cantidad.label }} <span class="text-terracota">*</span>
                     </label>
                     {{ formulario.cantidad }}
                     {% for e in formulario.cantidad.errors %}<p class="text-xs text-terracota mt-1">{{ e }}</p>{% endfor %}
                 </div>
                 <div>
-                    <label for="{{ formulario.fecha.id_for_label }}" class="block text-sm font-medium text-[#1f2d27] mb-1">
+                    <label for="{{ formulario.fecha.id_for_label }}" class="block text-sm font-medium text-[#0F1E2F] mb-1">
                         {{ formulario.fecha.label }} <span class="text-terracota">*</span>
                     </label>
                     {{ formulario.fecha }}
@@ -66,10 +66,10 @@
             </div>
 
             <!-- Vista previa del gasto de materia prima -->
-            <div id="detalleProduccion" class="rounded-lg bg-crema border border-verde/15 p-4 text-sm text-[#1f2d27] hidden"></div>
+            <div id="detalleProduccion" class="rounded-lg bg-crema border border-verde/15 p-4 text-sm text-[#0F1E2F] hidden"></div>
 
             <div>
-                <label for="{{ formulario.observaciones.id_for_label }}" class="block text-sm font-medium text-[#1f2d27] mb-1">
+                <label for="{{ formulario.observaciones.id_for_label }}" class="block text-sm font-medium text-[#0F1E2F] mb-1">
                     {{ formulario.observaciones.label }}
                 </label>
                 {{ formulario.observaciones }}

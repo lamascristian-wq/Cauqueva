@@ -5,16 +5,16 @@
     /* Los campos del formulario los renderiza Django con las clases definidas en forms.py;
        este bloque solo les cambia los colores a la paleta CAUQUEVA sin tocar el formulario. */
     .form-cauqueva :is(input, select, textarea) {
-        border-color: rgb(11 93 59 / 0.25);
+        border-color: rgb(15 87 114 / 0.25);
     }
     .form-cauqueva :is(input, select, textarea):focus {
         outline: none;
-        border-color: #0B5D3B;
-        --tw-ring-color: rgb(11 93 59 / 0.5);
-        box-shadow: 0 0 0 2px rgb(11 93 59 / 0.5);
+        border-color: #0F5772;
+        --tw-ring-color: rgb(15 87 114 / 0.5);
+        box-shadow: 0 0 0 2px rgb(15 87 114 / 0.5);
     }
     .form-cauqueva input[type="checkbox"] {
-        accent-color: #0B5D3B;
+        accent-color: #0F5772;
     }
 </style>
 
@@ -36,7 +36,7 @@
             <!-- Nombre del proveedor -->
             <div>
                 <label for="{{ formulario.nombre.id_for_label }}"
-                       class="block text-sm font-medium text-[#1f2d27] mb-1">
+                       class="block text-sm font-medium text-[#0F1E2F] mb-1">
                     {{ formulario.nombre.label }} <span class="text-terracota">*</span>
                 </label>
 
@@ -50,7 +50,7 @@
             <!-- Teléfono -->
             <div>
                 <label for="{{ formulario.telefono.id_for_label }}"
-                       class="block text-sm font-medium text-[#1f2d27] mb-1">
+                       class="block text-sm font-medium text-[#0F1E2F] mb-1">
                     {{ formulario.telefono.label }}
                 </label>
 
@@ -70,7 +70,7 @@
             <!-- Correo electrónico -->
             <div>
                 <label for="{{ formulario.email.id_for_label }}"
-                       class="block text-sm font-medium text-[#1f2d27] mb-1">
+                       class="block text-sm font-medium text-[#0F1E2F] mb-1">
                     {{ formulario.email.label }}
                 </label>
 
@@ -89,13 +89,13 @@
 
             <!-- Materias primas -->
             <div>
-                <label class="block text-sm font-medium text-[#1f2d27] mb-1">
+                <label class="block text-sm font-medium text-[#0F1E2F] mb-1">
                     {{ formulario.materias_primas.label }}
                 </label>
 
                 <div class="max-h-56 overflow-y-auto rounded-lg border border-verde/20 bg-crema/50 p-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {% for checkbox in formulario.materias_primas %}
-                        <label class="flex items-center gap-2 text-sm text-[#1f2d27] cursor-pointer">
+                        <label class="flex items-center gap-2 text-sm text-[#0F1E2F] cursor-pointer">
                             {{ checkbox.tag }} {{ checkbox.choice_label }}
                         </label>
                     {% empty %}

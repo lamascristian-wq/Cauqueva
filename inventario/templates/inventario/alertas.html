@@ -6,7 +6,7 @@
         <h2 class="text-2xl font-bold font-serif text-verde flex items-center">
             <span class="material-icons mr-2 text-terracota">warning</span> Alertas de Stock Crítico
         </h2>
-        <p class="text-sm text-[#1f2d27]/70 mt-1">Materias primas que se encuentran por debajo o igual a su nivel de stock mínimo.</p>
+        <p class="text-sm text-[#0F1E2F]/70 mt-1">Materias primas que se encuentran por debajo o igual a su nivel de stock mínimo.</p>
     </div>
 
     <div class="flex items-center space-x-3">
@@ -26,7 +26,7 @@
     <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse">
             <thead>
-                <tr class="bg-crema border-b border-verde/10 text-[#1f2d27]/70 text-xs uppercase tracking-wider">
+                <tr class="bg-crema border-b border-verde/10 text-[#0F1E2F]/70 text-xs uppercase tracking-wider">
                     <th class="p-4 font-medium">Materia Prima</th>
                     <th class="p-4 font-medium">Variedad</th>
                     <th class="p-4 font-medium text-terracota">Stock Actual</th>
@@ -35,18 +35,18 @@
                     <th class="p-4 font-medium text-right">Acciones</th>
                 </tr>
             </thead>
-            <tbody class="text-[#1f2d27] text-sm divide-y divide-verde/5">
+            <tbody class="text-[#0F1E2F] text-sm divide-y divide-verde/5">
 
                 {% for item in alertas %}
                 <tr class="hover:bg-terracota-claro/30 transition-colors">
-                    <td class="p-4 font-medium text-[#1f2d27]">{{ item.nombre }}</td>
-                    <td class="p-4 text-[#1f2d27]/60">{{ item.variedad|default:"-" }}</td>
+                    <td class="p-4 font-medium text-[#0F1E2F]">{{ item.nombre }}</td>
+                    <td class="p-4 text-[#0F1E2F]/60">{{ item.variedad|default:"-" }}</td>
 
                     <td class="p-4 font-bold text-terracota">
-                        {{ item.stock_actual }} <span class="font-normal text-xs text-[#1f2d27]/60">{{ item.unidad }}</span>
+                        {{ item.stock_actual }} <span class="font-normal text-xs text-[#0F1E2F]/60">{{ item.unidad }}</span>
                     </td>
 
-                    <td class="p-4 text-[#1f2d27]/60">
+                    <td class="p-4 text-[#0F1E2F]/60">
                         {{ item.stock_minimo }} <span class="text-xs">{{ item.unidad }}</span>
                     </td>
 
@@ -66,9 +66,9 @@
                 {% empty %}
                 <tr>
                     <td colspan="6" class="p-12 text-center text-verde">
-                        <span class="material-icons text-verde text-5xl mb-3 block">check_circle</span>
-                        <p class="text-lg font-medium text-[#1f2d27]">Stock en niveles óptimos</p>
-                        <p class="text-sm text-[#1f2d27]/60 mt-1">Ninguna materia prima está por debajo de su stock mínimo en la base de datos.</p>
+                        <span class="material-icons text-salvia text-5xl mb-3 block">check_circle</span>
+                        <p class="text-lg font-medium text-[#0F1E2F]">Stock en niveles óptimos</p>
+                        <p class="text-sm text-[#0F1E2F]/60 mt-1">Ninguna materia prima está por debajo de su stock mínimo en la base de datos.</p>
                     </td>
                 </tr>
                 {% endfor %}

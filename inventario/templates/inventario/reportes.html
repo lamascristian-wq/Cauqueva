@@ -57,7 +57,7 @@
         <!-- Resumen -->
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
 
-        <div class="tarjeta bg-white rounded-xl border border-verde/10 border-b-4 border-b-verde shadow-sm p-4 flex items-center">
+        <div class="tarjeta bg-white rounded-xl border border-verde/10 border-b-4 border-b-salvia shadow-sm p-4 flex items-center">
             <span class="material-icons text-verde bg-verde-claro rounded-full p-2.5 mr-3">trending_up</span>
             <div>
                 <p class="text-xs text-gray-500">Stock total acumulado</p>
@@ -81,7 +81,7 @@
             </div>
         </div>
 
-        <div class="tarjeta bg-white rounded-xl border border-verde/10 border-b-4 {% if criticas_cierre %}border-b-terracota{% else %}border-b-verde{% endif %} shadow-sm p-4 flex items-center">
+        <div class="tarjeta bg-white rounded-xl border border-verde/10 border-b-4 {% if criticas_cierre %}border-b-terracota{% else %}border-b-salvia{% endif %} shadow-sm p-4 flex items-center">
             {% if criticas_cierre %}
                 <span class="material-icons text-terracota bg-terracota-claro rounded-full p-2.5 mr-3">warning</span>
             {% else %}
@@ -104,8 +104,8 @@
             </div>
         </div>
 
-        <div class="tarjeta bg-white rounded-xl border border-verde/10 border-b-4 border-b-verde shadow-sm p-4 flex items-center">
-            <span class="material-icons text-verde bg-verde-claro rounded-full p-2.5 mr-3">payments</span>
+        <div class="tarjeta bg-white rounded-xl border border-verde/10 border-b-4 border-b-ocre shadow-sm p-4 flex items-center">
+            <span class="material-icons text-ocre-oscuro bg-ocre-claro rounded-full p-2.5 mr-3">payments</span>
             <div>
                 <p class="text-xs text-gray-500">Ventas del mes</p>
                 <p class="text-xl font-bold">${{ ventas_mes|floatformat:"2g" }}</p>
@@ -134,11 +134,11 @@
                 <tbody class="divide-y divide-verde/10">
                     {% for f in filas %}
                     <tr>
-                        <td class="px-5 py-3 font-medium text-[#1f2d27]">{{ f.materia }}</td>
+                        <td class="px-5 py-3 font-medium text-[#0F1E2F]">{{ f.materia }}</td>
 
                         <td class="px-5 py-3 text-right text-verde">+{{ f.ingresos|floatformat:"-2" }}</td>
                         <td class="px-5 py-3 text-right text-ocre-oscuro">−{{ f.consumos|floatformat:"-2" }}</td>
-                        <td class="px-5 py-3 text-right font-semibold {% if f.critica %}text-terracota{% else %}text-[#1f2d27]{% endif %}">
+                        <td class="px-5 py-3 text-right font-semibold {% if f.critica %}text-terracota{% else %}text-[#0F1E2F]{% endif %}">
                             {{ f.final|floatformat:"-2" }} {{ f.unidad }}
                         </td>
                         <td class="px-5 py-3 text-right text-gray-600">${{ f.precio_referencia|floatformat:"-2" }}</td>
@@ -177,13 +177,13 @@
                 <tbody class="divide-y divide-verde/10">
                     {% for c in compras %}
                     <tr>
-                        <td class="px-5 py-3 font-medium text-[#1f2d27]">{{ c.proveedor__nombre|default:"Sin proveedor" }}</td>
+                        <td class="px-5 py-3 font-medium text-[#0F1E2F]">{{ c.proveedor__nombre|default:"Sin proveedor" }}</td>
                         <td class="px-5 py-3 text-gray-600">
                             {{ c.materia_prima__nombre }}{% if c.materia_prima__variedad %} - {{ c.materia_prima__variedad }}{% endif %}
                         </td>
-                        <td class="px-5 py-3 text-right font-semibold text-[#1f2d27]">{{ c.total|floatformat:"-2" }} {{ c.materia_prima__unidad_medida }}</td>
+                        <td class="px-5 py-3 text-right font-semibold text-[#0F1E2F]">{{ c.total|floatformat:"-2" }} {{ c.materia_prima__unidad_medida }}</td>
                         <td class="px-5 py-3 text-right text-gray-600">{{ c.veces }}</td>
-                        <td class="px-5 py-3 text-right font-semibold text-[#1f2d27]">${{ c.precio_total|floatformat:"2g" }}</td>
+                        <td class="px-5 py-3 text-right font-semibold text-[#0F1E2F]">${{ c.precio_total|floatformat:"2g" }}</td>
                     </tr>
                     {% empty %}
                     <tr><td colspan="4" class="px-5 py-10 text-center text-gray-500">No hay compras registradas en este mes.</td></tr>
@@ -214,8 +214,8 @@
         data: {
           labels: comp.labels,
           datasets: [
-            {label: "Pagado en materia prima", data: comp.compras, backgroundColor: "#D98E2B", borderRadius: 4},
-            {label: "Ventas por producción", data: comp.ventas, backgroundColor: "#0B5D3B", borderRadius: 4},
+            {label: "Pagado en materia prima", data: comp.compras, backgroundColor: "#F2BF44", borderRadius: 4},
+            {label: "Ventas por producción", data: comp.ventas, backgroundColor: "#0F5772", borderRadius: 4},
           ],
         },
         options: {

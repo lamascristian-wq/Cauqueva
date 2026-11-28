@@ -159,6 +159,14 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = "login"
 LOGIN_REDIRECT_URL = "panelprincipal"   # el nombre de tu URL del dashboard
 LOGOUT_REDIRECT_URL = "login"
+# Cada vez que se cierra el navegador hay que volver a iniciar sesión
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+# Y la sesión dura como máximo 1 hora
+SESSION_COOKIE_AGE = 3600
+
+# En producción (HTTPS) las cookies solo viajan cifradas
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
 
 RESEND_API_KEY = os.environ.get("RESEND_API_KEY", "")
 RESEND_FROM_EMAIL = os.environ.get("RESEND_FROM_EMAIL", "")
